@@ -1,4 +1,20 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// Importar configuração da API
+import apiConfig, { testConnection } from './api-config.js';
+
+// Configuração da API
+const API_BASE_URL = apiConfig.baseURL;
+
+console.log('🌐 API Base URL:', API_BASE_URL);
+console.log('🌐 Environment:', process.env.NODE_ENV);
+
+// Testar conectividade automaticamente
+testConnection().then(workingConfig => {
+  if (workingConfig) {
+    console.log('✅ API conectada com sucesso!');
+  } else {
+    console.log('⚠️ API não está acessível. Verifique a conexão.');
+  }
+});
 
 // Configuração padrão para requisições
 const defaultConfig = {
