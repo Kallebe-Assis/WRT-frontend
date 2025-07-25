@@ -118,10 +118,12 @@ const Header = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 20px 30px;
-  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
-  color: white;
+  background: linear-gradient(135deg, #C0C0C0 0%, #E5E5E5 25%, #F5F5F5 50%, #E5E5E5 75%, #C0C0C0 100%);
+  color: #333;
   position: relative;
   overflow: hidden;
+  border-bottom: 2px solid #B0B0B0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
   &::before {
     content: '';
@@ -130,8 +132,34 @@ const Header = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    opacity: 0.3;
+    background: linear-gradient(45deg, 
+      rgba(255, 255, 255, 0.1) 0%, 
+      rgba(255, 255, 255, 0.3) 25%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0.3) 75%, 
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    opacity: 0.8;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.8) 50%, 
+      transparent 100%
+    );
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
   }
 `;
 
@@ -139,32 +167,55 @@ const Title = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
   margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
   animation: ${float} 3s ease-in-out infinite;
+  color: #2C3E50;
+  z-index: 1;
+  position: relative;
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    text-align: center;
+  }
 `;
 
 const HeaderActions = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 12px;
   z-index: 1;
+  flex-wrap: wrap;
+  max-width: 65%;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px;
+  }
 `;
 
 const ActionButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
+  border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   padding: 12px 16px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  font-size: 1rem;
-  font-weight: 600;
+  backdrop-filter: blur(15px);
+  font-size: 0.9rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  min-width: fit-content;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(255, 255, 255, 0.3) inset;
 
   &::before {
     content: '';
@@ -173,7 +224,7 @@ const ActionButton = styled.button`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
     transition: left 0.5s;
   }
 
@@ -182,19 +233,48 @@ const ActionButton = styled.button`
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.95);
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(255, 255, 255, 0.4) inset;
+    border-color: rgba(255, 255, 255, 1);
+    color: #000;
   }
 
-  &.danger:hover {
-    background: rgba(255, 59, 48, 0.8);
-    animation: ${pulse} 0.6s ease-in-out;
+  &:active {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
   }
 
-  &.primary:hover {
-    background: rgba(52, 199, 89, 0.8);
-    animation: ${glow} 1s ease-in-out infinite;
+  &.danger {
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    border-color: rgba(231, 76, 60, 0.8);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3), 0 0 20px rgba(231, 76, 60, 0.2);
+
+    &:hover {
+      background: rgba(231, 76, 60, 1);
+      box-shadow: 0 12px 25px rgba(231, 76, 60, 0.4), 0 0 30px rgba(231, 76, 60, 0.3);
+      animation: ${pulse} 0.6s ease-in-out;
+    }
+  }
+
+  &.primary {
+    background: rgba(46, 204, 113, 0.9);
+    color: white;
+    border-color: rgba(46, 204, 113, 0.8);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3), 0 0 20px rgba(46, 204, 113, 0.2);
+
+    &:hover {
+      background: rgba(46, 204, 113, 1);
+      box-shadow: 0 12px 25px rgba(46, 204, 113, 0.4), 0 0 30px rgba(46, 204, 113, 0.3);
+      animation: ${glow} 1s ease-in-out infinite;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    gap: 6px;
   }
 `;
 
@@ -397,11 +477,23 @@ const NotaTelaCheia = ({ nota, onFechar, onEditar, onExcluir }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState(null);
   const contentRef = useRef(null);
 
-  const { adicionarNota, atualizarNota } = useNotasAPIContext();
+  const { adicionarNota, atualizarNota, alternarFavorito } = useNotasAPIContext();
 
   useEffect(() => {
+    // Carregar dados do usuário
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+      }
+    }
+
     // Carregar estado de favorito e bookmark do localStorage
     const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
     const bookmarks = JSON.parse(localStorage.getItem('notasBookmarks') || '[]');
@@ -435,19 +527,28 @@ const NotaTelaCheia = ({ nota, onFechar, onEditar, onExcluir }) => {
     setShowShareModal(false);
   };
 
-  const toggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
-    const notaId = nota.id || nota._id;
-    
-    if (isFavorite) {
-      const newFavorites = favorites.filter(id => id !== notaId);
-      localStorage.setItem('notasFavoritas', JSON.stringify(newFavorites));
-    } else {
-      favorites.push(notaId);
-      localStorage.setItem('notasFavoritas', JSON.stringify(favorites));
+  const toggleFavorite = async () => {
+    try {
+      // Alternar favorito no backend
+      await alternarFavorito(nota.id || nota._id);
+      
+      // Atualizar estado local
+      setIsFavorite(!isFavorite);
+      
+      // Atualizar localStorage
+      const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
+      const notaId = nota.id || nota._id;
+      
+      if (isFavorite) {
+        const newFavorites = favorites.filter(id => id !== notaId);
+        localStorage.setItem('notasFavoritas', JSON.stringify(newFavorites));
+      } else {
+        favorites.push(notaId);
+        localStorage.setItem('notasFavoritas', JSON.stringify(favorites));
+      }
+    } catch (error) {
+      console.error('Erro ao alternar favorito:', error);
     }
-    
-    setIsFavorite(!isFavorite);
   };
 
   const toggleBookmark = () => {
@@ -590,7 +691,7 @@ const NotaTelaCheia = ({ nota, onFechar, onEditar, onExcluir }) => {
               )}
               <MetadataItem>
                 <FontAwesomeIcon icon={faUser} />
-                Autor: WRTmind
+                Autor: {user ? user.nome : 'Usuário'}
               </MetadataItem>
               {isFavorite && (
                 <MetadataItem>

@@ -313,9 +313,11 @@ const ListaItens = ({
   onCopiar,
   onExportar,
   onImprimir,
+  onTelaCheia,
+  onFavoritar,
   modoOrdenacao = 'automatico'
 }) => {
-  const { definirTermoBusca, definirOrdenacao, termoBusca, ordenacao, erro } = useNotasAPIContext();
+  const { definirTermoBusca, definirOrdenacao, termoBusca, ordenacao, erro, alternarFavorito } = useNotasAPIContext();
 
   // Mostrar loading se estiver carregando
   if (carregando) {
@@ -371,6 +373,14 @@ const ListaItens = ({
   const handleClickLink = (link) => {
     if (link.url) {
       window.open(link.url, '_blank');
+    }
+  };
+
+  const handleFavoritar = async (itemId) => {
+    try {
+      await alternarFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao favoritar item:', error);
     }
   };
 
@@ -531,6 +541,8 @@ const ListaItens = ({
               onCopiar={() => handleCopiar(item)}
               onExportar={() => onExportar && onExportar(item)}
               onImprimir={() => onImprimir && onImprimir(item)}
+              onTelaCheia={onTelaCheia}
+              onFavoritar={handleFavoritar}
             />
           ))
         )}

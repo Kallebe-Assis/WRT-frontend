@@ -57,7 +57,12 @@ export const testRequest = async (endpoint) => {
   console.log('📋 Headers:', headers);
   
   try {
-    const response = await fetch(`http://localhost:5000/api${endpoint}`, {
+    // Usar configuração da API da Vercel
+    const baseURL = 'https://wrt-back.vercel.app/api';
+    
+    console.log('🌐 URL completa:', `${baseURL}${endpoint}`);
+    
+    const response = await fetch(`${baseURL}${endpoint}`, {
       method: 'GET',
       headers
     });

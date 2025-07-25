@@ -6,10 +6,13 @@ import {
   faEdit,
   faTrash,
   faTimes,
-  faExternalLinkAlt
+  faExternalLinkAlt,
+  faHeart
 } from '@fortawesome/free-solid-svg-icons';
 import { linksAPI } from '../config/api';
 import Loading from './Loading';
+import { useNotasAPIContext } from '../context/NotasAPIContext';
+import { formatarData } from '../utils/formatacao';
 
 const Container = styled.div`
   padding: 1rem 2rem;
@@ -261,6 +264,57 @@ const BotaoAcao = styled.button`
   }
 `;
 
+const SecaoFavoritos = styled.div`
+  background: var(--corFundoSecundaria);
+  border-radius: var(--bordaRaioGrande);
+  padding: var(--espacamentoGrande);
+  margin-bottom: var(--espacamentoGrande);
+  border: 1px solid var(--corBordaPrimaria);
+  box-shadow: var(--sombraLeve);
+`;
+
+const ListaFavoritos = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacamentoMedio);
+`;
+
+const ItemFavorito = styled.div`
+  padding: var(--espacamentoMedio);
+  background: var(--corFundoTerciaria);
+  border-radius: var(--bordaRaioMedia);
+  border-left: 4px solid #FF6B6B;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: var(--sombraLeve);
+  }
+`;
+
+const TituloFavorito = styled.h4`
+  color: var(--corTextoPrimaria);
+  margin: 0 0 var(--espacamentoPequeno) 0;
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
+`;
+
+const DataFavorito = styled.span`
+  color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFontePequena);
+`;
+
+const TituloSecao = styled.h3`
+  color: var(--corTextoSecundaria);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const TelaInicial = () => {
   const [icones, setIcones] = useState([]);
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -277,6 +331,10 @@ const TelaInicial = () => {
   const [arrastando, setArrastando] = useState(null);
   const [sobre, setSobre] = useState(null);
   const [reordenando, setReordenando] = useState(false);
+
+  // const { buscarFavoritas } = useNotasAPIContext(); // DESABILITADO
+  // const [favoritos, setFavoritos] = useState([]); // DESABILITADO
+  // const [carregandoFavoritos, setCarregandoFavoritos] = useState(false); // DESABILITADO
 
   // Carregar links do banco de dados
   const carregarLinks = useCallback(async () => {
@@ -312,6 +370,80 @@ const TelaInicial = () => {
   useEffect(() => {
     carregarLinks();
   }, [carregarLinks]); // Usar a função carregarLinks definida acima
+
+  // useEffect(() => {
+  //   const carregarFavoritos = async () => {
+  //     setCarregandoFavoritos(true);
+  //     try {
+  //       // Verificar se o usuário está logado
+  //       const user = localStorage.getItem('user');
+  //       if (!user) {
+  //         console.log('⚠️ Usuário não logado, pulando carregamento de favoritos');
+  //         setFavoritos([]);
+  //         return;
+  //       }
+
+  //       // Verificar se os dados do usuário são válidos
+  //       let userData;
+  //       try {
+  //         userData = JSON.parse(user);
+  //         if (!userData.id) {
+  //         console.log('⚠️ Dados do usuário inválidos, pulando carregamento de favoritos');
+  //         setFavoritos([]);
+  //         return;
+  //       } catch (error) {
+  //         console.log('⚠️ Erro ao parsear dados do usuário, pulando carregamento de favoritos');
+  //         setFavoritos([]);
+  //         return;
+  //       }
+
+  //       const favoritas = await buscarFavoritas();
+  //       setFavoritos(favoritas.slice(0, 5)); // Mostrar apenas os 5 primeiros
+  //     } catch (error) {
+  //       console.error('Erro ao carregar favoritos:', error);
+  //       setFavoritos([]);
+  //     } finally {
+  //       setCarregandoFavoritos(false);
+  //     }
+  //   };
+
+  //   carregarFavoritos();
+  // }, []); // Remover buscarFavoritas da dependência para evitar loop
+
+  // Listener para favoritos alterados (DESABILITADO)
+  // useEffect(() => {
+  //   const handleFavoritosAlterados = async () => {
+  //     setCarregandoFavoritos(true);
+  //     try {
+  //       const favoritas = await buscarFavoritas();
+  //       setFavoritos(favoritas.slice(0, 5));
+  //     } catch (error) {
+  //       console.error('Erro ao atualizar favoritos:', error);
+  //     } finally {
+  //       setCarregandoFavoritos(false);
+  //     }
+  //   };
+
+  //   window.addEventListener('favoritosAlterados', handleFavoritosAlterados);
+
+  //   return () => {
+  //     window.removeEventListener('favoritosAlterados', handleFavoritosAlterados);
+  //   };
+  // }, []);
+
+  // Listener para logout (DESABILITADO)
+  // useEffect(() => {
+  //   const handleUserLogout = () => {
+  //     console.log('🚪 Evento de logout detectado no TelaInicial');
+  //     setFavoritos([]);
+  //   };
+
+  //   window.addEventListener('userLogout', handleUserLogout);
+
+  //   return () => {
+  //     window.removeEventListener('userLogout', handleUserLogout);
+  //   };
+  // }, []);
 
   const handleAdicionar = useCallback((posicao = null) => {
     setEditando(null);
@@ -497,6 +629,13 @@ const TelaInicial = () => {
     setSobre(null);
   }, []);
 
+  // const handleFavoritoClick = (nota) => {
+  //   // Disparar evento customizado para abrir a nota
+  //   window.dispatchEvent(new CustomEvent('abrirNota', { 
+  //     detail: { nota } 
+  //   }));
+  // };
+
   // Criar grade 7x5 (35 posições)
   const posicoes = Array.from({ length: 35 }, (_, i) => i);
 
@@ -675,6 +814,31 @@ const TelaInicial = () => {
           );
         })}
       </GradeContainer>
+
+      {/* <SecaoFavoritos>
+        <TituloSecao>
+          <FontAwesomeIcon icon={faHeart} style={{ color: '#FF6B6B' }} />
+          Favoritos Recentes
+        </TituloSecao>
+        {carregandoFavoritos ? (
+          <p>Carregando favoritos...</p>
+        ) : favoritos.length > 0 ? (
+          <ListaFavoritos>
+            {favoritos.map(nota => (
+              <ItemFavorito 
+                key={nota.id || nota._id}
+                onClick={() => handleFavoritoClick(nota)}
+                title={`Clique para abrir: ${nota.titulo}`}
+              >
+                <TituloFavorito>{nota.titulo}</TituloFavorito>
+                <DataFavorito>{formatarData(nota.dataModificacao)}</DataFavorito>
+              </ItemFavorito>
+            ))}
+          </ListaFavoritos>
+        ) : (
+          <p>Nenhum favorito encontrado.</p>
+        )}
+      </SecaoFavoritos> */}
 
       {/* Modal */}
       {mostrarModal && (

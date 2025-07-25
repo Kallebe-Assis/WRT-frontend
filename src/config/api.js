@@ -1,19 +1,17 @@
-// Importar configuração da API
-import apiConfig, { testConnection } from './api-config.js';
+// Importar configuração centralizada
+import { config, getApiUrl, apiRequest } from './environment.js';
 
 // Configuração da API
-const API_BASE_URL = apiConfig.baseURL;
+const API_BASE_URL = config.API_BASE_URL;
 
 console.log('🌐 API Base URL:', API_BASE_URL);
-console.log('🌐 Environment:', process.env.NODE_ENV);
+console.log('🌐 Environment:', config.NODE_ENV);
 
-// Testar conectividade automaticamente
-testConnection().then(workingConfig => {
-  if (workingConfig) {
-    console.log('✅ API conectada com sucesso!');
-  } else {
-    console.log('⚠️ API não está acessível. Verifique a conexão.');
-  }
+// Log da configuração atual
+console.log('✅ Configuração da API carregada:', {
+  baseURL: API_BASE_URL,
+  environment: config.NODE_ENV,
+  isDevelopment: config.IS_DEVELOPMENT
 });
 
 // Configuração padrão para requisições
@@ -34,9 +32,19 @@ async function makeRequest(endpoint, options = {}) {
     try {
       const userData = JSON.parse(user);
       userId = userData.id;
+      
+      // Verificar se o ID do usuário é válido
+      if (!userId) {
+        console.error('❌ ID do usuário inválido');
+        throw new Error('Usuário não autenticado');
+      }
     } catch (error) {
-      console.error('Erro ao obter ID do usuário:', error);
+      console.error('❌ Erro ao obter ID do usuário:', error);
+      throw new Error('Usuário não autenticado');
     }
+  } else {
+    console.error('❌ Nenhum usuário encontrado no localStorage');
+    throw new Error('Usuário não autenticado');
   }
 
   const config = {
@@ -51,6 +59,7 @@ async function makeRequest(endpoint, options = {}) {
   };
 
   console.log('🌐 makeRequest - Endpoint:', endpoint);
+  console.log('🌐 makeRequest - URL completa:', `${API_BASE_URL}${endpoint}`);
   console.log('🌐 makeRequest - Config:', config);
   console.log('🌐 makeRequest - User ID:', userId);
 
@@ -63,6 +72,14 @@ async function makeRequest(endpoint, options = {}) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ makeRequest - Erro HTTP:', response.status, errorText);
+      
+      // Se for erro 401, limpar dados do usuário
+      if (response.status === 401) {
+        console.log('🔐 Erro 401 - Limpando dados do usuário');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('userLogout'));
+      }
+      
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
@@ -234,15 +251,15 @@ const excluirNotaDefinitivamente = async (id) => {
   }
 };
 
-const alternarFavorito = async (id) => {
-  try {
-    const response = await makeRequest(`/notas/${id}/favorito`, { method: 'PATCH' });
-    return response;
-  } catch (error) {
-    console.error('Erro ao alternar favorito:', error);
-    throw error;
-  }
-};
+// const alternarFavorito = async (id) => {
+//   try {
+//     const response = await makeRequest(`/notas/${id}/favorito`, { method: 'PATCH' });
+//     return response;
+//   } catch (error) {
+//     console.error('Erro ao alternar favorito:', error);
+//     throw error;
+//   }
+// };
 
 const alternarFixado = async (id) => {
   try {
@@ -280,15 +297,15 @@ const atualizarMultiplasOrdenacoes = async (ordenacoes) => {
   }
 };
 
-const buscarFavoritas = async () => {
-  try {
-    const response = await makeRequest('/notas/favoritas');
-    return response;
-  } catch (error) {
-    console.error('Erro ao buscar notas favoritas:', error);
-    throw error;
-  }
-};
+// const buscarFavoritas = async () => {
+//   try {
+//     const response = await makeRequest('/notas/favoritas');
+//     return response;
+//   } catch (error) {
+//     console.error('Erro ao buscar notas favoritas:', error);
+//     throw error;
+//   }
+// };
 
 const buscarFixadas = async () => {
   try {
@@ -399,10 +416,10 @@ export const notasAPI = {
   deletar: deletarNota,
   restaurar: restaurarNota,
   excluirDefinitivamente: excluirNotaDefinitivamente,
-  alternarFavorito,
+  // alternarFavorito, // DESABILITADO
   alternarFixado,
   atualizarOrdenacao,
   atualizarMultiplasOrdenacoes,
-  buscarFavoritas,
+  // buscarFavoritas, // DESABILITADO
   buscarFixadas
 }; 

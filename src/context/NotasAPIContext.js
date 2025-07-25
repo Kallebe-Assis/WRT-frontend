@@ -24,10 +24,12 @@ export const NotasAPIProvider = ({ children }) => {
   const {
     notas,
     categorias,
+    topicos,
     carregando,
     erro,
     carregarNotas,
     carregarCategorias,
+    carregarTopicos,
     criarNota,
     atualizarNota,
     deletarNota,
@@ -41,8 +43,24 @@ export const NotasAPIProvider = ({ children }) => {
     notasDeletadas,
     adicionarCategoria,
     editarCategoria,
-    removerCategoria
+    removerCategoria,
+    // buscarFavoritas, // DESABILITADO
+    // alternarFavorito // DESABILITADO
   } = useNotasAPI();
+
+  // Expor funções no window para uso pela sincronização
+  useEffect(() => {
+    window.notasContext = {
+      carregarNotas,
+      carregarCategorias,
+      carregarTopicos,
+      recarregarDados
+    };
+    
+    return () => {
+      delete window.notasContext;
+    };
+  }, [carregarNotas, carregarCategorias, carregarTopicos]);
 
   // Filtrar e ordenar notas usando useMemo para otimização
   const notasFiltradas = useMemo(() => {
@@ -179,6 +197,7 @@ export const NotasAPIProvider = ({ children }) => {
     try {
       await carregarNotas({ ativo: true });
       await carregarCategorias();
+      await carregarTopicos();
     } catch (error) {
       console.error('Erro ao recarregar dados:', error);
     }
@@ -204,6 +223,7 @@ export const NotasAPIProvider = ({ children }) => {
     notas: notasFiltradas,
     todasAsNotas: notas,
     categorias,
+    topicos,
     carregando,
     erro,
     categoriaAtiva,
@@ -240,6 +260,8 @@ export const NotasAPIProvider = ({ children }) => {
     // Utilitários
     notasAtivas,
     notasDeletadas
+    // buscarFavoritas, // DESABILITADO
+    // alternarFavorito // DESABILITADO
   };
 
   return (

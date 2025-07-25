@@ -5,6 +5,7 @@ import { debugAuth } from '../utils/debug';
 export const useNotasAPI = () => {
   const [notas, setNotas] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [topicos, setTopicos] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
@@ -14,6 +15,14 @@ export const useNotasAPI = () => {
     
     // Debug de autenticação
     debugAuth();
+    
+    // Verificar se o usuário está logado
+    const user = localStorage.getItem('user');
+    if (!user) {
+      console.log('❌ Usuário não logado, pulando carregamento de notas');
+      setNotas([]);
+      return [];
+    }
     
     setCarregando(true);
     setErro(null);
@@ -43,6 +52,21 @@ export const useNotasAPI = () => {
       console.error('Erro ao carregar categorias:', error);
       setErro(error.message);
       setCategorias([]);
+      return [];
+    }
+  }, []);
+
+  // Carregar tópicos
+  const carregarTopicos = useCallback(async () => {
+    try {
+      const response = await categoriasAPI.listar();
+      const topicosData = response.topicos || [];
+      setTopicos(topicosData);
+      return topicosData;
+    } catch (error) {
+      console.error('Erro ao carregar tópicos:', error);
+      setErro(error.message);
+      setTopicos([]);
       return [];
     }
   }, []);
@@ -150,29 +174,34 @@ export const useNotasAPI = () => {
     }
   }, [carregarNotas]);
 
-  // Alternar favorito
-  const alternarFavorito = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.alternarFavorito(id);
-      const notaAtualizada = response.nota;
-      
-      // Atualizar a nota no estado local
-      setNotas(prev => prev.map(nota => 
-        nota.id === id ? { ...nota, favorito: notaAtualizada.favorito } : nota
-      ));
-      
-      return notaAtualizada;
-    } catch (error) {
-      console.error('Erro ao alternar favorito:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
+  // Alternar favorito (DESABILITADO)
+  // const alternarFavorito = useCallback(async (id) => {
+  //   setCarregando(true);
+  //   setErro(null);
+  //   
+  //   try {
+  //     const response = await notasAPI.alternarFavorito(id);
+  //     const notaAtualizada = response.nota;
+  //       
+  //     // Atualizar a nota na lista local
+  //     setNotas(prev => prev.map(nota => 
+  //       nota.id === id ? notaAtualizada : nota
+  //     ));
+  //       
+  //     // Disparar evento para notificar outros componentes
+  //     window.dispatchEvent(new CustomEvent('favoritosAlterados', {
+  //       detail: { notaId: id, favorito: notaAtualizada.favorito }
+  //     }));
+  //       
+  //     return notaAtualizada;
+  //   } catch (error) {
+  //     console.error('Erro ao alternar favorito:', error);
+  //     setErro(error.message);
+  //     throw error;
+  //   } finally {
+  //     setCarregando(false);
+  //   }
+  // }, []);
 
   // Alternar fixado
   const alternarFixado = useCallback(async (id) => {
@@ -242,22 +271,29 @@ export const useNotasAPI = () => {
     }
   }, [carregarNotas]);
 
-  // Buscar notas favoritas
-  const buscarFavoritas = useCallback(async () => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.buscarFavoritas();
-      return response.notas || [];
-    } catch (error) {
-      console.error('Erro ao buscar notas favoritas:', error);
-      setErro(error.message);
-      return [];
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
+  // Buscar notas favoritas (DESABILITADO)
+  // const buscarFavoritas = useCallback(async () => {
+  //   // Verificar se o usuário está logado
+  //   const user = localStorage.getItem('user');
+  //   if (!user) {
+  //     console.log('❌ Usuário não logado, pulando busca de favoritos');
+  //     return [];
+  //   }
+  //   
+  //   setCarregando(true);
+  //   setErro(null);
+  //   
+  //   try {
+  //     const response = await notasAPI.buscarFavoritas();
+  //     return response.notas || [];
+  //   } catch (error) {
+  //     console.error('Erro ao buscar notas favoritas:', error);
+  //     setErro(error.message);
+  //     return [];
+  //   } finally {
+  //     setCarregando(false);
+  //   }
+  // }, []);
 
   // Buscar notas fixadas
   const buscarFixadas = useCallback(async () => {
@@ -353,11 +389,40 @@ export const useNotasAPI = () => {
     }
   }, []);
 
-  // Carregar dados iniciais apenas uma vez
+  // Carregar dados iniciais apenas quando o usuário estiver logado
   useEffect(() => {
-    console.log('🚀 Iniciando carregamento de dados...');
+    console.log('🚀 Verificando se usuário está logado...');
+    
     const carregarDadosIniciais = async () => {
       try {
+        // Verificar se o usuário está logado
+        const user = localStorage.getItem('user');
+        if (!user) {
+          console.log('⚠️ Usuário não está logado, aguardando login...');
+          setNotas([]);
+          setCategorias([]);
+          return;
+        }
+
+        // Verificar se os dados do usuário são válidos
+        let userData;
+        try {
+          userData = JSON.parse(user);
+          if (!userData.id) {
+            console.log('⚠️ Dados do usuário inválidos, aguardando login válido...');
+            setNotas([]);
+            setCategorias([]);
+            return;
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao parsear dados do usuário, aguardando login válido...');
+          setNotas([]);
+          setCategorias([]);
+          return;
+        }
+
+        console.log('✅ Usuário logado, carregando dados...');
+        
         // Usar as funções diretamente sem dependências circulares
         const responseNotas = await notasAPI.listar(); // Carregar todas as notas (ativas e deletadas)
         setNotas(responseNotas.notas || []);
@@ -368,22 +433,101 @@ export const useNotasAPI = () => {
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
         setErro(error.message);
+        // Em caso de erro, limpar dados para evitar estado inconsistente
+        setNotas([]);
+        setCategorias([]);
       }
     };
     
     carregarDadosIniciais();
   }, []); // Array vazio - executa apenas uma vez
 
+  // Adicionar um useEffect para escutar mudanças no localStorage e eventos de login
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'user') {
+        console.log('👤 Mudança detectada no localStorage (user)');
+        if (e.newValue) {
+          // Usuário fez login, carregar dados
+          console.log('✅ Usuário logado, carregando dados...');
+          const carregarDadosIniciais = async () => {
+            try {
+              const responseNotas = await notasAPI.listar();
+              setNotas(responseNotas.notas || []);
+              
+              const responseCategorias = await categoriasAPI.listar();
+              const categoriasIniciais = responseCategorias.categorias || [];
+              setCategorias(categoriasIniciais);
+            } catch (error) {
+              console.error('Erro ao carregar dados após login:', error);
+              setErro(error.message);
+            }
+          };
+          carregarDadosIniciais();
+        } else {
+          // Usuário fez logout, limpar dados
+          console.log('🚪 Usuário deslogado, limpando dados...');
+          setNotas([]);
+          setCategorias([]);
+          setErro(null);
+        }
+      }
+    };
+
+    const handleUserLogin = (e) => {
+      console.log('👤 Evento de login detectado:', e.detail);
+      // Usuário fez login, carregar dados
+      console.log('✅ Usuário logado, carregando dados...');
+      const carregarDadosIniciais = async () => {
+        try {
+          const responseNotas = await notasAPI.listar();
+          setNotas(responseNotas.notas || []);
+          
+          const responseCategorias = await categoriasAPI.listar();
+          const categoriasIniciais = responseCategorias.categorias || [];
+          setCategorias(categoriasIniciais);
+        } catch (error) {
+          console.error('Erro ao carregar dados após login:', error);
+          setErro(error.message);
+        }
+      };
+      carregarDadosIniciais();
+    };
+
+    const handleUserLogout = () => {
+      console.log('🚪 Evento de logout detectado');
+      // Usuário fez logout, limpar dados
+      console.log('🚪 Usuário deslogado, limpando dados...');
+      setNotas([]);
+      setCategorias([]);
+      setErro(null);
+    };
+
+    // Adicionar listeners
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('userLogout', handleUserLogout);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('userLogout', handleUserLogout);
+    };
+  }, []);
+
   return {
     // Estado
     notas,
     categorias,
+    topicos,
     carregando,
     erro,
     
     // Ações
     carregarNotas,
     carregarCategorias,
+    carregarTopicos,
     criarNota,
     atualizarNota,
     deletarNota,
@@ -394,12 +538,12 @@ export const useNotasAPI = () => {
     buscarPorTermo,
     limparErro,
     
-    // Novos métodos para favoritos, fixados e ordenação
-    alternarFavorito,
+    // Novos métodos para fixados e ordenação
+    // alternarFavorito, // DESABILITADO
     alternarFixado,
     atualizarOrdenacao,
     atualizarMultiplasOrdenacoes,
-    buscarFavoritas,
+    // buscarFavoritas, // DESABILITADO
     buscarFixadas,
     
     // Gerenciamento de categorias
@@ -410,7 +554,7 @@ export const useNotasAPI = () => {
     // Utilitários
     notasAtivas: notas.filter(nota => nota.ativo),
     notasDeletadas: notas.filter(nota => !nota.ativo),
-    notasFavoritas: notas.filter(nota => nota.favorito && nota.ativo),
+    // notasFavoritas: notas.filter(nota => nota.favorito && nota.ativo), // DESABILITADO
     notasFixadas: notas.filter(nota => nota.fixado && nota.ativo)
   };
 }; 

@@ -2,30 +2,25 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faTimes, 
+  faFolder, 
   faPlus, 
   faEdit, 
-  faTrash, 
-  faCheck,
-  faCog,
-  faTags,
-  faFolder,
-  faSync,
+  faTrashAlt, 
+  faSave, 
+  faTimes, 
+  faSync, 
+  faDownload,
   faEye,
-  faTrashAlt,
-  faPlay,
-  faBug,
-  faTerminal,
-  faDatabase,
-  faNetworkWired,
-  faUser,
-  faStickyNote,
-  faLink,
-  faDownload
+  faEyeSlash,
+  faFilter,
+  faCog,
+  faCheck,
+  faPlay
 } from '@fortawesome/free-solid-svg-icons';
+import { getApiUrl } from '../config/environment.js';
+import { syncAPI } from '../config/api';
+import LogModal from './LogModal';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
-import { syncAPI, linksAPI } from '../config/api';
-import { debugAuth, testRequest } from '../utils/debug';
 
 // Styled Components básicos
 const SecaoConfiguracao = styled.div`
@@ -50,14 +45,7 @@ const SecaoDescricao = styled.p`
 `;
 
 const Configuracoes = ({ visivel, onFechar }) => {
-  const { 
-    categorias,
-    adicionarCategoria, 
-    removerCategoria, 
-    editarCategoria,
-    recarregarDados
-  } = useNotasAPIContext();
-
+  const { categorias, adicionarCategoria, editarCategoria, removerCategoria } = useNotasAPIContext();
   const [abaAtiva, setAbaAtiva] = useState('categorias');
   const [editandoCategoria, setEditandoCategoria] = useState(null);
   const [formCategoria, setFormCategoria] = useState({ nome: '', descricao: '', cor: '#667eea' });
@@ -149,7 +137,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
   const carregarLogsSistema = async () => {
     try {
       setLoadingLogs(true);
-      const response = await fetch(`http://localhost:5000/api/logs?type=${logsFilter !== 'all' ? logsFilter : ''}`);
+      const response = await fetch(`${getApiUrl('/logs')}?type=${logsFilter !== 'all' ? logsFilter : ''}`);
       const data = await response.json();
       setSystemLogs(data.logs || []);
       setLogsStats(data.stats);
@@ -164,7 +152,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
   const limparLogsSistema = async () => {
     if (window.confirm('Tem certeza que deseja limpar todos os logs do sistema?')) {
       try {
-        await fetch('http://localhost:5000/api/logs', { method: 'DELETE' });
+        await fetch(getApiUrl('/logs'), { method: 'DELETE' });
         await carregarLogsSistema();
         alert('Logs do sistema limpos com sucesso!');
       } catch (error) {
@@ -176,7 +164,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
 
   const exportarLogs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/logs/export');
+      const response = await fetch(getApiUrl('/logs/export'));
       const data = await response.json();
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -235,13 +223,12 @@ const Configuracoes = ({ visivel, onFechar }) => {
   const handleSalvarCategoria = async () => {
     if (formCategoria.nome.trim()) {
       try {
-        const categoriaAtual = categorias[editandoCategoria];
         const dadosAtualizados = {
           nome: formCategoria.nome.trim(),
           descricao: formCategoria.descricao.trim(),
           cor: formCategoria.cor || '#667eea'
         };
-        await editarCategoria(categoriaAtual.id, dadosAtualizados);
+        await editarCategoria(editandoCategoria, dadosAtualizados);
         setEditandoCategoria(null);
         setFormCategoria({ nome: '', descricao: '', cor: '#667eea' });
         setMostrarFormulario(false);
@@ -261,8 +248,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
   const handleRemoverCategoria = async (index) => {
     if (window.confirm('Tem certeza que deseja remover esta categoria?')) {
       try {
-        const categoria = categorias[index];
-        await removerCategoria(categoria.id);
+        await removerCategoria(index);
       } catch (error) {
         console.error('Erro ao remover categoria:', error);
         alert('Erro ao remover categoria: ' + error.message);
@@ -321,9 +307,9 @@ const Configuracoes = ({ visivel, onFechar }) => {
 
         {/* Abas */}
         <div style={{ 
-          display: 'flex',
-          gap: 'var(--espacamentoPequeno)',
-          marginBottom: 'var(--espacamentoMedio)',
+          display: 'flex', 
+          gap: '2px', 
+          marginBottom: 'var(--espacamentoGrande)',
           borderBottom: '1px solid var(--corBordaPrimaria)'
         }}>
           <button 
@@ -340,7 +326,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
               transition: 'all var(--transicaoRapida)'
             }}
           >
-            <FontAwesomeIcon icon={faTags} />
+            <FontAwesomeIcon icon={faFolder} />
             Categorias
           </button>
           <button 
@@ -359,40 +345,6 @@ const Configuracoes = ({ visivel, onFechar }) => {
           >
             <FontAwesomeIcon icon={faSync} />
             Sincronização
-          </button>
-          <button 
-            onClick={() => setAbaAtiva('debug')}
-            style={{
-              background: abaAtiva === 'debug' ? 'var(--corPrimaria)' : 'var(--corFundoSecundaria)',
-              color: abaAtiva === 'debug' ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)',
-              border: 'none',
-              borderRadius: 'var(--bordaRaioMedia) var(--bordaRaioMedia) 0 0',
-              padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-              cursor: 'pointer',
-              fontSize: 'var(--tamanhoFonteMedia)',
-              fontWeight: 'bold',
-              transition: 'all var(--transicaoRapida)'
-            }}
-          >
-            <FontAwesomeIcon icon={faBug} />
-            Debug
-          </button>
-          <button 
-            onClick={() => setAbaAtiva('logs')}
-            style={{
-              background: abaAtiva === 'logs' ? 'var(--corPrimaria)' : 'var(--corFundoSecundaria)',
-              color: abaAtiva === 'logs' ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)',
-              border: 'none',
-              borderRadius: 'var(--bordaRaioMedia) var(--bordaRaioMedia) 0 0',
-              padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-              cursor: 'pointer',
-              fontSize: 'var(--tamanhoFonteMedia)',
-              fontWeight: 'bold',
-              transition: 'all var(--transicaoRapida)'
-            }}
-          >
-            <FontAwesomeIcon icon={faTerminal} />
-            Logs
           </button>
         </div>
 
@@ -549,7 +501,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
                             transition: 'all var(--transicaoRapida)'
                           }}
                         >
-                          <FontAwesomeIcon icon={faTrash} />
+                          <FontAwesomeIcon icon={faTrashAlt} />
                         </button>
                       </div>
                     </div>
@@ -773,492 +725,6 @@ const Configuracoes = ({ visivel, onFechar }) => {
                 <FontAwesomeIcon icon={faPlay} />
                 {loadingSync ? 'Sincronizando...' : 'Sincronizar Agora'}
               </button>
-            </div>
-          </SecaoConfiguracao>
-        )}
-
-        {abaAtiva === 'debug' && (
-          <SecaoConfiguracao>
-            <SecaoTitulo>
-              <FontAwesomeIcon icon={faBug} />
-              Ferramentas de Debug
-            </SecaoTitulo>
-            <SecaoDescricao>
-              Ferramentas para diagnosticar problemas e testar funcionalidades do sistema.
-            </SecaoDescricao>
-
-            <div style={{ display: 'grid', gap: 'var(--espacamentoMedio)', marginTop: 'var(--espacamentoGrande)' }}>
-              
-              {/* Seção de Autenticação */}
-              <div style={{ 
-                background: 'var(--corFundoSecundaria)', 
-                padding: 'var(--espacamentoMedio)', 
-                borderRadius: 'var(--bordaRaioMedia)',
-                border: '1px solid var(--corBordaPrimaria)'
-              }}>
-                <h4 style={{ 
-                  color: 'var(--corTextoPrimaria)', 
-                  margin: '0 0 var(--espacamentoMedio) 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}>
-                  <FontAwesomeIcon icon={faUser} />
-                  Autenticação
-                </h4>
-                
-                <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={debugAuth}
-                    style={{
-                      background: 'var(--corPrimaria)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faEye} />
-                    Verificar Auth
-                  </button>
-                </div>
-              </div>
-
-              {/* Seção de Testes de API */}
-              <div style={{ 
-                background: 'var(--corFundoSecundaria)', 
-                padding: 'var(--espacamentoMedio)', 
-                borderRadius: 'var(--bordaRaioMedia)',
-                border: '1px solid var(--corBordaPrimaria)'
-              }}>
-                <h4 style={{ 
-                  color: 'var(--corTextoPrimaria)', 
-                  margin: '0 0 var(--espacamentoMedio) 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}>
-                  <FontAwesomeIcon icon={faNetworkWired} />
-                  Testes de API
-                </h4>
-                
-                <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => testRequest('/notas')}
-                    style={{
-                      background: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faStickyNote} />
-                    Testar Notas
-                  </button>
-                  
-                  <button 
-                    onClick={() => testRequest('/links')}
-                    style={{
-                      background: '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faLink} />
-                    Testar Links
-                  </button>
-                  
-                  <button 
-                    onClick={() => testRequest('/categorias')}
-                    style={{
-                      background: '#6f42c1',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTags} />
-                    Testar Categorias
-                  </button>
-                  
-                  <button 
-                    onClick={() => testRequest('/sync/status')}
-                    style={{
-                      background: '#fd7e14',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faSync} />
-                    Testar Sync
-                  </button>
-                </div>
-              </div>
-
-              {/* Seção de Informações do Sistema */}
-              <div style={{ 
-                background: 'var(--corFundoSecundaria)', 
-                padding: 'var(--espacamentoMedio)', 
-                borderRadius: 'var(--bordaRaioMedia)',
-                border: '1px solid var(--corBordaPrimaria)'
-              }}>
-                <h4 style={{ 
-                  color: 'var(--corTextoPrimaria)', 
-                  margin: '0 0 var(--espacamentoMedio) 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}>
-                  <FontAwesomeIcon icon={faDatabase} />
-                  Informações do Sistema
-                </h4>
-                
-                <div style={{ 
-                  background: 'var(--corFundoPrimaria)', 
-                  padding: 'var(--espacamentoMedio)', 
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  fontSize: 'var(--tamanhoFontePequena)',
-                  fontFamily: 'monospace'
-                }}>
-                  <div><strong>User Agent:</strong> {navigator.userAgent}</div>
-                  <div><strong>Local Storage:</strong> {localStorage.getItem('user') ? 'Usuário logado' : 'Nenhum usuário'}</div>
-                  <div><strong>API Base URL:</strong> http://localhost:5000/api</div>
-                  <div><strong>Timestamp:</strong> {new Date().toLocaleString()}</div>
-                </div>
-              </div>
-
-              {/* Seção de Limpeza */}
-              <div style={{ 
-                background: 'var(--corFundoSecundaria)', 
-                padding: 'var(--espacamentoMedio)', 
-                borderRadius: 'var(--bordaRaioMedia)',
-                border: '1px solid var(--corBordaPrimaria)'
-              }}>
-                <h4 style={{ 
-                  color: 'var(--corTextoPrimaria)', 
-                  margin: '0 0 var(--espacamentoMedio) 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}>
-                  <FontAwesomeIcon icon={faTrashAlt} />
-                  Limpeza
-                </h4>
-                
-                <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => {
-                      localStorage.clear();
-                      alert('LocalStorage limpo! Recarregue a página.');
-                    }}
-                    style={{
-                      background: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTrashAlt} />
-                    Limpar LocalStorage
-                  </button>
-                  
-                  <button 
-                    onClick={() => {
-                      console.clear();
-                      alert('Console limpo!');
-                    }}
-                    style={{
-                      background: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--bordaRaioMedia)',
-                      padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                      cursor: 'pointer',
-                      fontSize: 'var(--tamanhoFontePequena)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--espacamentoPequeno)'
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTerminal} />
-                    Limpar Console
-                  </button>
-                </div>
-              </div>
-            </div>
-          </SecaoConfiguracao>
-        )}
-
-        {abaAtiva === 'logs' && (
-          <SecaoConfiguracao>
-            <SecaoTitulo>
-              <FontAwesomeIcon icon={faTerminal} />
-              Logs do Sistema
-            </SecaoTitulo>
-            <SecaoDescricao>
-              Visualize logs detalhados das operações do Firebase e do sistema.
-            </SecaoDescricao>
-
-            {/* Estatísticas */}
-            {logsStats && (
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                gap: 'var(--espacamentoMedio)',
-                marginBottom: 'var(--espacamentoGrande)'
-              }}>
-                <div style={{ 
-                  background: 'var(--corFundoSecundaria)', 
-                  padding: 'var(--espacamentoMedio)', 
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 'var(--tamanhoFonteTitulo)', fontWeight: 'bold', color: 'var(--corPrimaria)' }}>
-                    {logsStats.total}
-                  </div>
-                  <div style={{ fontSize: 'var(--tamanhoFontePequena)', color: 'var(--corTextoSecundaria)' }}>
-                    Total
-                  </div>
-                </div>
-                <div style={{ 
-                  background: 'var(--corFundoSecundaria)', 
-                  padding: 'var(--espacamentoMedio)', 
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 'var(--tamanhoFonteTitulo)', fontWeight: 'bold', color: '#28a745' }}>
-                    {logsStats.firebase}
-                  </div>
-                  <div style={{ fontSize: 'var(--tamanhoFontePequena)', color: 'var(--corTextoSecundaria)' }}>
-                    Firebase
-                  </div>
-                </div>
-                <div style={{ 
-                  background: 'var(--corFundoSecundaria)', 
-                  padding: 'var(--espacamentoMedio)', 
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 'var(--tamanhoFonteTitulo)', fontWeight: 'bold', color: '#007bff' }}>
-                    {logsStats.api}
-                  </div>
-                  <div style={{ fontSize: 'var(--tamanhoFontePequena)', color: 'var(--corTextoSecundaria)' }}>
-                    API
-                  </div>
-                </div>
-                <div style={{ 
-                  background: 'var(--corFundoSecundaria)', 
-                  padding: 'var(--espacamentoMedio)', 
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 'var(--tamanhoFonteTitulo)', fontWeight: 'bold', color: '#dc3545' }}>
-                    {logsStats.error}
-                  </div>
-                  <div style={{ fontSize: 'var(--tamanhoFontePequena)', color: 'var(--corTextoSecundaria)' }}>
-                    Erros
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Controles */}
-            <div style={{ 
-              display: 'flex', 
-              gap: 'var(--espacamentoMedio)', 
-              marginBottom: 'var(--espacamentoGrande)',
-              flexWrap: 'wrap'
-            }}>
-              <select 
-                value={logsFilter} 
-                onChange={(e) => setLogsFilter(e.target.value)}
-                style={{
-                  padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                  border: '1px solid var(--corBordaPrimaria)',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  background: 'var(--corFundoPrimaria)',
-                  color: 'var(--corTextoPrimaria)'
-                }}
-              >
-                <option value="all">Todos os tipos</option>
-                <option value="firebase">Firebase</option>
-                <option value="api">API</option>
-                <option value="error">Erros</option>
-                <option value="info">Informações</option>
-              </select>
-
-              <button 
-                onClick={carregarLogsSistema}
-                disabled={loadingLogs}
-                style={{
-                  background: 'var(--corPrimaria)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                  cursor: loadingLogs ? 'not-allowed' : 'pointer',
-                  opacity: loadingLogs ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}
-              >
-                <FontAwesomeIcon icon={faSync} />
-                {loadingLogs ? 'Carregando...' : 'Atualizar'}
-              </button>
-
-              <button 
-                onClick={exportarLogs}
-                style={{
-                  background: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}
-              >
-                <FontAwesomeIcon icon={faDownload} />
-                Exportar
-              </button>
-
-              <button 
-                onClick={limparLogsSistema}
-                style={{
-                  background: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  padding: 'var(--espacamentoPequeno) var(--espacamentoMedio)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--espacamentoPequeno)'
-                }}
-              >
-                <FontAwesomeIcon icon={faTrashAlt} />
-                Limpar
-              </button>
-            </div>
-
-            {/* Lista de Logs */}
-            <div style={{ 
-              background: 'var(--corFundoSecundaria)', 
-              borderRadius: 'var(--bordaRaioMedia)',
-              maxHeight: '400px',
-              overflowY: 'auto'
-            }}>
-              {loadingLogs ? (
-                <div style={{ padding: 'var(--espacamentoGrande)', textAlign: 'center' }}>
-                  Carregando logs...
-                </div>
-              ) : systemLogs.length === 0 ? (
-                <div style={{ padding: 'var(--espacamentoGrande)', textAlign: 'center', color: 'var(--corTextoSecundaria)' }}>
-                  Nenhum log encontrado.
-                </div>
-              ) : (
-                systemLogs.map((log) => (
-                  <div 
-                    key={log.id}
-                    style={{
-                      padding: 'var(--espacamentoMedio)',
-                      borderBottom: '1px solid var(--corBordaPrimaria)',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 'var(--espacamentoMedio)'
-                    }}
-                  >
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: log.type === 'firebase' ? '#ff6b35' : 
-                                 log.type === 'api' ? '#007bff' : 
-                                 log.type === 'error' ? '#dc3545' : '#6c757d',
-                      color: 'white',
-                      fontSize: 'var(--tamanhoFontePequena)'
-                    }}>
-                      {log.type === 'firebase' ? '🔥' : 
-                       log.type === 'api' ? '🌐' : 
-                       log.type === 'error' ? '❌' : 'ℹ️'}
-                    </div>
-                    
-                    <div style={{ flex: 1 }}>
-                      <div style={{ 
-                        fontWeight: 'bold', 
-                        color: 'var(--corTextoPrimaria)',
-                        marginBottom: 'var(--espacamentoPequeno)'
-                      }}>
-                        {log.message}
-                      </div>
-                      <div style={{ 
-                        fontSize: 'var(--tamanhoFontePequena)', 
-                        color: 'var(--corTextoSecundaria)',
-                        marginBottom: 'var(--espacamentoPequeno)'
-                      }}>
-                        {formatarTimestamp(log.timestamp)} • {log.type.toUpperCase()}
-                      </div>
-                      {log.details && (
-                        <div style={{
-                          background: 'var(--corFundoPrimaria)',
-                          padding: 'var(--espacamentoPequeno)',
-                          borderRadius: 'var(--bordaRaioMedia)',
-                          fontSize: 'var(--tamanhoFontePequena)',
-                          fontFamily: 'monospace',
-                          whiteSpace: 'pre-wrap',
-                          maxHeight: '100px',
-                          overflowY: 'auto'
-                        }}>
-                          {JSON.stringify(log.details, null, 2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
           </SecaoConfiguracao>
         )}
@@ -1515,6 +981,7 @@ const Configuracoes = ({ visivel, onFechar }) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

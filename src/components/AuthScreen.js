@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faEnvelope, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { getApiUrl } from '../config/environment.js';
 
 const AuthContainer = styled.div`
   min-height: 100vh;
@@ -179,8 +180,8 @@ const AuthScreen = ({ onLogin }) => {
   const [success, setSuccess] = useState('');
   
   const [loginData, setLoginData] = useState({
-    email: '',
-    senha: ''
+    email: 'teste@wrtmind.com',
+    senha: '123456'
   });
   
   const [cadastroData, setCadastroData] = useState({
@@ -196,7 +197,7 @@ const AuthScreen = ({ onLogin }) => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(getApiUrl('/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,6 +211,12 @@ const AuthScreen = ({ onLogin }) => {
         setSuccess('Login realizado com sucesso!');
         // Salvar dados do usuário no localStorage
         localStorage.setItem('user', JSON.stringify(data.usuario));
+        
+        // Disparar evento customizado para notificar o login
+        window.dispatchEvent(new CustomEvent('userLogin', { 
+          detail: { user: data.usuario } 
+        }));
+        
         // Chamar callback de login
         setTimeout(() => {
           onLogin(data.usuario);
@@ -243,7 +250,7 @@ const AuthScreen = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/cadastro', {
+      const response = await fetch(getApiUrl('/auth/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

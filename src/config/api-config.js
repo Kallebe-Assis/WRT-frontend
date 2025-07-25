@@ -10,9 +10,9 @@ const API_CONFIG = {
     timeout: 15000,
     retries: 5
   },
-  // URL alternativa para teste (caso a Vercel não funcione)
+  // URL alternativa para teste
   alternative: {
-    baseURL: 'https://wrt-backend.vercel.app/api',
+    baseURL: 'https://wrt-back.vercel.app/api',
     timeout: 15000,
     retries: 5
   }

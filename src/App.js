@@ -17,7 +17,9 @@ import {
   faExclamationCircle,
   faInfoCircle,
   faEye,
-  faCrown
+  faCrown,
+  faHeart,
+  faStar
 } from '@fortawesome/free-solid-svg-icons';
 
 import { NotasAPIProvider, useNotasAPIContext } from './context/NotasAPIContext';
@@ -34,6 +36,7 @@ import EditorTextoAvancado from './components/EditorTextoAvancado';
 
 import GlobalStyles from './styles/GlobalStyles';
 import { syncAPI, linksAPI } from './config/api';
+import { getApiUrl } from './config/environment.js';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -485,53 +488,93 @@ function useSyncStatus() {
     if (syncing) return; // Evitar múltiplas sincronizações simultâneas
     
     try {
+      console.log('🔄 Iniciando sincronização manual...');
       setSyncing(true);
       setStatus('syncing');
       
-      console.log('🔄 Iniciando sincronização manual...');
-      
-      // Chamar API de sincronização manual
+      // Primeiro, sincronizar links
       const resultado = await linksAPI.sincronizarManual();
+      console.log('✅ Sincronização de links concluída:', resultado);
       
-      if (resultado.success) {
-        console.log('✅ Sincronização manual concluída com sucesso');
-        
-        // Verificar se ainda há pendências após a sincronização
-        try {
-          const pendencias = await linksAPI.verificarPendencias();
-          if (pendencias.temPendencias) {
-            setStatus('syncing');
-            setStats({ pendentes: pendencias.quantidade });
-            console.log('🔄 Status: Ainda sincronizando (pendências restantes)');
-          } else {
-            setStatus('ok');
-            setStats({ pendentes: 0 });
-            console.log('✅ Status: Totalmente sincronizado');
-          }
-        } catch (error) {
-          console.log('⚠️ Erro ao verificar pendências pós-sync:', error.message);
-          setStatus('ok'); // Assumir que está ok se não conseguir verificar
-        }
-        
-        // Atualizar status após sincronização
-        setTimeout(fetchStatus, 5000); // Aumentado para 5 segundos (era 1 segundo)
-      } else {
-        console.log('⚠️ Sincronização manual falhou:', resultado.message);
-        setStatus('error');
+      // Aguardar um pouco antes de verificar pendências
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setStatus('syncing');
+      
+      // Verificar se há pendências após a sincronização
+      try {
+        const pendencias = await syncAPI.buscarPendencias();
+        console.log('📊 Pendências após sincronização:', pendencias);
+      } catch (error) {
+        console.log('⚠️ Erro ao verificar pendências pós-sync:', error.message);
       }
+      
+      // Recarregar todos os dados do usuário logado
+      console.log('🔄 Recarregando dados do usuário...');
+      
+      // Recarregar notas
+      if (window.notasContext && window.notasContext.carregarNotas) {
+        await window.notasContext.carregarNotas();
+      }
+      
+      // Recarregar categorias
+      if (window.notasContext && window.notasContext.carregarCategorias) {
+        await window.notasContext.carregarCategorias();
+      }
+      
+      // Recarregar tópicos
+      if (window.notasContext && window.notasContext.carregarTopicos) {
+        await window.notasContext.carregarTopicos();
+      }
+      
+      console.log('✅ Recarregamento de dados concluído');
+      setStatus('ok');
       
     } catch (error) {
       console.error('❌ Erro na sincronização manual:', error);
       setStatus('error');
+      
+      // Mesmo com erro, tentar recarregar os dados
+      try {
+        console.log('🔄 Tentando recarregar dados mesmo com erro...');
+        
+        if (window.notasContext && window.notasContext.carregarNotas) {
+          await window.notasContext.carregarNotas();
+        }
+        
+        if (window.notasContext && window.notasContext.carregarCategorias) {
+          await window.notasContext.carregarCategorias();
+        }
+        
+        if (window.notasContext && window.notasContext.carregarTopicos) {
+          await window.notasContext.carregarTopicos();
+        }
+        
+        console.log('✅ Recarregamento de dados concluído mesmo com erro');
+      } catch (reloadError) {
+        console.error('❌ Erro ao recarregar dados:', reloadError);
+      }
     } finally {
       setSyncing(false);
     }
   };
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); // Verificar a cada 30 segundos (era 5 segundos)
-    return () => clearInterval(interval);
+    // Só fazer requisições se o usuário estiver logado
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.id) {
+          fetchStatus();
+          const interval = setInterval(fetchStatus, 30000); // Verificar a cada 30 segundos
+          return () => clearInterval(interval);
+        }
+      } catch (error) {
+        console.log('⚠️ Usuário não logado ou dados inválidos, pulando verificações de status');
+      }
+    } else {
+      console.log('⚠️ Usuário não logado, pulando verificações de status');
+    }
   }, []);
 
   return { 
@@ -553,7 +596,9 @@ const AppContent = () => {
     erro,
     adicionarNota,
     editarNota,
-    excluirNota
+    excluirNota,
+    // buscarFavoritas, // DESABILITADO
+    // alternarFavorito // DESABILITADO
   } = useNotasAPIContext();
   
   const [user, setUser] = useState(null);
@@ -567,6 +612,10 @@ const AppContent = () => {
   const [logsStats, setLogsStats] = useState(null);
   const [logsFilter, setLogsFilter] = useState('all');
   const [menuRecolhido, setMenuRecolhido] = useState(false);
+  const [telaCheiaVisivel, setTelaCheiaVisivel] = useState(false);
+  const [notaTelaCheia, setNotaTelaCheia] = useState(null);
+  // const [notasFavoritas, setNotasFavoritas] = useState([]); // DESABILITADO
+  // const [contadorFavoritos, setContadorFavoritos] = useState(0); // DESABILITADO
   const sync = useSyncStatus();
 
   // Verificar se há usuário logado no localStorage
@@ -583,15 +632,128 @@ const AppContent = () => {
     }
   }, []);
 
+  // Carregar contador de favoritos (DESABILITADO)
+  // useEffect(() => {
+  //   const carregarContadorFavoritos = async () => {
+  //     try {
+  //       // Verificar se o usuário está logado
+  //       const user = localStorage.getItem('user');
+  //       if (!user) {
+  //         console.log('⚠️ Usuário não logado, pulando carregamento de favoritos');
+  //         setContadorFavoritos(0);
+  //         return;
+  //       }
+
+  //       // Verificar se os dados do usuário são válidos
+  //       let userData;
+  //       try {
+  //         userData = JSON.parse(user);
+  //         if (!userData.id) {
+  //           console.log('⚠️ Dados do usuário inválidos, pulando carregamento de favoritos');
+  //           setContadorFavoritos(0);
+  //           return;
+  //       } catch (error) {
+  //         console.log('⚠️ Erro ao parsear dados do usuário, pulando carregamento de favoritos');
+  //         setContadorFavoritos(0);
+  //         return;
+  //       }
+
+  //       const favoritas = await buscarFavoritas();
+  //       setContadorFavoritos(favoritas.length);
+  //     } catch (error) {
+  //       console.error('Erro ao carregar contador de favoritos:', error);
+  //       setContadorFavoritos(0);
+  //     }
+  //   };
+
+  //   if (user) {
+  //     carregarContadorFavoritos();
+  //   } else {
+  //     setContadorFavoritos(0);
+  //   }
+  // }, [user, buscarFavoritas]); // Remover 'notas' da dependência para evitar loop
+
+  // Listener para abrir nota da tela inicial
+  useEffect(() => {
+    const handleAbrirNota = (event) => {
+      const { nota } = event.detail;
+      if (nota) {
+        handleEditarItem(nota);
+      }
+    };
+
+    window.addEventListener('abrirNota', handleAbrirNota);
+
+    return () => {
+      window.removeEventListener('abrirNota', handleAbrirNota);
+    };
+  }, []);
+
+  // Listener para favoritos alterados (DESABILITADO)
+  // useEffect(() => {
+  //   const handleFavoritosAlterados = async () => {
+  //     await atualizarContadorFavoritos();
+  //   };
+
+  //   window.addEventListener('favoritosAlterados', handleFavoritosAlterados);
+
+  //   return () => {
+  //     window.removeEventListener('favoritosAlterados', handleFavoritosAlterados);
+  //   };
+  // }, []);
+
+  // Listener para logout
+  useEffect(() => {
+    const handleUserLogout = () => {
+      console.log('🚪 Evento de logout detectado no App');
+      setUser(null);
+      // setContadorFavoritos(0); // DESABILITADO
+    };
+
+    window.addEventListener('userLogout', handleUserLogout);
+
+    return () => {
+      window.removeEventListener('userLogout', handleUserLogout);
+    };
+  }, []);
+
+  // Função para atualizar contador de favoritos (DESABILITADO)
+  // const atualizarContadorFavoritos = async () => {
+  //   try {
+  //     const favoritas = await buscarFavoritas();
+  //     setContadorFavoritos(favoritas.length);
+  //   } catch (error) {
+  //     console.error('Erro ao atualizar contador de favoritos:', error);
+  //   }
+  // };
+
+  // Função para alternar favorito com atualização do contador (DESABILITADO)
+  // const handleAlternarFavorito = async (id) => {
+  //   try {
+  //     await alternarFavorito(id);
+  //     await atualizarContadorFavoritos();
+  //   } catch (error) {
+  //     console.error('Erro ao alternar favorito:', error);
+  //   }
+  // };
+
   const handleLogin = (userData) => {
+    console.log('👤 Executando login...', userData);
     setUser(userData);
     // Verificar se é admin
     setIsAdmin(userData.id === 'eUF9zbjEuU0G9f7ntD4R');
+    
+    // Disparar evento customizado para notificar o login
+    window.dispatchEvent(new CustomEvent('userLogin', { detail: userData }));
   };
 
   const handleLogout = () => {
+    console.log('🚪 Executando logout...');
     setUser(null);
     localStorage.removeItem('user');
+    
+    // Disparar evento customizado para notificar o logout
+    window.dispatchEvent(new CustomEvent('userLogout'));
   };
 
   const handleNovoItem = () => {
@@ -619,6 +781,38 @@ const AppContent = () => {
     import('./utils/exportacao').then(({ imprimirNota }) => {
       imprimirNota(item);
     });
+  };
+
+  const handleTelaCheia = (item) => {
+    setNotaTelaCheia(item);
+    setTelaCheiaVisivel(true);
+  };
+
+  const handleFecharTelaCheia = () => {
+    setTelaCheiaVisivel(false);
+    setNotaTelaCheia(null);
+  };
+
+  const handleEditarTelaCheia = () => {
+    if (notaTelaCheia) {
+      setTelaCheiaVisivel(false);
+      setNotaTelaCheia(null);
+      handleEditarItem(notaTelaCheia);
+    }
+  };
+
+  const handleExcluirTelaCheia = () => {
+    if (notaTelaCheia) {
+      const confirmacao = window.confirm(
+        `Tem certeza que deseja excluir a nota "${notaTelaCheia.titulo}"?\n\nEsta ação não pode ser desfeita.`
+      );
+      
+      if (confirmacao) {
+        excluirNota(notaTelaCheia.id || notaTelaCheia._id);
+        setTelaCheiaVisivel(false);
+        setNotaTelaCheia(null);
+      }
+    }
   };
 
   const handleSalvarItem = async (id, formData) => {
@@ -665,7 +859,7 @@ const AppContent = () => {
   // Funções para logs do sistema
   const carregarLogsSistema = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/logs?type=${logsFilter !== 'all' ? logsFilter : ''}`);
+      const response = await fetch(`${getApiUrl('/logs')}?type=${logsFilter !== 'all' ? logsFilter : ''}`);
       const data = await response.json();
       setSystemLogs(data.logs || []);
       setLogsStats(data.stats);
@@ -677,7 +871,7 @@ const AppContent = () => {
   const limparLogsSistema = async () => {
     if (window.confirm('Tem certeza que deseja limpar todos os logs do sistema?')) {
       try {
-        await fetch('http://localhost:5000/api/logs', { method: 'DELETE' });
+        await fetch(getApiUrl('/logs'), { method: 'DELETE' });
         await carregarLogsSistema();
         alert('Logs do sistema limpos com sucesso!');
       } catch (error) {
@@ -689,7 +883,7 @@ const AppContent = () => {
 
   const exportarLogs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/logs/export');
+      const response = await fetch(getApiUrl('/logs/export'));
       const data = await response.json();
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -721,6 +915,16 @@ const AppContent = () => {
       return () => clearInterval(interval);
     }
   }, [logModalVisible, logsFilter]);
+
+  // const handleFavoritos = async () => {
+  //   try {
+  //     const favoritas = await buscarFavoritas();
+  //     setNotasFavoritas(favoritas);
+  //     setTelaAtiva('favoritos');
+  //   } catch (error) {
+  //     console.error('Erro ao carregar favoritos:', error);
+  //   }
+  // };
 
   const renderizarConteudo = () => {
     switch (telaAtiva) {
@@ -789,9 +993,76 @@ const AppContent = () => {
               onVisualizar={handleVisualizarItem}
               onExportar={handleExportarItem}
               onImprimir={handleImprimirItem}
+              onTelaCheia={handleTelaCheia}
+              // onFavoritar={handleAlternarFavorito} // DESABILITADO
             />
           </>
         );
+      // case 'favoritos': // DESABILITADO
+      //   return (
+      //     <>
+      //       <StatusIconContainer>
+      //         <StatusIcon
+      //           onMouseEnter={() => setTooltipVisivel(true)}
+      //           onMouseLeave={() => setTooltipVisivel(false)}
+      //         >
+      //           <FontAwesomeIcon icon={faInfoCircle} />
+      //         </StatusIcon>
+      //         <StatusTooltip visivel={tooltipVisivel}>
+      //           <TooltipTitle>Status da Aplicação</TooltipTitle>
+      //           <TooltipItem>
+      //             <TooltipLabel>Carregando:</TooltipLabel>
+      //             <TooltipValue>{carregando ? 'Sim' : 'Não'}</TooltipValue>
+      //           </TooltipItem>
+      //           <TooltipItem>
+      //             <TooltipLabel>Favoritos carregados:</TooltipLabel>
+      //             <TooltipValue>{notasFavoritas.length}</TooltipValue>
+      //           </TooltipItem>
+      //           <TooltipItem>
+      //             <TooltipLabel>Erro:</TooltipLabel>
+      //             <TooltipValue>{erro || 'Nenhum'}</TooltipValue>
+      //           </TooltipItem>
+      //         </StatusTooltip>
+      //       </StatusIconContainer>
+
+      //       <NotasContainer>
+      //         <h3>Favoritos ({notasFavoritas.length})</h3>
+      //         {notasFavoritas.length > 0 ? (
+      //           <NotasLista>
+      //             {notasFavoritas.map(nota => (
+      //               <NotaItemCompacto 
+      //                 key={nota.id || nota._id}
+      //                 onClick={() => handleEditarItem(nota)}
+      //               >
+      //                 <NotaTituloCompacto>
+      //                   <FontAwesomeIcon icon={faHeart} style={{ color: '#FF6B6B', marginRight: '8px' }} />
+      //                   {nota.titulo}
+      //                   </NotaTituloCompacto>
+      //               </NotaItemCompacto>
+      //             ))}
+      //           </NotasLista>
+      //         ) : (
+      //           <p>Nenhum favorito encontrado.</p>
+      //         )}
+      //       </NotasContainer>
+
+      //       <ListaItens
+      //         itens={notasFavoritas}
+      //         tipo="nota"
+      //         titulo="Favoritos"
+      //         icone={faHeart}
+      //         carregando={carregando}
+      //         onNovo={handleNovoItem}
+      //         onEditar={handleEditarItem}
+      //         onExcluir={excluirNota}
+      //         onVisualizar={handleVisualizarItem}
+      //         onExportar={handleExportarItem}
+      //         onImprimir={handleImprimirItem}
+      //         onTelaCheia={handleTelaCheia}
+      //         onFavoritar={handleAlternarFavorito}
+      //       />
+      //     </>
+      //   );
       case 'configuracoes':
         return <Configuracoes visivel={true} onFechar={() => setTelaAtiva('inicial')} />;
       case 'lixeira':
@@ -845,25 +1116,7 @@ const AppContent = () => {
           >
             <FontAwesomeIcon icon={menuRecolhido ? faBars : faTimes} />
           </button>
-          <button 
-            onClick={abrirLogModal}
-            style={{
-              background: '#ff6b35',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--bordaRaioMedia)',
-              padding: '8px 16px',
-              marginRight: '10px',
-              cursor: 'pointer',
-              fontSize: 'var(--tamanhoFontePequena)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <FontAwesomeIcon icon={faEye} />
-            Logs
-          </button>
+
           <LogoutButton onClick={handleLogout}>
             <FontAwesomeIcon icon={faSignOutAlt} />
             Sair
@@ -954,6 +1207,28 @@ const AppContent = () => {
             <FontAwesomeIcon icon={faStickyNote} />
             <span>Notes</span>
           </MenuItem>
+          {/* <MenuItem 
+            ativo={telaAtiva === 'favoritos'} 
+            onClick={handleFavoritos}
+            recolhido={menuRecolhido}
+          >
+            <FontAwesomeIcon icon={faHeart} />
+            <span>Favorites</span>
+            {contadorFavoritos > 0 && (
+              <span style={{
+                background: '#FF6B6B',
+                color: 'white',
+                fontSize: '0.75rem',
+                padding: '2px 6px',
+                borderRadius: '10px',
+                marginLeft: 'auto',
+                minWidth: '20px',
+                textAlign: 'center'
+              }}>
+                {contadorFavoritos}
+              </span>
+            )}
+          </MenuItem> */}
           <MenuItem 
             ativo={telaAtiva === 'configuracoes'} 
             onClick={() => setTelaAtiva('configuracoes')}
@@ -1001,6 +1276,16 @@ const AppContent = () => {
         filter={logsFilter}
         onFilterChange={setLogsFilter}
       />
+
+      {/* Tela Cheia da Nota */}
+      {telaCheiaVisivel && notaTelaCheia && (
+        <NotaTelaCheia
+          nota={notaTelaCheia}
+          onFechar={handleFecharTelaCheia}
+          onEditar={handleEditarTelaCheia}
+          onExcluir={handleExcluirTelaCheia}
+        />
+      )}
     </AppContainer>
   );
 };

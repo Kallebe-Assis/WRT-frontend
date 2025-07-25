@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -254,6 +254,18 @@ const CardItem = ({
   onExportar,
   onImprimir
 }) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    // Carregar estado de favorito e bookmark do localStorage
+    const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
+    const bookmarks = JSON.parse(localStorage.getItem('notasBookmarks') || '[]');
+    
+    setIsFavorite(favorites.includes(item.id || item._id));
+    setIsBookmarked(bookmarks.includes(item.id || item._id));
+  }, [item]);
+
   const handleCopiar = async () => {
     const textoParaCopiar = `${item.titulo}\n\n${item.conteudo || ''}`;
     const sucesso = await copiarParaClipboard(textoParaCopiar);
@@ -278,6 +290,54 @@ const CardItem = ({
     
     if (confirmacao) {
       onExcluir(item._id || item.id);
+    }
+  };
+
+  const handleFavoritar = async (e) => {
+    e.stopPropagation();
+    
+    try {
+      if (onFavoritar) {
+        await onFavoritar(item._id || item.id);
+        
+        // Atualizar estado local
+        setIsFavorite(!isFavorite);
+        
+        // Atualizar localStorage
+        const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
+        const notaId = item.id || item._id;
+        
+        if (isFavorite) {
+          const newFavorites = favorites.filter(id => id !== notaId);
+          localStorage.setItem('notasFavoritas', JSON.stringify(newFavorites));
+        } else {
+          favorites.push(notaId);
+          localStorage.setItem('notasFavoritas', JSON.stringify(favorites));
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao favoritar nota:', error);
+    }
+  };
+
+  const handleBookmark = (e) => {
+    e.stopPropagation();
+    
+    const bookmarks = JSON.parse(localStorage.getItem('notasBookmarks') || '[]');
+    const notaId = item.id || item._id;
+    
+    if (isBookmarked) {
+      const newBookmarks = bookmarks.filter(id => id !== notaId);
+      localStorage.setItem('notasBookmarks', JSON.stringify(newBookmarks));
+    } else {
+      bookmarks.push(notaId);
+      localStorage.setItem('notasBookmarks', JSON.stringify(bookmarks));
+    }
+    
+    setIsBookmarked(!isBookmarked);
+    
+    if (onBookmark) {
+      onBookmark(item);
     }
   };
 
@@ -359,22 +419,18 @@ const CardItem = ({
             <FontAwesomeIcon icon={faShare} />
           </ActionButton>
           <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onFavoritar && onFavoritar(item);
-            }}
+            onClick={handleFavoritar}
             title="Favoritar"
+            style={{ color: isFavorite ? '#FF6B6B' : 'inherit' }}
           >
-            <FontAwesomeIcon icon={faHeart} />
+            <FontAwesomeIcon icon={isFavorite ? faHeartSolid : faHeart} />
           </ActionButton>
           <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onBookmark && onBookmark(item);
-            }}
+            onClick={handleBookmark}
             title="Adicionar aos favoritos"
+            style={{ color: isBookmarked ? '#FFD700' : 'inherit' }}
           >
-            <FontAwesomeIcon icon={faBookmark} />
+            <FontAwesomeIcon icon={isBookmarked ? faBookmarkSolid : faBookmark} />
           </ActionButton>
           <ActionButton
             onClick={(e) => {

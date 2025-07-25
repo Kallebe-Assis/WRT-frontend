@@ -14,7 +14,9 @@ import {
   faSort,
   faFilter,
   faBars,
-  faTimes
+  faTimes,
+  faTag,
+  faHeart
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 
@@ -282,8 +284,79 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
     definirCategoriaAtiva,
     definirTermoBusca,
     definirOrdenacao,
-    estatisticas
+    estatisticas,
+    // buscarFavoritas // DESABILITADO
   } = useNotasAPIContext();
+
+  // const [contadorFavoritos, setContadorFavoritos] = useState(0); // DESABILITADO
+
+  // useEffect(() => {
+  //   const carregarContadorFavoritos = async () => {
+  //     try {
+  //       // Verificar se o usuário está logado
+  //       const user = localStorage.getItem('user');
+  //       if (!user) {
+  //         console.log('⚠️ Usuário não logado, pulando carregamento de favoritos');
+  //         setContadorFavoritos(0);
+  //         return;
+  //       }
+
+  //       // Verificar se os dados do usuário são válidos
+  //       let userData;
+  //       try {
+  //         userData = JSON.parse(user);
+  //         if (!userData.id) {
+  //         console.log('⚠️ Dados do usuário inválidos, pulando carregamento de favoritos');
+  //         setContadorFavoritos(0);
+  //         return;
+  //       } catch (error) {
+  //         console.log('⚠️ Erro ao parsear dados do usuário, pulando carregamento de favoritos');
+  //         setContadorFavoritos(0);
+  //         return;
+  //       }
+
+  //       const favoritas = await buscarFavoritas();
+  //       setContadorFavoritos(favoritas.length);
+  //     } catch (error) {
+  //       console.error('Erro ao carregar contador de favoritos:', error);
+  //       setContadorFavoritos(0);
+  //     }
+  //   };
+
+  //   carregarContadorFavoritos();
+  // }, []); // Remover buscarFavoritas da dependência para evitar loop
+
+  // Listener para favoritos alterados (DESABILITADO)
+  // useEffect(() => {
+  //   const handleFavoritosAlterados = async () => {
+  //     try {
+  //       const favoritas = await buscarFavoritas();
+  //       setContadorFavoritos(favoritas.length);
+  //     } catch (error) {
+  //       console.error('Erro ao atualizar contador de favoritos:', error);
+  //     }
+  //   };
+
+  //   window.addEventListener('favoritosAlterados', handleFavoritosAlterados);
+
+  //   return () => {
+  //     window.removeEventListener('favoritosAlterados', handleFavoritosAlterados);
+  //   };
+  // }, []);
+
+  // Listener para logout (DESABILITADO)
+  // useEffect(() => {
+  //   const handleUserLogout = () => {
+  //     console.log('🚪 Evento de logout detectado no MenuLateral');
+  //     setContadorFavoritos(0);
+  //   };
+
+  //   window.addEventListener('userLogout', handleUserLogout);
+
+  //   return () => {
+  //     window.removeEventListener('userLogout', handleUserLogout);
+  //   };
+  // }, []);
 
   const itensNavegacao = [
     {
@@ -380,8 +453,7 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
         <SecaoMenu recolhido={menuRecolhido}>
           <TituloSecao recolhido={menuRecolhido}>Navegação</TituloSecao>
           <ListaNavegacao>
-            {/* Teste direto - renderizar cada item individualmente */}
-            <ItemNavegacao key="notes">
+            <ItemNavegacao>
               <BotaoNavegacao
                 ativo={categoriaAtiva === 'anotacoes'}
                 onClick={() => definirCategoriaAtiva('anotacoes')}
@@ -399,7 +471,25 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
               </BotaoNavegacao>
             </ItemNavegacao>
 
-            <ItemNavegacao key="trash">
+            <ItemNavegacao>
+              <BotaoNavegacao
+                ativo={categoriaAtiva === 'favoritos'}
+                onClick={() => definirCategoriaAtiva('favoritos')}
+                title={menuRecolhido ? 'Favorites' : ''}
+              >
+                <IconeNavegacao>
+                  <FontAwesomeIcon icon={faHeart} size="sm" />
+                </IconeNavegacao>
+                <TextoNavegacao recolhido={menuRecolhido}>
+                  Favorites
+                </TextoNavegacao>
+                <Contador ativo={categoriaAtiva === 'favoritos'} recolhido={menuRecolhido}>
+                  {contadorFavoritos}
+                </Contador>
+              </BotaoNavegacao>
+            </ItemNavegacao>
+
+            <ItemNavegacao>
               <BotaoNavegacao
                 ativo={categoriaAtiva === 'lixeira'}
                 onClick={() => definirCategoriaAtiva('lixeira')}
