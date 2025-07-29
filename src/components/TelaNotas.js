@@ -9,6 +9,8 @@ import {
   faTrash,
   faEye
 } from '@fortawesome/free-solid-svg-icons';
+import { useNotasAPIContext } from '../context/NotasAPIContext';
+import FormattedContent from './FormattedContent';
 
 const Container = styled.div`
   padding: var(--espacamentoGrande);
@@ -394,7 +396,7 @@ const TelaNotas = ({
                 e.stopPropagation();
                 onEditarItem(nota);
               }}>
-                {nota.conteudo.replace(/<[^>]*>/g, '').substring(0, 150)}...
+                <FormattedContent content={nota.conteudo} />
               </CardConteudo>
               
               <CardFooter>

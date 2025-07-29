@@ -1,458 +1,219 @@
-import React, { useRef, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import React from 'react';
 import { Editor } from '@tinymce/tinymce-react';
-import { TINYMCE_CONFIG } from '../config/tinymce-config';
+import styled from 'styled-components';
 
 const EditorContainer = styled.div`
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioGrande);
-  background: var(--corFundoCard);
-  overflow: hidden;
-  box-shadow: var(--sombraLeve);
-  transition: all var(--transicaoRapida);
+  .tox-tinymce {
+    border: 2px solid var(--corBordaPrimaria);
+    border-radius: var(--bordaRaioMedia);
+    background: var(--corFundoPrimaria);
+  }
 
-  &:focus-within {
-    border-color: var(--corBordaFoco);
+  .tox .tox-toolbar {
+    background: var(--corFundoSecundaria);
+    border-bottom: 1px solid var(--corBordaPrimaria);
+  }
+
+  .tox .tox-tbtn {
+    color: var(--corTextoPrimaria);
+  }
+
+  .tox .tox-tbtn:hover {
+    background: var(--corFundoHover);
+  }
+
+  .tox .tox-edit-area {
+    background: var(--corFundoPrimaria);
+  }
+
+  .tox .tox-edit-area__iframe {
+    background: var(--corFundoPrimaria);
+  }
+
+  .tox .tox-edit-focus {
+    border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
-
-  .tox-tinymce {
-    border: none !important;
-    border-radius: var(--bordaRaioGrande) !important;
-  }
-
-  .tox-toolbar {
-    background: var(--corFundoSecundaria) !important;
-    border-bottom: 1px solid var(--corBordaPrimaria) !important;
-  }
-
-  .tox-toolbar__group {
-    background: var(--corFundoSecundaria) !important;
-  }
-
-  .tox-tbtn {
-    background: transparent !important;
-    color: var(--corTextoPrimaria) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    border-radius: var(--bordaRaioPequena) !important;
-    margin: 2px !important;
-    transition: all var(--transicaoRapida) !important;
-  }
-
-  .tox-tbtn:hover {
-    background: var(--corPrimaria) !important;
-    color: var(--corTextoClara) !important;
-    transform: scale(1.05) !important;
-  }
-
-  .tox-tbtn--enabled {
-    background: var(--corPrimaria) !important;
-    color: var(--corTextoClara) !important;
-  }
-
-  .tox-edit-area {
-    background: var(--corFundoCard) !important;
-  }
-
-  .tox-edit-area__iframe {
-    background: var(--corFundoCard) !important;
-  }
-
-  .tox-editor-container {
-    background: var(--corFundoCard) !important;
-  }
-
-  .tox-statusbar {
-    background: var(--corFundoSecundaria) !important;
-    border-top: 1px solid var(--corBordaPrimaria) !important;
-    color: var(--corTextoSecundaria) !important;
-  }
-
-  .tox-menu {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    border-radius: var(--bordaRaioMedia) !important;
-    box-shadow: var(--sombraMedia) !important;
-  }
-
-  .tox-collection__item {
-    color: var(--corTextoPrimaria) !important;
-    background: var(--corFundoCard) !important;
-  }
-
-  .tox-collection__item:hover {
-    background: var(--corFundoSecundaria) !important;
-  }
-
-  .tox-dialog {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    border-radius: var(--bordaRaioGrande) !important;
-    box-shadow: var(--sombraForte) !important;
-  }
-
-  .tox-dialog__header {
-    background: var(--corFundoSecundaria) !important;
-    border-bottom: 1px solid var(--corBordaPrimaria) !important;
-  }
-
-  .tox-dialog__body {
-    background: var(--corFundoCard) !important;
-  }
-
-  .tox-dialog__footer {
-    background: var(--corFundoSecundaria) !important;
-    border-top: 1px solid var(--corBordaPrimaria) !important;
-  }
-
-  .tox-textfield {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    color: var(--corTextoPrimaria) !important;
-  }
-
-  .tox-textfield:focus {
-    border-color: var(--corBordaFoco) !important;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
-  }
-
-  .tox-listbox {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    color: var(--corTextoPrimaria) !important;
-  }
-
-  .tox-color-picker {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-  }
-
-  .tox-panel {
-    background: var(--corFundoCard) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-    border-radius: var(--bordaRaioMedia) !important;
-  }
-
-  .tox-button {
-    background: var(--corPrimaria) !important;
-    color: var(--corTextoClara) !important;
-    border: none !important;
-    border-radius: var(--bordaRaioPequena) !important;
-    padding: 8px 16px !important;
-    cursor: pointer !important;
-    transition: all var(--transicaoRapida) !important;
-  }
-
-  .tox-button:hover {
-    background: var(--corSecundaria) !important;
-    transform: scale(1.05) !important;
-  }
-
-  .tox-button--secondary {
-    background: var(--corFundoSecundaria) !important;
-    color: var(--corTextoPrimaria) !important;
-    border: 1px solid var(--corBordaPrimaria) !important;
-  }
-
-  .tox-button--secondary:hover {
-    background: var(--corFundoTerciaria) !important;
-  }
 `;
 
-const EditorHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--espacamentoMedio);
-  background: var(--corFundoSecundaria);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-`;
-
-const EditorTitle = styled.h3`
-  margin: 0;
-  color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 600;
-`;
-
-const EditorStats = styled.div`
-  display: flex;
-  gap: var(--espacamentoMedio);
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-`;
-
-const StatItem = styled.span`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-
-const RichTextEditor = ({ 
-  value, 
-  content,
-  onChange, 
-  onContentChange,
-  placeholder = "Digite seu conteúdo aqui...",
-  onSave,
-  onClose,
-  showHeader = true,
-  height = 500,
-  disabled = false
-}) => {
-  const [wordCount, setWordCount] = useState(0);
-  const [charCount, setCharCount] = useState(0);
-  const [isDirty, setIsDirty] = useState(false);
-  const editorRef = useRef(null);
-
-  // Usar content se fornecido, senão value
-  const editorValue = content || value || '';
-
-  // Usar onContentChange se fornecido, senão onChange
-  const handleChange = onContentChange || onChange;
-
-  // Configuração avançada do TinyMCE
-  const advancedConfig = {
-    ...TINYMCE_CONFIG,
-    height: height,
-    // apiKey: 'your-free-api-key-here', // Obtenha em: https://www.tiny.cloud/auth/signup/
-    readonly: disabled,
-    disabled: disabled,
-    
-    // Plugins avançados
-    plugins: [
-      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-      'insertdatetime', 'media', 'table', 'help', 'wordcount',
-      'emoticons', 'paste', 'importcss', 'textpattern',
-      'nonbreaking', 'pagebreak', 'quickbars', 'directionality',
-      'visualchars', 'codesample', 'hr', 'pagebreak',
-      'save', 'print', 'export', 'import',
-      'searchreplace', 'autosave', 'contextmenu',
-      'spellchecker', 'tabfocus', 'template', 'visualblocks',
-      'visualchars', 'codesample', 'emoticons', 'paste',
-      'importcss', 'textpattern', 'nonbreaking', 'pagebreak',
-      'quickbars', 'directionality', 'visualchars', 'codesample',
-      'hr', 'pagebreak', 'save', 'print', 'export', 'import',
-      'searchreplace', 'autosave', 'contextmenu', 'spellchecker',
-      'tabfocus', 'template', 'visualblocks', 'visualchars',
-      'codesample', 'emoticons', 'paste', 'importcss', 'textpattern',
-      'nonbreaking', 'pagebreak', 'quickbars', 'directionality',
-      'visualchars', 'codesample', 'hr', 'pagebreak', 'save',
-      'print', 'export', 'import', 'searchreplace', 'autosave',
-      'contextmenu', 'spellchecker', 'tabfocus', 'template',
-      'visualblocks', 'visualchars', 'codesample', 'emoticons',
-      'paste', 'importcss', 'textpattern', 'nonbreaking', 'pagebreak',
-      'quickbars', 'directionality', 'visualchars', 'codesample',
-      'hr', 'pagebreak', 'save', 'print', 'export', 'import',
-      'searchreplace', 'autosave', 'contextmenu', 'spellchecker',
-      'tabfocus', 'template', 'visualblocks', 'visualchars'
-    ],
-    
-    // Toolbar muito mais completo
-    toolbar: [
-      'undo redo | formatselect fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | outdent indent',
-      'bullist numlist | link image media table | emoticons charmap | hr pagebreak | removeformat | help | fullscreen | preview | print | export',
-      'searchreplace | spellchecker | visualblocks visualchars | codesample | ltr rtl | nonbreaking | template | save | autosave',
-      'insertdatetime | anchor | pagebreak | quickbars | directionality | visualchars | codesample | hr | removeformat | help | fullscreen'
-    ],
-    
-    // Configurações avançadas
-    menubar: true,
-    statusbar: true,
-    elementpath: true,
-    resize: true,
-    branding: false,
-    promotion: false,
-    onboarding: false,
-    
-    // Auto-save
-    autosave_interval: '30s',
-    autosave_prefix: 'tinymce-autosave-{path}{query}-{id}-',
-    autosave_retention: '1440m',
-    
-    // Spell checker
-    browser_spellcheck: true,
-    spellchecker_language: 'pt_BR',
-    spellchecker_rpc_url: 'https://spellchecker.tiny.cloud',
-    
-    // Templates
-    template_cdate_format: '[Date Created (CDATE): %m/%d/%Y : %H:%M:%S]',
-    template_mdate_format: '[Date Modified (MDATE): %m/%d/%Y : %H:%M:%S]',
-    
-    // Quick toolbar
-    quickbars_selection_toolbar: 'bold italic underline strikethrough | quicklink h2 h3 blockquote quickimage quicktable | forecolor backcolor',
-    quickbars_insert_toolbar: 'quickimage quicktable',
-    
-    // Context menu
-    contextmenu: 'link image imagetools table configurepermanentpen',
-    
-    // Paste settings
-    paste_data_images: true,
-    paste_as_text: false,
-    paste_enable_default_filters: true,
-    
-    // File picker
-    file_picker_types: 'image media',
-    automatic_uploads: true,
-    
-    // Content style avançado
-    content_style: `
-      body { 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-        color: var(--corTextoPrimaria);
-        background: var(--corFundoCard);
-        padding: 20px;
-        margin: 0;
-      }
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--corTextoPrimaria);
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-  }
-      h1 { font-size: 2.5em; }
-      h2 { font-size: 2em; }
-      h3 { font-size: 1.5em; }
-      h4 { font-size: 1.25em; }
-      h5 { font-size: 1.1em; }
-      h6 { font-size: 1em; }
-  p { margin: 0 0 1em 0; }
-      ul, ol { margin: 0 0 1em 1.5em; }
-  li { margin: 0.25em 0; }
-  blockquote {
-    border-left: 4px solid var(--corPrimaria);
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    background: var(--corFundoSecundaria);
-    font-style: italic;
-  }
-  code {
-    background: var(--corFundoSecundaria);
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-  }
-  pre {
-    background: var(--corFundoSecundaria);
-    padding: 1em;
-    border-radius: 5px;
-    overflow-x: auto;
-  }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin: 1em 0;
-      }
-      th, td {
-        border: 1px solid var(--corBordaPrimaria);
-        padding: 8px 12px;
-        text-align: left;
-      }
-      th {
-        background: var(--corFundoSecundaria);
-    font-weight: bold;
-  }
-      img {
-        max-width: 100%;
-        height: auto;
-      }
-      a {
-        color: var(--corPrimaria);
-        text-decoration: none;
-      }
-      a:hover {
-    text-decoration: underline;
-  }
-      .highlight {
-        background: yellow;
-        padding: 2px 4px;
-      }
-      .mark {
-        background: var(--corSecundaria);
-        color: var(--corTextoClara);
-        padding: 2px 4px;
-        border-radius: 3px;
-      }
-    `,
-    
-    // Eventos
-    setup: (editor) => {
-      editor.on('init', () => {
-        console.log('🎨 Editor TinyMCE inicializado');
-        editorRef.current = editor;
-      });
-      
-      editor.on('change keyup', () => {
-        const content = editor.getContent();
-        const text = editor.getContent({ format: 'text' });
-        
-        // Contar palavras e caracteres
-        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-        setWordCount(words.length);
-        setCharCount(text.length);
-        
-        // Marcar como modificado
-        setIsDirty(true);
-        
-        // Chamar onChange
-        if (handleChange) {
-          handleChange(content);
-        }
-      });
-      
-      editor.on('blur', () => {
-        setIsDirty(false);
-      });
-    }
-  };
-
-  const handleSave = () => {
-    if (onSave && editorRef.current) {
-      const content = editorRef.current.getContent();
-      onSave(content);
-      setIsDirty(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    }
+const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo..." }) => {
+  const handleEditorChange = (content, editor) => {
+    onChange(content);
   };
 
   return (
     <EditorContainer>
-      {showHeader && (
-        <EditorHeader>
-          <EditorTitle>Editor Avançado</EditorTitle>
-          <EditorStats>
-            <StatItem>
-              📝 {wordCount} palavras
-            </StatItem>
-            <StatItem>
-              🔤 {charCount} caracteres
-            </StatItem>
-            {isDirty && (
-              <StatItem style={{ color: 'var(--corAviso)' }}>
-                ⚠️ Modificado
-              </StatItem>
-            )}
-          </EditorStats>
-        </EditorHeader>
-      )}
-      
       <Editor
-        value={editorValue}
-        init={advancedConfig}
-        onEditorChange={(content, editor) => {
-          if (handleChange) {
-            handleChange(content);
+        apiKey='dovo08r35w45rtk3mu0yhvdctb2nb7oee5t944bj78bk79cz'
+        value={value}
+        onEditorChange={handleEditorChange}
+        disabled={disabled}
+        init={{
+          height: 450,
+          menubar: false,
+          plugins: [
+            // Core editing features
+            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+            // Premium features (included in free trial)
+            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+          ],
+          toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+          content_style: `
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 14px;
+              line-height: 1.6;
+              color: var(--corTextoPrimaria);
+              background: var(--corFundoPrimaria);
+              padding: 16px;
+              margin: 0;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              color: var(--corTextoPrimaria);
+              margin-top: 16px;
+              margin-bottom: 8px;
+            }
+            p {
+              margin: 0 0 12px 0;
+            }
+            a {
+              color: var(--corPrimaria);
+              text-decoration: underline;
+            }
+            a:hover {
+              color: var(--corSecundaria);
+            }
+            ul, ol {
+              margin: 0 0 12px 0;
+              padding-left: 24px;
+            }
+            blockquote {
+              border-left: 4px solid var(--corPrimaria);
+              margin: 16px 0;
+              padding-left: 16px;
+              font-style: italic;
+              color: var(--corTextoSecundaria);
+            }
+            code {
+              background: var(--corFundoSecundaria);
+              padding: 2px 4px;
+              border-radius: 3px;
+              font-family: 'Courier New', monospace;
+            }
+            pre {
+              background: var(--corFundoSecundaria);
+              padding: 12px;
+              border-radius: 4px;
+              overflow-x: auto;
+              margin: 16px 0;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 16px 0;
+            }
+            table th, table td {
+              border: 1px solid var(--corBordaPrimaria);
+              padding: 8px 12px;
+              text-align: left;
+            }
+            table th {
+              background: var(--corFundoSecundaria);
+              font-weight: 600;
+            }
+          `,
+          placeholder: placeholder,
+          branding: false,
+          elementpath: false,
+          resize: true,
+          statusbar: false,
+          browser_spellcheck: true,
+          contextmenu: true,
+          paste_data_images: true,
+          image_advtab: true,
+          link_list: [],
+          image_list: [],
+          table_default_styles: {
+            width: '100%'
+          },
+          table_default_attributes: {
+            border: '1'
+          },
+          fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
+          font_family_formats: 'Andale Mono=andale mono,times; Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
+          color_map: [
+            '#000000', 'Black',
+            '#434343', 'Grey 1',
+            '#666666', 'Grey 2',
+            '#999999', 'Grey 3',
+            '#b7b7b7', 'Grey 4',
+            '#cccccc', 'Grey 5',
+            '#d9d9d9', 'Grey 6',
+            '#efefef', 'Grey 7',
+            '#f3f3f3', 'Grey 8',
+            '#ffffff', 'White',
+            '#980000', 'Red',
+            '#ff0000', 'Red 2',
+            '#ff9900', 'Orange',
+            '#ffff00', 'Yellow',
+            '#00ff00', 'Green',
+            '#00ffff', 'Cyan',
+            '#4a86e8', 'Blue',
+            '#0000ff', 'Blue 2',
+            '#9900ff', 'Purple',
+            '#ff00ff', 'Magenta',
+            '#e6b8af', 'Pink',
+            '#f4cccc', 'Pink 2',
+            '#fce5cd', 'Pink 3',
+            '#fff2cc', 'Pink 4',
+            '#d9ead3', 'Pink 5',
+            '#d0e0e3', 'Pink 6',
+            '#c9daf8', 'Pink 7',
+            '#cfe2f3', 'Pink 8',
+            '#d9d2e9', 'Pink 9',
+            '#ead1dc', 'Pink 10',
+            '#dd7e6b', 'Pink 11',
+            '#ea9999', 'Pink 12',
+            '#f9cb9c', 'Pink 13',
+            '#ffe599', 'Pink 14',
+            '#b6d7a8', 'Pink 15',
+            '#a2c4c9', 'Pink 16',
+            '#a4c2f4', 'Pink 17',
+            '#b4a7d6', 'Pink 18',
+            '#d5a6bd', 'Pink 19',
+            '#cc4125', 'Pink 20',
+            '#e06666', 'Pink 21',
+            '#f6b26b', 'Pink 22',
+            '#ffd966', 'Pink 23',
+            '#93c47d', 'Pink 24',
+            '#76a5af', 'Pink 25',
+            '#6d9eeb', 'Pink 26',
+            '#8e7cc3', 'Pink 27',
+            '#c27ba0', 'Pink 28',
+            '#a61c00', 'Pink 29',
+            '#cc0000', 'Pink 30',
+            '#e69138', 'Pink 31',
+            '#f1c232', 'Pink 32',
+            '#6aa84f', 'Pink 33',
+            '#45818e', 'Pink 34',
+            '#3c78d8', 'Pink 35',
+            '#674ea7', 'Pink 36',
+            '#a64d79', 'Pink 37'
+          ],
+          tinycomments_mode: 'embedded',
+          tinycomments_author: 'WRTmind User',
+          mergetags_list: [
+            { value: 'First.Name', title: 'First Name' },
+            { value: 'Email', title: 'Email' },
+          ],
+          ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not implemented')),
+          setup: (editor) => {
+            // Configurações adicionais se necessário
+            editor.on('init', () => {
+              // Editor inicializado
+            });
           }
         }}
-        disabled={disabled}
       />
     </EditorContainer>
   );

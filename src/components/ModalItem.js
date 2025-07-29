@@ -8,6 +8,8 @@ import {
   faHeart,
   faStar
 } from '@fortawesome/free-solid-svg-icons';
+import RichTextEditor from './RichTextEditor';
+import FullFormattedContent from './FullFormattedContent';
 
 // Animação do spinner
 const spin = keyframes`
@@ -161,6 +163,7 @@ const FormGroupConteudo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 500px;
 `;
 
 const FormRow = styled.div`
@@ -476,14 +479,15 @@ const ModalItem = ({
 
             <FormGroupConteudo>
               <Label htmlFor="conteudo">Conteúdo</Label>
-              <Textarea
-                id="conteudo"
-                name="conteudo"
-                value={formData.conteudo}
-                onChange={handleInputChange}
-                placeholder="Digite o conteúdo..."
-                disabled={modo === 'visualizar'}
-              />
+              {modo === 'visualizar' ? (
+                <FullFormattedContent content={formData.conteudo} />
+              ) : (
+                <RichTextEditor
+                  value={formData.conteudo}
+                  onChange={(content) => setFormData(prev => ({ ...prev, conteudo: content }))}
+                  disabled={modo === 'visualizar'}
+                />
+              )}
             </FormGroupConteudo>
 
             {/* Removido o campo de categoria duplicado - agora o campo topico é o select de categorias */}
