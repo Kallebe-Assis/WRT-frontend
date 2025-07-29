@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes,
@@ -8,6 +8,23 @@ import {
   faHeart,
   faStar
 } from '@fortawesome/free-solid-svg-icons';
+import RichTextEditor from './RichTextEditor';
+import FullFormattedContent from './FullFormattedContent';
+
+// Animação do spinner
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.div`
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+`;
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -26,11 +43,13 @@ const ModalOverlay = styled.div`
 const ModalContent = styled.div`
   background: var(--corFundoCard);
   border-radius: var(--bordaRaioGrande);
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
+  width: 95%;
+  height: 95vh;
+  max-width: 1400px;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 `;
 
 const ModalHeader = styled.div`
@@ -39,6 +58,69 @@ const ModalHeader = styled.div`
   align-items: center;
   padding: var(--espacamentoGrande);
   border-bottom: 1px solid var(--corBordaPrimaria);
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+`;
+
+const BotaoHeader = styled.button`
+  background: transparent;
+  border: 1px solid var(--corBordaPrimaria);
+  color: var(--corTextoSecundaria);
+  padding: 6px 12px;
+  border-radius: var(--bordaRaioPequena);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    background: var(--corFundoHover);
+    color: var(--corTextoPrimaria);
+    border-color: var(--corPrimaria);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const BotaoSalvar = styled(BotaoHeader)`
+  background: var(--corPrimaria);
+  color: white;
+  border-color: var(--corPrimaria);
+
+  &:hover:not(:disabled) {
+    background: var(--corSecundaria);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const BotaoExcluir = styled(BotaoHeader)`
+  color: #e74c3c;
+  border-color: #e74c3c;
+
+  &:hover {
+    background: #e74c3c;
+    color: white;
+  }
 `;
 
 const ModalTitle = styled.h2`
@@ -64,9 +146,39 @@ const BotaoFechar = styled.button`
 
 const ModalBody = styled.div`
   padding: var(--espacamentoGrande);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
 
 const FormGroup = styled.div`
+  margin-bottom: var(--espacamentoMedio);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+const FormGroupConteudo = styled.div`
+  margin-bottom: var(--espacamentoMedio);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+`;
+
+const FormRow = styled.div`
+  display: flex;
+  gap: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoMedio);
+`;
+
+const FormGroupTitulo = styled.div`
+  flex: 1;
+  margin-bottom: var(--espacamentoMedio);
+`;
+
+const FormGroupTopico = styled.div`
+  width: 200px;
   margin-bottom: var(--espacamentoMedio);
 `;
 
@@ -104,7 +216,7 @@ const Textarea = styled.textarea`
   font-size: var(--tamanhoFonteMedia);
   font-family: inherit;
   resize: vertical;
-  min-height: 200px;
+  min-height: 400px;
   transition: all var(--transicaoMedia);
 
   &:focus {
@@ -214,8 +326,7 @@ const ModalItem = ({
   const [formData, setFormData] = useState({
     titulo: '',
     conteudo: '',
-    topico: '',
-    categoria: ''
+    topico: ''
   });
 
   // Atualizar formData quando item mudar
@@ -224,15 +335,13 @@ const ModalItem = ({
       setFormData({
         titulo: item.titulo || item.nome || '',
         conteudo: item.conteudo || '',
-        topico: item.topico || '',
-        categoria: item.categoria || ''
+        topico: item.topico || item.categoria || ''
       });
     } else {
       setFormData({
         titulo: '',
         conteudo: '',
-        topico: '',
-        categoria: ''
+        topico: ''
       });
     }
   }, [item]);
@@ -276,82 +385,24 @@ const ModalItem = ({
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalHeader>
-          <ModalTitle>{getTitulo()}</ModalTitle>
-          <BotaoFechar onClick={onClose}>
-            <FontAwesomeIcon icon={faTimes} />
-          </BotaoFechar>
-        </ModalHeader>
-
         <form onSubmit={handleSubmit}>
-          <ModalBody>
-            <FormGroup>
-              <Label htmlFor="titulo">Título</Label>
-              <Input
-                id="titulo"
-                name="titulo"
-                type="text"
-                value={formData.titulo}
-                onChange={handleInputChange}
-                placeholder="Digite o título..."
-                disabled={modo === 'visualizar'}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="conteudo">Conteúdo</Label>
-              <Textarea
-                id="conteudo"
-                name="conteudo"
-                value={formData.conteudo}
-                onChange={handleInputChange}
-                placeholder="Digite o conteúdo..."
-                disabled={modo === 'visualizar'}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="topico">Tópico</Label>
-              <Input
-                id="topico"
-                name="topico"
-                type="text"
-                value={formData.topico}
-                onChange={handleInputChange}
-                placeholder="Digite o tópico..."
-                disabled={modo === 'visualizar'}
-              />
-            </FormGroup>
-
-            {categorias.length > 0 && (
-              <FormGroup>
-                <Label htmlFor="categoria">Categoria</Label>
-                <Select
-                  id="categoria"
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={handleInputChange}
-                  disabled={modo === 'visualizar'}
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categorias.map(categoria => (
-                    <option key={categoria.id} value={categoria.nome}>
-                      {categoria.nome}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-            )}
-          </ModalBody>
-
-          <ModalFooter>
-            <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)' }}>
+          <ModalHeader>
+            <HeaderLeft>
+              <ModalTitle>{getTitulo()}</ModalTitle>
+              <BotaoFechar onClick={onClose}>
+                <FontAwesomeIcon icon={faTimes} />
+              </BotaoFechar>
+            </HeaderLeft>
+            <HeaderRight>
               {modo !== 'visualizar' && (
-                <BotaoPrimario type="submit" disabled={carregando}>
-                  <FontAwesomeIcon icon={faSave} />
+                <BotaoSalvar type="submit" disabled={carregando}>
+                  {carregando ? (
+                    <Spinner />
+                  ) : (
+                    <FontAwesomeIcon icon={faSave} />
+                  )}
                   {item?.id ? 'Atualizar' : 'Salvar'}
-                </BotaoPrimario>
+                </BotaoSalvar>
               )}
 
               {modo === 'visualizar' && item?.id && (
@@ -366,20 +417,84 @@ const ModalItem = ({
                   {item.favorito ? 'Favorito' : 'Favoritar'}
                 </BotaoFavorito>
               )}
-            </div>
 
-            <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)' }}>
               {modo !== 'visualizar' && item?.id && (
-                <BotaoPerigo onClick={handleDelete} disabled={carregando}>
+                <BotaoExcluir onClick={handleDelete} disabled={carregando}>
                   <FontAwesomeIcon icon={faTrash} />
                   Excluir
-                </BotaoPerigo>
+                </BotaoExcluir>
               )}
 
-              <BotaoSecundario onClick={onClose} disabled={carregando}>
+              <BotaoHeader onClick={onClose} disabled={carregando}>
                 Cancelar
-              </BotaoSecundario>
-            </div>
+              </BotaoHeader>
+            </HeaderRight>
+          </ModalHeader>
+
+          <ModalBody>
+            <FormRow>
+              <FormGroupTitulo>
+                <Label htmlFor="titulo">Título</Label>
+                <Input
+                  id="titulo"
+                  name="titulo"
+                  type="text"
+                  value={formData.titulo}
+                  onChange={handleInputChange}
+                  placeholder="Digite o título..."
+                  disabled={modo === 'visualizar'}
+                  required
+                />
+              </FormGroupTitulo>
+              <FormGroupTopico>
+                <Label htmlFor="topico">Tópico</Label>
+                <Select
+                  id="topico"
+                  name="topico"
+                  value={formData.topico}
+                  onChange={handleInputChange}
+                  disabled={modo === 'visualizar'}
+                >
+                  <option value="">Selecione um tópico</option>
+                  {Array.isArray(categorias) && categorias.map((categoria) => {
+                    if (typeof categoria === 'object' && categoria.nome) {
+                      return (
+                        <option key={categoria.id || categoria.nome} value={categoria.nome}>
+                          {categoria.nome}
+                        </option>
+                      );
+                    }
+                    if (typeof categoria === 'string') {
+                      return (
+                        <option key={categoria} value={categoria}>
+                          {categoria}
+                        </option>
+                      );
+                    }
+                    return null;
+                  })}
+                </Select>
+              </FormGroupTopico>
+            </FormRow>
+
+            <FormGroupConteudo>
+              <Label htmlFor="conteudo">Conteúdo</Label>
+              {modo === 'visualizar' ? (
+                <FullFormattedContent content={formData.conteudo} />
+              ) : (
+                <RichTextEditor
+                  value={formData.conteudo}
+                  onChange={(content) => setFormData(prev => ({ ...prev, conteudo: content }))}
+                  disabled={modo === 'visualizar'}
+                />
+              )}
+            </FormGroupConteudo>
+
+            {/* Removido o campo de categoria duplicado - agora o campo topico é o select de categorias */}
+          </ModalBody>
+
+          <ModalFooter>
+            {/* Botões movidos para o ModalHeader */}
           </ModalFooter>
         </form>
       </ModalContent>

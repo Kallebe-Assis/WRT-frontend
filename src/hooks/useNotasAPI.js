@@ -326,9 +326,9 @@ export const useNotasAPI = () => {
   const buscarPorTermo = useCallback(async (termo) => {
     // Implementar busca no backend quando disponível
     // Por enquanto, filtrar localmente
-    const notasFiltradas = notas.filter(nota =>
-      nota.titulo.toLowerCase().includes(termo.toLowerCase()) ||
-      nota.conteudo.toLowerCase().includes(termo.toLowerCase())
+    const notasFiltradas = (notas || []).filter(nota =>
+      (nota.titulo && nota.titulo.toLowerCase().includes(termo.toLowerCase())) ||
+      (nota.conteudo && nota.conteudo.toLowerCase().includes(termo.toLowerCase()))
     );
     return notasFiltradas;
   }, [notas]);

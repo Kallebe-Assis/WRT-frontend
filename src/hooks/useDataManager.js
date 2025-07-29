@@ -367,9 +367,9 @@ export const useDataManager = () => {
     limparDados,
     
     // Dados filtrados
-    notasAtivas: notas.filter(nota => nota.ativo),
-    notasDeletadas: notas.filter(nota => !nota.ativo),
-    notasFavoritas: notas.filter(nota => nota.favorito && nota.ativo),
-    linksAtivos: links.filter(link => link.ativo !== false)
+    notasAtivas: (notas || []).filter(nota => nota.ativo),
+    notasDeletadas: (notas || []).filter(nota => !nota.ativo),
+    notasFavoritas: (notas || []).filter(nota => nota.favorito && nota.ativo),
+    linksAtivos: (links || []).filter(link => link.ativo !== false)
   };
 }; 

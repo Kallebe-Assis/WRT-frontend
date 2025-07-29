@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faLink,
-  faHeart,
   faEdit,
   faTrash,
   faExternalLinkAlt
@@ -94,112 +93,155 @@ const SelectFiltro = styled.select`
 
 const GridLinks = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: var(--espacamentoGrande);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--espacamentoMedio);
 `;
 
 const CardLink = styled.div`
-  background: var(--corFundoCard);
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  padding: var(--espacamentoGrande);
-  transition: all var(--transicaoRapida);
+  border-radius: var(--bordaRaioGrande);
+  padding: var(--espacamentoPequeno);
+  transition: all var(--transicaoMedia);
   cursor: pointer;
-
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sombraLeve);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+  
   &:hover {
     border-color: var(--corPrimaria);
+    transform: translateY(-4px);
+    box-shadow: var(--sombraForte);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+  
+  &:active {
     transform: translateY(-2px);
-    box-shadow: var(--sombraMedia);
   }
 `;
 
 const CardHeader = styled.div`
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
 `;
 
-const CardTitulo = styled.h3`
-  color: var(--corTextoPrimaria);
-  font-size: 1.2rem;
+const CardTitle = styled.h3`
+  font-size: var(--tamanhoFontePequena);
   font-weight: 600;
+  color: var(--corTextoPrimaria);
   margin: 0;
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
-const CardAcoes = styled.div`
+const CardActions = styled.div`
   display: flex;
-  gap: var(--espacamentoPequeno);
-`;
-
-const BotaoAcao = styled.button`
-  background: transparent;
-  border: none;
-  color: var(--corTextoSecundaria);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--bordaRaioPequena);
-  transition: all var(--transicaoRapida);
-
-  &:hover {
-    color: var(--corPrimaria);
-    background: var(--corFundoSecundaria);
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--transicaoRapida);
+  
+  ${CardLink}:hover & {
+    opacity: 1;
   }
 `;
 
-const CardImagem = styled.div`
-  width: 100%;
-  height: 150px;
-  background: var(--corFundoSecundaria);
+const CardActionButton = styled.button`
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border: 1px solid var(--corBordaPrimaria);
+  color: var(--corTextoSecundaria);
+  cursor: pointer;
+  padding: 2px;
   border-radius: var(--bordaRaioMedia);
-  margin-bottom: var(--espacamentoMedio);
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  
+  &:hover {
+    background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    color: var(--corTextoClara);
+    border-color: var(--corPrimaria);
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
+  }
+`;
+
+const CardImage = styled.div`
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border-radius: var(--bordaRaioMedia);
+  margin-bottom: var(--espacamentoPequeno);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
   
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    border-radius: var(--bordaRaioMedia);
+    padding: 4px;
+  }
+  
+  .placeholder {
+    color: var(--corTextoTerciaria);
+    font-size: 1rem;
   }
 `;
 
-const CardConteudo = styled.div`
+const CardContent = styled.div`
   color: var(--corTextoSecundaria);
-  line-height: 1.6;
-  margin-bottom: var(--espacamentoMedio);
-`;
-
-const CardUrl = styled.div`
-  color: var(--corPrimaria);
   font-size: var(--tamanhoFontePequena);
-  word-break: break-all;
-  margin-bottom: var(--espacamentoMedio);
+  line-height: 1.3;
+  margin-bottom: var(--espacamentoPequeno);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  min-height: 2.6em;
 `;
 
 const CardFooter = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
+  padding-top: var(--espacamentoPequeno);
+  border-top: 1px solid var(--corBordaPrimaria);
 `;
 
 const CardMeta = styled.div`
   display: flex;
-  gap: var(--espacamentoMedio);
   align-items: center;
-`;
-
-const Tag = styled.span`
-  background: var(--corPrimaria);
-  color: white;
-  padding: 4px 8px;
-  border-radius: var(--bordaRaioPequena);
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 500;
+  gap: var(--espacamentoPequeno);
+  flex: 1;
 `;
 
 const EstadoVazio = styled.div`
@@ -221,19 +263,30 @@ const TelaLinks = ({
   onEditarItem, 
   onVisualizarItem, 
   onExcluirItem,
-  onFavoritarItem 
+  forcarAtualizacao
 }) => {
   const [termoBusca, setTermoBusca] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('dataCriacao');
 
+  // Reagir à atualização forçada
+  useEffect(() => {
+    if (forcarAtualizacao > 0) {
+      console.log('🔄 TelaLinks: Atualização forçada detectada');
+      // Limpar filtros para mostrar todos os dados atualizados
+      setTermoBusca('');
+      setFiltroCategoria('todos');
+      setOrdenacao('dataCriacao');
+    }
+  }, [forcarAtualizacao]);
+
   // Filtrar e ordenar links
-  const linksFiltrados = links
+  const linksFiltrados = (links || [])
     .filter(link => {
       const matchBusca = termoBusca === '' || 
-        link.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        link.descricao.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        link.url.toLowerCase().includes(termoBusca.toLowerCase());
+        (link.nome && link.nome.toLowerCase().includes(termoBusca.toLowerCase())) ||
+        (link.descricao && link.descricao.toLowerCase().includes(termoBusca.toLowerCase())) ||
+        (link.url && link.url.toLowerCase().includes(termoBusca.toLowerCase()));
       
       const matchCategoria = filtroCategoria === 'todos' || link.categoria === filtroCategoria;
       
@@ -242,28 +295,18 @@ const TelaLinks = ({
     .sort((a, b) => {
       switch (ordenacao) {
         case 'nome':
-          return a.nome.localeCompare(b.nome);
+          return (a.nome || '').localeCompare(b.nome || '');
         case 'dataCriacao':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         case 'dataModificacao':
-          return new Date(b.updatedAt) - new Date(a.updatedAt);
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         default:
           return 0;
       }
     });
 
   // Obter categorias únicas
-  const categorias = [...new Set(links.map(link => link.categoria).filter(Boolean))];
-
-  const formatarData = (data) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const categorias = [...new Set((links || []).map(link => link.categoria).filter(Boolean))];
 
   const handleAbrirLink = (url) => {
     window.open(url, '_blank');
@@ -307,9 +350,23 @@ const TelaLinks = ({
           onChange={(e) => setFiltroCategoria(e.target.value)}
         >
           <option value="todos">Todas as categorias</option>
-          {categorias.map(categoria => (
-            <option key={categoria} value={categoria}>{categoria}</option>
-          ))}
+          {Array.isArray(categorias) && categorias.map((categoria) => {
+            let categoriaValue = '';
+            let categoriaKey = '';
+            if (typeof categoria === 'object' && categoria.nome) {
+              categoriaValue = categoria.nome;
+              categoriaKey = categoria.id || categoria.nome;
+            } else if (typeof categoria === 'string') {
+              categoriaValue = categoria;
+              categoriaKey = categoria;
+            }
+            if (!categoriaValue) return null;
+            return (
+              <option key={categoriaKey} value={categoriaValue}>
+                {categoriaValue}
+              </option>
+            );
+          })}
         </SelectFiltro>
         <SelectFiltro
           value={ordenacao}
@@ -337,46 +394,55 @@ const TelaLinks = ({
       ) : (
         <GridLinks>
           {linksFiltrados.map(link => (
-            <CardLink key={link.id}>
+            <CardLink key={link.id} onClick={() => handleAbrirLink(link.url)}>
               <CardHeader>
-                <CardTitulo>{link.nome}</CardTitulo>
-                <CardAcoes>
-                  {link.favorito && (
-                    <BotaoAcao onClick={() => onFavoritarItem(link.id)}>
-                      <FontAwesomeIcon icon={faHeart} style={{ color: '#e74c3c' }} />
-                    </BotaoAcao>
-                  )}
-                  <BotaoAcao onClick={() => onEditarItem(link)}>
+                <CardTitle>{link.nome}</CardTitle>
+                <CardActions>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    handleAbrirLink(link.url);
+                  }}>
+                    <FontAwesomeIcon icon={faExternalLinkAlt} />
+                  </CardActionButton>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    onEditarItem(link);
+                  }}>
                     <FontAwesomeIcon icon={faEdit} />
-                  </BotaoAcao>
-                  <BotaoAcao onClick={() => onExcluirItem(link.id)}>
+                  </CardActionButton>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    onExcluirItem(link.id);
+                  }}>
                     <FontAwesomeIcon icon={faTrash} />
-                  </BotaoAcao>
-                </CardAcoes>
+                  </CardActionButton>
+                </CardActions>
               </CardHeader>
               
-              {link.imagemUrl && (
-                <CardImagem>
+              {link.imagemUrl ? (
+                <CardImage>
                   <img src={link.imagemUrl} alt={link.nome} />
-                </CardImagem>
+                </CardImage>
+              ) : (
+                <CardImage>
+                  <div className="placeholder">
+                    <FontAwesomeIcon icon={faLink} />
+                  </div>
+                </CardImage>
               )}
               
-              <CardConteudo>
+              <CardContent>
                 {link.descricao}
-              </CardConteudo>
-              
-              <CardUrl>
-                {link.url}
-              </CardUrl>
+              </CardContent>
               
               <CardFooter>
                 <CardMeta>
-                  {link.categoria && <Tag>{link.categoria}</Tag>}
-                  <span>{formatarData(link.createdAt)}</span>
+                  {link.categoria && (
+                    <span>
+                      {typeof link.categoria === 'object' ? link.categoria.nome || 'Categoria' : link.categoria}
+                    </span>
+                  )}
                 </CardMeta>
-                <BotaoAcao onClick={() => handleAbrirLink(link.url)}>
-                  <FontAwesomeIcon icon={faExternalLinkAlt} />
-                </BotaoAcao>
               </CardFooter>
             </CardLink>
           ))}

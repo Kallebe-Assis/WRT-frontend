@@ -9,6 +9,7 @@ import {
   faEye,
   faEdit
 } from '@fortawesome/free-solid-svg-icons';
+import RichTextEditor from './RichTextEditor';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -175,7 +176,7 @@ const ModalNota = ({
   const [formData, setFormData] = useState({
     titulo: '',
     conteudo: '',
-    topico: '',
+    categoria: '',
     favorito: false
   });
 
@@ -186,14 +187,14 @@ const ModalNota = ({
       setFormData({
         titulo: nota.titulo || '',
         conteudo: nota.conteudo || '',
-        topico: nota.topico || '',
+        categoria: nota.categoria || '',
         favorito: nota.favorito || false
       });
     } else {
       setFormData({
         titulo: '',
         conteudo: '',
-        topico: '',
+        categoria: '',
         favorito: false
       });
     }
@@ -295,29 +296,42 @@ const ModalNota = ({
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="topico">Tópico</Label>
+            <Label htmlFor="categoria">Categoria</Label>
             <Select
-              id="topico"
-              value={formData.topico}
-              onChange={(e) => handleInputChange('topico', e.target.value)}
+              id="categoria"
+              value={formData.categoria}
+              onChange={(e) => handleInputChange('categoria', e.target.value)}
               disabled={modo === 'visualizar'}
             >
-              <option value="">Selecione um tópico...</option>
-              {categorias.map((categoria) => (
-                <option key={categoria.id} value={categoria.nome}>
-                  {categoria.nome}
-                </option>
-              ))}
+              <option value="">Selecione uma categoria...</option>
+              {Array.isArray(categorias) && categorias.map((categoria) => {
+                if (typeof categoria === 'object' && categoria.nome) {
+                  return (
+                    <option key={categoria.id || categoria.nome} value={categoria.nome}>
+                      {categoria.nome}
+                    </option>
+                  );
+                }
+                if (typeof categoria === 'string') {
+                  return (
+                    <option key={categoria} value={categoria}>
+                      {categoria}
+                    </option>
+                  );
+                }
+                return null;
+              })}
             </Select>
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="conteudo">Conteúdo *</Label>
-            <Textarea
-              id="conteudo"
-              placeholder="Digite o conteúdo da nota..."
+            <RichTextEditor
               value={formData.conteudo}
-              onChange={(e) => handleInputChange('conteudo', e.target.value)}
+              onChange={(content) => handleInputChange('conteudo', content)}
+              placeholder="Digite o conteúdo da nota..."
+              height={400}
+              showHeader={false}
               disabled={modo === 'visualizar'}
             />
           </FormGroup>

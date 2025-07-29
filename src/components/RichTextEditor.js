@@ -1,431 +1,219 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import styled from 'styled-components';
 
 const EditorContainer = styled.div`
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioGrande);
-  background: var(--corFundoCard);
-  overflow: hidden;
-`;
-
-const Toolbar = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px;
-  background: var(--corFundoSecundaria);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-`;
-
-const ToolbarButton = styled.button`
-  background: transparent;
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: var(--corTextoPrimaria);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
+  .tox-tinymce {
+    border: 2px solid var(--corBordaPrimaria);
+    border-radius: var(--bordaRaioMedia);
+    background: var(--corFundoPrimaria);
   }
 
-  &.active {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
-`;
-
-const ToolbarSelect = styled.select`
-  background: transparent;
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: var(--corTextoPrimaria);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
-`;
-
-const EditorArea = styled.div`
-  width: 100%;
-  min-height: 400px;
-  padding: 16px;
-  border: none;
-  outline: none;
-  background: var(--corFundoCard);
-  color: var(--corTextoPrimaria);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  overflow-y: auto;
-  direction: ltr;
-  text-align: left;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-
-  &:empty:before {
-    content: attr(data-placeholder);
-    color: var(--corTextoSecundaria);
-    pointer-events: none;
+  .tox .tox-toolbar {
+    background: var(--corFundoSecundaria);
+    border-bottom: 1px solid var(--corBordaPrimaria);
   }
 
-  &:focus {
-    outline: none;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
+  .tox .tox-tbtn {
     color: var(--corTextoPrimaria);
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-weight: bold;
   }
 
-  h1 { font-size: 2em; }
-  h2 { font-size: 1.5em; }
-  h3 { font-size: 1.25em; }
-  h4 { font-size: 1.1em; }
-  h5 { font-size: 1em; }
-  h6 { font-size: 0.9em; }
-
-  p { margin: 0 0 1em 0; }
-
-  ul, ol { 
-    margin: 0 0 1em 1.5em; 
+  .tox .tox-tbtn:hover {
+    background: var(--corFundoHover);
   }
 
-  li { margin: 0.25em 0; }
-
-  blockquote {
-    border-left: 4px solid var(--corPrimaria);
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    background: var(--corFundoSecundaria);
-    font-style: italic;
+  .tox .tox-edit-area {
+    background: var(--corFundoPrimaria);
   }
 
-  code {
-    background: var(--corFundoSecundaria);
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
+  .tox .tox-edit-area__iframe {
+    background: var(--corFundoPrimaria);
   }
 
-  pre {
-    background: var(--corFundoSecundaria);
-    padding: 1em;
-    border-radius: 5px;
-    overflow-x: auto;
-  }
-
-  strong {
-    font-weight: bold;
-  }
-
-  em {
-    font-style: italic;
-  }
-
-  u {
-    text-decoration: underline;
-  }
-
-  s {
-    text-decoration: line-through;
+  .tox .tox-edit-focus {
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
 
-const RichTextEditor = ({ value, onChange, placeholder = "Digite seu conteúdo aqui..." }) => {
-  const editorRef = useRef(null);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const [isStrike, setIsStrike] = useState(false);
-  const [internalValue, setInternalValue] = useState(value || '');
-
-  // Inicializar o editor
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      // Definir o conteúdo inicial apenas uma vez
-      if (!editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = value || '';
-      }
-    }
-  }, []);
-
-  // Sincronizar com mudanças externas
-  useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value || '');
-      if (editorRef.current && value !== editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = value || '';
-      }
-    }
-  }, [value, internalValue]);
-
-  const execCommand = (command, value = null) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      const success = document.execCommand(command, false, value);
-      updateToolbarState();
-      return success;
-    }
-    return false;
-  };
-
-  const updateToolbarState = () => {
-    if (editorRef.current) {
-      setIsBold(document.queryCommandState('bold'));
-      setIsItalic(document.queryCommandState('italic'));
-      setIsUnderline(document.queryCommandState('underline'));
-      setIsStrike(document.queryCommandState('strikeThrough'));
-    }
-  };
-
-  const handleFormat = (format) => {
-    switch (format) {
-      case 'bold':
-        execCommand('bold');
-        break;
-      case 'italic':
-        execCommand('italic');
-        break;
-      case 'underline':
-        execCommand('underline');
-        break;
-      case 'strike':
-        execCommand('strikeThrough');
-        break;
-      case 'h1':
-        execCommand('formatBlock', '<h1>');
-        break;
-      case 'h2':
-        execCommand('formatBlock', '<h2>');
-        break;
-      case 'h3':
-        execCommand('formatBlock', '<h3>');
-        break;
-      case 'p':
-        execCommand('formatBlock', '<p>');
-        break;
-      case 'ul':
-        execCommand('insertUnorderedList');
-        break;
-      case 'ol':
-        execCommand('insertOrderedList');
-        break;
-      case 'quote':
-        execCommand('formatBlock', '<blockquote>');
-        break;
-      case 'code':
-        execCommand('formatBlock', '<pre>');
-        break;
-      case 'undo':
-        execCommand('undo');
-        break;
-      case 'redo':
-        execCommand('redo');
-        break;
-      case 'clear':
-        execCommand('removeFormat');
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleColorChange = (type, color) => {
-    if (type === 'text') {
-      execCommand('foreColor', color);
-    } else {
-      execCommand('hiliteColor', color);
-    }
-  };
-
-  const handleAlignment = (align) => {
-    execCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
-  };
-
-  const handleEditorChange = () => {
-    if (editorRef.current && onChange) {
-      const content = editorRef.current.innerHTML;
-      if (content !== internalValue) {
-        setInternalValue(content);
-        onChange(content);
-      }
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    // Atalhos de teclado
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          handleFormat('bold');
-          break;
-        case 'i':
-          e.preventDefault();
-          handleFormat('italic');
-          break;
-        case 'u':
-          e.preventDefault();
-          handleFormat('underline');
-          break;
-        case 'z':
-          e.preventDefault();
-          if (e.shiftKey) {
-            handleFormat('redo');
-          } else {
-            handleFormat('undo');
-          }
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Enter - permitir comportamento padrão
-    if (e.key === 'Enter') {
-      // Não fazer nada especial, deixar o comportamento padrão
-    }
+const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo..." }) => {
+  const handleEditorChange = (content, editor) => {
+    onChange(content);
   };
 
   return (
     <EditorContainer>
-      <Toolbar>
-        {/* Formatação básica */}
-        <ToolbarButton 
-          onClick={() => handleFormat('bold')} 
-          className={isBold ? 'active' : ''}
-          title="Negrito (Ctrl+B)"
-        >
-          <strong>B</strong>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('italic')} 
-          className={isItalic ? 'active' : ''}
-          title="Itálico (Ctrl+I)"
-        >
-          <em>I</em>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('underline')} 
-          className={isUnderline ? 'active' : ''}
-          title="Sublinhado (Ctrl+U)"
-        >
-          <u>U</u>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('strike')} 
-          className={isStrike ? 'active' : ''}
-          title="Tachado"
-        >
-          <s>S</s>
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Títulos */}
-        <ToolbarSelect onChange={(e) => handleFormat(e.target.value)} title="Títulos">
-          <option value="p">Parágrafo</option>
-          <option value="h1">Título 1</option>
-          <option value="h2">Título 2</option>
-          <option value="h3">Título 3</option>
-        </ToolbarSelect>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Listas */}
-        <ToolbarButton onClick={() => handleFormat('ul')} title="Lista não ordenada">
-          •
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('ol')} title="Lista ordenada">
-          1.
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Citações e código */}
-        <ToolbarButton onClick={() => handleFormat('quote')} title="Citação">
-          "
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('code')} title="Código">
-          &lt;/&gt;
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Cores */}
-        <ToolbarSelect onChange={(e) => handleColorChange('text', e.target.value)} title="Cor do texto">
-          <option value="">Cor</option>
-          <option value="#000000">Preto</option>
-          <option value="#FF0000">Vermelho</option>
-          <option value="#00FF00">Verde</option>
-          <option value="#0000FF">Azul</option>
-          <option value="#FFFF00">Amarelo</option>
-          <option value="#FF00FF">Magenta</option>
-          <option value="#00FFFF">Ciano</option>
-        </ToolbarSelect>
-
-        <ToolbarSelect onChange={(e) => handleColorChange('background', e.target.value)} title="Cor de fundo">
-          <option value="">Fundo</option>
-          <option value="#FFFF00">Amarelo</option>
-          <option value="#00FFFF">Ciano</option>
-          <option value="#FF00FF">Magenta</option>
-          <option value="#00FF00">Verde</option>
-          <option value="#FF0000">Vermelho</option>
-          <option value="#0000FF">Azul</option>
-        </ToolbarSelect>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Alinhamento */}
-        <ToolbarButton onClick={() => handleAlignment('left')} title="Alinhar à esquerda">
-          ⬅
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('center')} title="Centralizar">
-          ↔
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('right')} title="Alinhar à direita">
-          ➡
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('justify')} title="Justificar">
-          ⬌
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Utilitários */}
-        <ToolbarButton onClick={() => handleFormat('undo')} title="Desfazer (Ctrl+Z)">
-          ↶
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('redo')} title="Refazer (Ctrl+Shift+Z)">
-          ↷
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('clear')} title="Limpar formatação">
-          ✕
-        </ToolbarButton>
-      </Toolbar>
-      
-      <EditorArea
-        ref={editorRef}
-        contentEditable="true"
-        data-placeholder={placeholder}
-        onInput={handleEditorChange}
-        onKeyDown={handleKeyDown}
-        onMouseUp={updateToolbarState}
-        onKeyUp={updateToolbarState}
-        onBlur={handleEditorChange}
-        suppressContentEditableWarning={true}
+      <Editor
+        apiKey='dovo08r35w45rtk3mu0yhvdctb2nb7oee5t944bj78bk79cz'
+        value={value}
+        onEditorChange={handleEditorChange}
+        disabled={disabled}
+        init={{
+          height: 450,
+          menubar: false,
+          plugins: [
+            // Core editing features
+            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+            // Premium features (included in free trial)
+            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+          ],
+          toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+          content_style: `
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 14px;
+              line-height: 1.6;
+              color: var(--corTextoPrimaria);
+              background: var(--corFundoPrimaria);
+              padding: 16px;
+              margin: 0;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              color: var(--corTextoPrimaria);
+              margin-top: 16px;
+              margin-bottom: 8px;
+            }
+            p {
+              margin: 0 0 12px 0;
+            }
+            a {
+              color: var(--corPrimaria);
+              text-decoration: underline;
+            }
+            a:hover {
+              color: var(--corSecundaria);
+            }
+            ul, ol {
+              margin: 0 0 12px 0;
+              padding-left: 24px;
+            }
+            blockquote {
+              border-left: 4px solid var(--corPrimaria);
+              margin: 16px 0;
+              padding-left: 16px;
+              font-style: italic;
+              color: var(--corTextoSecundaria);
+            }
+            code {
+              background: var(--corFundoSecundaria);
+              padding: 2px 4px;
+              border-radius: 3px;
+              font-family: 'Courier New', monospace;
+            }
+            pre {
+              background: var(--corFundoSecundaria);
+              padding: 12px;
+              border-radius: 4px;
+              overflow-x: auto;
+              margin: 16px 0;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 16px 0;
+            }
+            table th, table td {
+              border: 1px solid var(--corBordaPrimaria);
+              padding: 8px 12px;
+              text-align: left;
+            }
+            table th {
+              background: var(--corFundoSecundaria);
+              font-weight: 600;
+            }
+          `,
+          placeholder: placeholder,
+          branding: false,
+          elementpath: false,
+          resize: true,
+          statusbar: false,
+          browser_spellcheck: true,
+          contextmenu: true,
+          paste_data_images: true,
+          image_advtab: true,
+          link_list: [],
+          image_list: [],
+          table_default_styles: {
+            width: '100%'
+          },
+          table_default_attributes: {
+            border: '1'
+          },
+          fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
+          font_family_formats: 'Andale Mono=andale mono,times; Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Symbol=symbol; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva; Webdings=webdings; Wingdings=wingdings,zapf dingbats',
+          color_map: [
+            '#000000', 'Black',
+            '#434343', 'Grey 1',
+            '#666666', 'Grey 2',
+            '#999999', 'Grey 3',
+            '#b7b7b7', 'Grey 4',
+            '#cccccc', 'Grey 5',
+            '#d9d9d9', 'Grey 6',
+            '#efefef', 'Grey 7',
+            '#f3f3f3', 'Grey 8',
+            '#ffffff', 'White',
+            '#980000', 'Red',
+            '#ff0000', 'Red 2',
+            '#ff9900', 'Orange',
+            '#ffff00', 'Yellow',
+            '#00ff00', 'Green',
+            '#00ffff', 'Cyan',
+            '#4a86e8', 'Blue',
+            '#0000ff', 'Blue 2',
+            '#9900ff', 'Purple',
+            '#ff00ff', 'Magenta',
+            '#e6b8af', 'Pink',
+            '#f4cccc', 'Pink 2',
+            '#fce5cd', 'Pink 3',
+            '#fff2cc', 'Pink 4',
+            '#d9ead3', 'Pink 5',
+            '#d0e0e3', 'Pink 6',
+            '#c9daf8', 'Pink 7',
+            '#cfe2f3', 'Pink 8',
+            '#d9d2e9', 'Pink 9',
+            '#ead1dc', 'Pink 10',
+            '#dd7e6b', 'Pink 11',
+            '#ea9999', 'Pink 12',
+            '#f9cb9c', 'Pink 13',
+            '#ffe599', 'Pink 14',
+            '#b6d7a8', 'Pink 15',
+            '#a2c4c9', 'Pink 16',
+            '#a4c2f4', 'Pink 17',
+            '#b4a7d6', 'Pink 18',
+            '#d5a6bd', 'Pink 19',
+            '#cc4125', 'Pink 20',
+            '#e06666', 'Pink 21',
+            '#f6b26b', 'Pink 22',
+            '#ffd966', 'Pink 23',
+            '#93c47d', 'Pink 24',
+            '#76a5af', 'Pink 25',
+            '#6d9eeb', 'Pink 26',
+            '#8e7cc3', 'Pink 27',
+            '#c27ba0', 'Pink 28',
+            '#a61c00', 'Pink 29',
+            '#cc0000', 'Pink 30',
+            '#e69138', 'Pink 31',
+            '#f1c232', 'Pink 32',
+            '#6aa84f', 'Pink 33',
+            '#45818e', 'Pink 34',
+            '#3c78d8', 'Pink 35',
+            '#674ea7', 'Pink 36',
+            '#a64d79', 'Pink 37'
+          ],
+          tinycomments_mode: 'embedded',
+          tinycomments_author: 'WRTmind User',
+          mergetags_list: [
+            { value: 'First.Name', title: 'First Name' },
+            { value: 'Email', title: 'Email' },
+          ],
+          ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not implemented')),
+          setup: (editor) => {
+            // Configurações adicionais se necessário
+            editor.on('init', () => {
+              // Editor inicializado
+            });
+          }
+        }}
       />
     </EditorContainer>
   );
