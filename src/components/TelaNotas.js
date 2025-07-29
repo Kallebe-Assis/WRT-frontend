@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -202,11 +202,23 @@ const TelaNotas = ({
   onEditarItem, 
   onVisualizarItem, 
   onExcluirItem,
-  onFavoritarItem 
+  onFavoritarItem,
+  forcarAtualizacao 
 }) => {
   const [termoBusca, setTermoBusca] = useState('');
   const [filtroTopico, setFiltroTopico] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('dataCriacao');
+
+  // Reagir à atualização forçada
+  useEffect(() => {
+    if (forcarAtualizacao > 0) {
+      console.log('🔄 TelaNotas: Atualização forçada detectada');
+      // Limpar filtros para mostrar todos os dados atualizados
+      setTermoBusca('');
+      setFiltroTopico('todos');
+      setOrdenacao('dataCriacao');
+    }
+  }, [forcarAtualizacao]);
 
   // Debug logs
   console.log('🔍 TelaNotas - notas recebidas:', notas);

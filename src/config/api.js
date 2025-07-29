@@ -54,23 +54,25 @@ const listarLinks = async () => {
   try {
     console.log('🌐 API - listarLinks chamado');
     
-    const url = `${config.API_BASE_URL}/links`;
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // URL simplificada
+    const url = `https://wrt-back.vercel.app/api/links?userId=${userId}`;
     console.log('🌐 API - URL completa:', url);
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'user-id': getUserId()
+        'user-id': userId
       }
     });
     
-    console.log('📡 API - Status:', response.status);
-    console.log('📡 API - Status Text:', response.statusText);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API - Erro HTTP:', response.status, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
@@ -78,7 +80,7 @@ const listarLinks = async () => {
     console.log('✅ API - listarLinks resposta:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao listar links:', error);
+    console.error('❌ API - Erro ao listar links:', error);
     throw error;
   }
 };
@@ -97,24 +99,25 @@ const criarLink = async (link) => {
   try {
     console.log('🌐 API - criarLink chamado com dados:', link);
     
-    // Verificar se o usuário está logado
     const userId = getUserId();
-    console.log('🌐 API - UserId obtido:', userId);
-    
     if (!userId) {
       throw new Error('Usuário não autenticado');
     }
     
-    // Enviar apenas os campos necessários
+    // Reduzir tamanho da imagem se necessário
+    const imagemUrlReduzida = reduceImageSize(link.imagemUrl);
+    
+    // Enviar apenas os campos que o backend espera
     const dadosCorretos = {
       nome: link.nome,
       url: link.url,
-      imagemUrl: link.imagemUrl || ''
+      imagemUrl: imagemUrlReduzida || ''
     };
     
     console.log('🌐 API - dados corretos para Vercel:', dadosCorretos);
     
-    const url = `${config.API_BASE_URL}/links`;
+    // URL simplificada
+    const url = 'https://wrt-back.vercel.app/api/links';
     console.log('🌐 API - URL completa:', url);
     
     const response = await fetch(url, {
@@ -126,12 +129,8 @@ const criarLink = async (link) => {
       body: JSON.stringify(dadosCorretos)
     });
     
-    console.log('📡 API - Status:', response.status);
-    console.log('📡 API - Status Text:', response.statusText);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API - Erro HTTP:', response.status, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
@@ -139,51 +138,122 @@ const criarLink = async (link) => {
     console.log('✅ API - criarLink resposta:', data);
     return data;
   } catch (error) {
-    console.error('Erro ao criar link:', error);
+    console.error('❌ API - Erro ao criar link:', error);
     throw error;
   }
+};
+
+// Função para reduzir tamanho da imagem base64
+const reduceImageSize = (base64String, maxSize = 500000) => {
+  if (!base64String || base64String.length <= maxSize) {
+    return base64String;
+  }
+  
+  console.log('🖼️ Reduzindo tamanho da imagem de', base64String.length, 'para máximo', maxSize);
+  
+  // Se a imagem for muito grande, retornar null para usar ícone padrão
+  return null;
 };
 
 const atualizarLink = async (id, link) => {
   try {
     console.log('🌐 API - atualizarLink chamado com ID:', id, 'dados:', link);
     
-    // Enviar apenas os campos necessários
+    const userId = getUserId();
+    console.log('🌐 API - UserId obtido:', userId);
+    
+    if (!userId) {
+      console.error('❌ API - Usuário não autenticado');
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // Reduzir tamanho da imagem se necessário
+    const imagemUrlReduzida = reduceImageSize(link.imagemUrl);
+    
+    // Enviar apenas os campos que o backend espera
     const dadosCorretos = {
       nome: link.nome,
       url: link.url,
-      imagemUrl: link.imagemUrl || ''
+      imagemUrl: imagemUrlReduzida || ''
     };
     
     console.log('🌐 API - dados corretos para Vercel:', dadosCorretos);
+    console.log('🌐 API - Tamanho da imagem:', dadosCorretos.imagemUrl ? dadosCorretos.imagemUrl.length : 0);
     
-    // Usar fetch diretamente com query parameter
-    const url = `${config.API_BASE_URL}/links?id=${id}`;
+    // URL simplificada
+    const url = `https://wrt-back.vercel.app/api/links?id=${id}`;
     console.log('🌐 API - URL completa:', url);
     
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'user-id': getUserId()
-      },
-      body: JSON.stringify(dadosCorretos)
-    });
+    const headers = {
+      'Content-Type': 'application/json',
+      'user-id': userId
+    };
     
-    console.log('📡 API - Status:', response.status);
-    console.log('📡 API - Status Text:', response.statusText);
+    console.log('🌐 API - Headers:', headers);
+    console.log('🌐 API - Iniciando fetch...');
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API - Erro HTTP:', response.status, errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    // TENTATIVA 1: PUT normal
+    try {
+      console.log('🔄 Tentativa 1: PUT normal...');
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify(dadosCorretos)
+      });
+      
+      console.log('📡 API - Status:', response.status);
+      console.log('📡 API - Status Text:', response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API - Erro HTTP:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      console.log('📡 API - Response OK, lendo JSON...');
+      const data = await response.json();
+      console.log('✅ API - atualizarLink resposta:', data);
+      return data;
+    } catch (putError) {
+      console.error('❌ PUT falhou, tentando alternativa...', putError.message);
+      
+      // TENTATIVA 2: POST com _method=PUT
+      try {
+        console.log('🔄 Tentativa 2: POST com _method=PUT...');
+        const dadosComMethod = {
+          ...dadosCorretos,
+          _method: 'PUT'
+        };
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(dadosComMethod)
+        });
+        
+        console.log('📡 API - Status (POST):', response.status);
+        console.log('📡 API - Status Text (POST):', response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API - Erro HTTP (POST):', response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        console.log('📡 API - Response OK (POST), lendo JSON...');
+        const data = await response.json();
+        console.log('✅ API - atualizarLink resposta (POST):', data);
+        return data;
+      } catch (postError) {
+        console.error('❌ POST também falhou:', postError.message);
+        throw putError; // Re-throw o erro original do PUT
+      }
     }
-    
-    const data = await response.json();
-    console.log('✅ API - atualizarLink resposta:', data);
-    return data;
   } catch (error) {
     console.error('❌ API - Erro ao atualizar link:', error);
+    console.error('❌ API - Stack trace:', error.stack);
+    console.error('❌ API - Error name:', error.name);
+    console.error('❌ API - Error message:', error.message);
     throw error;
   }
 };
@@ -192,24 +262,25 @@ const deletarLink = async (id) => {
   try {
     console.log('🌐 API - deletarLink chamado com ID:', id);
     
-    // Usar fetch diretamente com query parameter
-    const url = `${config.API_BASE_URL}/links?id=${id}`;
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // URL simplificada
+    const url = `https://wrt-back.vercel.app/api/links?id=${id}`;
     console.log('🌐 API - URL completa:', url);
     
     const response = await fetch(url, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'user-id': getUserId()
+        'user-id': userId
       }
     });
     
-    console.log('📡 API - Status:', response.status);
-    console.log('📡 API - Status Text:', response.statusText);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API - Erro HTTP:', response.status, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
@@ -235,11 +306,12 @@ const getUserId = () => {
       return userData.id;
     } catch (error) {
       console.error('❌ getUserId - Erro ao obter ID do usuário:', error);
+      return null;
     }
   } else {
     console.log('❌ getUserId - User não encontrado no localStorage');
+    return null;
   }
-  return null;
 };
 
 export const linksAPI = {
@@ -531,8 +603,57 @@ const buscarFixadas = async () => {
 // API de Categorias
 const listarCategorias = async () => {
   try {
-    const response = await makeRequest('/categorias');
-    return response;
+    // Obter userId do localStorage
+    const user = localStorage.getItem('user');
+    let userId = null;
+    
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        userId = userData.id;
+      } catch (error) {
+        console.error('❌ Erro ao obter ID do usuário:', error);
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // Para GET, usar fetch diretamente com userId como header
+    const url = `${config.API_BASE_URL}/categorias`;
+    console.log('🌐 API - listarCategorias URL:', url);
+    console.log('🌐 API - listarCategorias userId:', userId);
+    
+    const response = await fetch(url, {
+      headers: {
+        'user-id': userId
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('📦 API - listarCategorias dados brutos:', data);
+    console.log('📦 API - listarCategorias success:', data.success);
+    console.log('📦 API - listarCategorias categorias:', data.categorias);
+    
+    // Verificar se categorias é um array
+    if (data.categorias && !Array.isArray(data.categorias)) {
+      console.error('❌ API - categorias não é um array:', typeof data.categorias);
+      throw new Error('Formato de dados inválido: categorias não é um array');
+    }
+    
+    // Verificar estrutura de cada categoria
+    if (data.categorias && data.categorias.length > 0) {
+      console.log('📦 API - Primeira categoria:', data.categorias[0]);
+      console.log('📦 API - Tipo da primeira categoria:', typeof data.categorias[0]);
+    }
+    
+    return data;
   } catch (error) {
     console.error('Erro ao listar categorias:', error);
     throw error;
@@ -551,11 +672,45 @@ const buscarCategoriaPorId = async (id) => {
 
 const criarCategoria = async (categoria) => {
   try {
-    const response = await makeRequest('/categorias', {
+    // Obter userId do localStorage
+    const user = localStorage.getItem('user');
+    let userId = null;
+    
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        userId = userData.id;
+      } catch (error) {
+        console.error('❌ Erro ao obter ID do usuário:', error);
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // Para POST, usar fetch diretamente com userId no header
+    const url = `${config.API_BASE_URL}/categorias`;
+    console.log('🌐 API - criarCategoria URL:', url);
+    console.log('🌐 API - criarCategoria dados:', categoria);
+    
+    const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      },
       body: JSON.stringify(categoria)
     });
-    return response;
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ API - criarCategoria resposta:', data);
+    return data;
   } catch (error) {
     console.error('Erro ao criar categoria:', error);
     throw error;
@@ -564,11 +719,45 @@ const criarCategoria = async (categoria) => {
 
 const atualizarCategoria = async (id, categoria) => {
   try {
-    const response = await makeRequest(`/categorias/${id}`, {
+    // Obter userId do localStorage
+    const user = localStorage.getItem('user');
+    let userId = null;
+    
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        userId = userData.id;
+      } catch (error) {
+        console.error('❌ Erro ao obter ID do usuário:', error);
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // Para PUT, usar fetch diretamente com userId no header
+    const url = `${config.API_BASE_URL}/categorias?id=${id}`;
+    console.log('🌐 API - atualizarCategoria URL:', url);
+    console.log('🌐 API - atualizarCategoria dados:', categoria);
+    
+    const response = await fetch(url, {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      },
       body: JSON.stringify(categoria)
     });
-    return response;
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ API - atualizarCategoria resposta:', data);
+    return data;
   } catch (error) {
     console.error('Erro ao atualizar categoria:', error);
     throw error;
@@ -577,10 +766,42 @@ const atualizarCategoria = async (id, categoria) => {
 
 const deletarCategoria = async (id) => {
   try {
-    const response = await makeRequest(`/categorias/${id}`, {
-      method: 'DELETE'
+    // Obter userId do localStorage
+    const user = localStorage.getItem('user');
+    let userId = null;
+    
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        userId = userData.id;
+      } catch (error) {
+        console.error('❌ Erro ao obter ID do usuário:', error);
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    // Para DELETE, usar fetch diretamente com userId no header
+    const url = `${config.API_BASE_URL}/categorias?id=${id}`;
+    console.log('🌐 API - deletarCategoria URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'user-id': userId
+      }
     });
-    return response;
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ API - deletarCategoria resposta:', data);
+    return data;
   } catch (error) {
     console.error('Erro ao deletar categoria:', error);
     throw error;

@@ -327,32 +327,172 @@ const ListaCategorias = styled.div`
 `;
 
 const CategoriaItem = styled.div`
-  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoCard) 100%);
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 1px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
+  border-radius: var(--bordaRaioMedio);
   padding: var(--espacamentoMedio);
-  transition: all var(--transicaoRapida);
+  margin-bottom: var(--espacamentoMedio);
   cursor: pointer;
+  transition: all var(--transicaoRapida);
+  position: relative;
+  overflow: hidden;
   
   &:hover {
-    border-color: var(--corPrimaria);
     transform: translateY(-2px);
     box-shadow: var(--sombraMedia);
+    border-color: var(--corPrimaria);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: ${props => props.cor || '#667eea'};
+    opacity: 0.8;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 20px 20px 0;
+    border-color: transparent ${props => props.cor || '#667eea'} transparent transparent;
+    opacity: 0.3;
   }
 `;
 
-const CategoriaNome = styled.div`
+const CategoriaNome = styled.h3`
+  margin: 0 0 var(--espacamentoPequeno) 0;
   color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteMedia);
   font-weight: 600;
-  margin-bottom: var(--espacamentoPequeno);
 `;
 
 const CategoriaMeta = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: var(--tamanhoFontePequena);
+  justify-content: space-between;
+  gap: var(--espacamentoMedio);
   color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFontePequena);
+  
+  .color-info {
+    display: flex;
+    align-items: center;
+    gap: var(--espacamentoMedio);
+  }
+  
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--espacamentoPequeno);
+  }
+  
+  svg {
+    cursor: pointer;
+    padding: 6px;
+    border-radius: var(--bordaRaioPequeno);
+    transition: all var(--transicaoRapida);
+    
+    &:hover {
+      background: var(--corFundoHover);
+      color: var(--corPrimaria);
+    }
+  }
+`;
+
+const ColorPreview = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoMedio);
+`;
+
+const ColorSwatch = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: var(--bordaRaioMedio);
+  background: ${props => props.cor};
+  border: 2px solid var(--corBordaPrimaria);
+  box-shadow: var(--sombraPequena);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+  }
+`;
+
+const ColorCode = styled.span`
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--corTextoPrimaria);
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoTerciaria) 100%);
+  padding: 6px 12px;
+  border-radius: var(--bordaRaioPequeno);
+  font-size: var(--tamanhoFontePequena);
+  border: 1px solid var(--corBordaPrimaria);
+  box-shadow: var(--sombraPequena);
+  letter-spacing: 0.5px;
+`;
+
+const ColorInput = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno);
+  background: var(--corFundoSecundaria);
+  border-radius: var(--bordaRaioMedio);
+  border: 1px solid var(--corBordaPrimaria);
+  
+  input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: none;
+    border-radius: var(--bordaRaioMedio);
+    cursor: pointer;
+    background: none;
+    box-shadow: var(--sombraPequena);
+    
+    &::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    
+    &::-webkit-color-swatch {
+      border: 2px solid var(--corBordaPrimaria);
+      border-radius: var(--bordaRaioMedio);
+    }
+    
+    &:hover {
+      transform: scale(1.05);
+      transition: transform var(--transicaoRapida);
+    }
+  }
 `;
 
 const EmptyState = styled.div`
@@ -542,6 +682,11 @@ const Configuracoes = ({
   const [formData, setFormData] = useState({ nome: '', cor: '#667eea' });
   const [abaAtiva, setAbaAtiva] = useState('categorias');
 
+  // Debug: Log do estado de categorias
+  console.log('🔍 Configuracoes - Estado de categorias:', categorias);
+  console.log('🔍 Configuracoes - Tipo de categorias:', typeof categorias);
+  console.log('🔍 Configuracoes - É array?', Array.isArray(categorias));
+
   useEffect(() => {
     carregarCategorias();
   }, []);
@@ -550,11 +695,20 @@ const Configuracoes = ({
     setCarregando(true);
     try {
       const response = await categoriasAPI.buscarTodos();
+      console.log('🔍 Resposta da API de categorias:', response);
+      
       if (response.success) {
-        setCategorias(response.data || []);
+        const categoriasData = response.categorias || [];
+        console.log('🔍 Categorias carregadas:', categoriasData);
+        console.log('🔍 Estrutura da primeira categoria:', categoriasData[0]);
+        setCategorias(categoriasData);
+      } else {
+        console.error('Erro na resposta da API:', response);
+        setCategorias([]);
       }
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
+      setCategorias([]);
     } finally {
       setCarregando(false);
     }
@@ -656,13 +810,20 @@ const Configuracoes = ({
 
             {carregando ? (
               <p>Carregando categorias...</p>
-            ) : categorias.length > 0 ? (
-              <ListaCategorias>
-                {categorias.map(categoria => (
-                  <CategoriaItem key={categoria.id} onClick={() => abrirModal(categoria)}>
-                    <CategoriaNome>{categoria.nome}</CategoriaNome>
-                    <CategoriaMeta>
-                      <span style={{ color: categoria.cor }}>●</span>
+            ) : Array.isArray(categorias) && categorias.map((categoria) => {
+              if (!categoria || typeof categoria !== 'object' || !categoria.id || !categoria.nome || !categoria.cor) {
+                console.error('❌ Categoria inválida:', categoria);
+                return null;
+              }
+              return (
+                <CategoriaItem key={categoria.id} onClick={() => abrirModal(categoria)} cor={categoria.cor}>
+                  <CategoriaNome>{categoria.nome}</CategoriaNome>
+                  <CategoriaMeta>
+                    <div className="color-info">
+                      <ColorSwatch cor={categoria.cor} />
+                      <ColorCode>{categoria.cor}</ColorCode>
+                    </div>
+                    <div className="actions">
                       <FontAwesomeIcon 
                         icon={faEdit} 
                         onClick={(e) => { 
@@ -677,16 +838,11 @@ const Configuracoes = ({
                           excluirCategoria(categoria.id); 
                         }} 
                       />
-                    </CategoriaMeta>
-                  </CategoriaItem>
-                ))}
-              </ListaCategorias>
-            ) : (
-              <EmptyState>
-                <EmptyIcon><FontAwesomeIcon icon={faTags} /></EmptyIcon>
-                <p>Nenhuma categoria encontrada</p>
-                <p>Crie sua primeira categoria para começar a organizar</p>
-              </EmptyState>
+                    </div>
+                  </CategoriaMeta>
+                </CategoriaItem>
+              );
+            })}
             )}
           </Secao>
         );
@@ -875,12 +1031,31 @@ const Configuracoes = ({
 
               <FormGroup>
                 <Label>Cor</Label>
-                <Input
-                  type="color"
-                  value={formData.cor}
-                  onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
-                />
+                <ColorInput>
+                  <input
+                    type="color"
+                    value={formData.cor}
+                    onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                  />
+                  <ColorSwatch cor={formData.cor} />
+                  <ColorCode>{formData.cor}</ColorCode>
+                </ColorInput>
               </FormGroup>
+
+              {formData.nome.trim() && (
+                <FormGroup>
+                  <Label>Preview</Label>
+                  <CategoriaItem cor={formData.cor} style={{ cursor: 'default', margin: 0 }}>
+                    <CategoriaNome>{formData.nome}</CategoriaNome>
+                    <CategoriaMeta>
+                      <div className="color-info">
+                        <ColorSwatch cor={formData.cor} />
+                        <ColorCode>{formData.cor}</ColorCode>
+                      </div>
+                    </CategoriaMeta>
+                  </CategoriaItem>
+                </FormGroup>
+              )}
 
               <ButtonGroup>
                 <CancelButton type="button" onClick={() => setModalAberto(false)}>

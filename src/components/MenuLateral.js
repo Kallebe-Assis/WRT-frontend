@@ -98,10 +98,52 @@ const TituloSecao = styled.h3`
   margin-bottom: var(--espacamentoMedio);
   white-space: nowrap;
   overflow: hidden;
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  background: var(--corFundoSecundaria);
-  border-radius: var(--bordaRaioMedia);
+`;
+
+const SecaoBusca = styled.div`
+  margin-bottom: var(--espacamentoGrande);
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
+  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
+  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
+`;
+
+const ContainerBusca = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+const IconeBusca = styled.div`
+  position: absolute;
+  left: var(--espacamentoPequeno);
+  color: var(--corTextoSecundaria);
+  z-index: 1;
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
+`;
+
+const InputBusca = styled.input`
+  width: 100%;
+  padding: var(--espacamentoPequeno) var(--espacamentoPequeno) var(--espacamentoPequeno) calc(var(--espacamentoPequeno) + 20px);
   border: 1px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  background: var(--corFundoPrimaria);
+  color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFontePequena);
+  transition: all var(--transicaoRapida);
+  opacity: ${props => props.recolhido ? 0 : 1};
+  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
+
+  &:focus {
+    outline: none;
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 2px var(--corPrimariaTransparente);
+  }
+
+  &::placeholder {
+    color: var(--corTextoSecundaria);
+  }
 `;
 
 const ListaNavegacao = styled.ul`
@@ -118,165 +160,88 @@ const BotaoNavegacao = styled.button`
   width: 100%;
   display: flex;
   align-items: center;
-  gap: var(--espacamentoMedio);
-  padding: var(--espacamentoMedio);
-  background: ${props => props.ativo ? 
-    'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)' : 
-    'transparent'};
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  background: ${props => props.ativo ? 'var(--corPrimaria)' : 'transparent'};
   color: ${props => props.ativo ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)'};
   border: ${props => props.ativo ? 'none' : '1px solid var(--corBordaPrimaria)'};
   border-radius: var(--bordaRaioMedia);
   cursor: pointer;
   transition: all var(--transicaoRapida);
   text-align: left;
-  font-size: var(--tamanhoFonteMedia);
-  white-space: nowrap;
-  font-weight: ${props => props.ativo ? '600' : '500'};
-  box-shadow: ${props => props.ativo ? 'var(--sombraLeve)' : 'none'};
+  position: relative;
+  overflow: hidden;
 
   &:hover {
-    background: ${props => props.ativo ? 
-      'linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%)' : 
-      'var(--corFundoHover)'};
-    transform: ${props => props.ativo ? 'translateY(-1px)' : 'none'};
-    box-shadow: ${props => props.ativo ? 'var(--sombraMedia)' : 'var(--sombraLeve)'};
+    background: ${props => props.ativo ? 'var(--corSecundaria)' : 'var(--corFundoSecundaria)'};
     border-color: ${props => props.ativo ? 'transparent' : 'var(--corPrimaria)'};
+    transform: translateX(2px) scale(0.98);
   }
 `;
 
 const IconeNavegacao = styled.div`
   width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: var(--espacamentoMedio);
   flex-shrink: 0;
 `;
 
 const TextoNavegacao = styled.span`
   flex: 1;
-  opacity: ${props => props.recolhido ? 0 : 1};
-  transition: opacity var(--transicaoMedia);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
 `;
 
 const Contador = styled.span`
   background: ${props => props.ativo ? 'var(--corTextoClara)' : 'var(--corPrimaria)'};
   color: ${props => props.ativo ? 'var(--corPrimaria)' : 'var(--corTextoClara)'};
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: var(--tamanhoFontePequena);
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
-  opacity: ${props => props.recolhido ? 0 : 1};
-  transition: opacity var(--transicaoMedia);
+  margin-left: var(--espacamentoPequeno);
   flex-shrink: 0;
-`;
-
-const SecaoBusca = styled.div`
-  margin-bottom: var(--espacamentoGrande);
-`;
-
-const ContainerBusca = styled.div`
-  position: relative;
-  margin-bottom: var(--espacamentoMedio);
-`;
-
-const InputBusca = styled.input`
-  width: 100%;
-  padding: var(--espacamentoMedio) var(--espacamentoMedio) var(--espacamentoMedio) 40px;
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  background: var(--corFundoTerciaria);
-  color: var(--corTextoPrimaria);
-  transition: all var(--transicaoRapida);
-  opacity: ${props => props.recolhido ? 0 : 1};
-  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
-  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
-
-  &:focus {
-    outline: none;
-    border-color: var(--corBordaFoco);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &::placeholder {
-    color: var(--corTextoTerciaria);
-  }
-`;
-
-const IconeBusca = styled.div`
-  position: absolute;
-  left: var(--espacamentoMedio);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--corTextoTerciaria);
-  z-index: 1;
   opacity: ${props => props.recolhido ? 0 : 1};
   transition: opacity var(--transicaoMedia);
-  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
-`;
-
-const SecaoOrdenacao = styled.div`
-  margin-bottom: var(--espacamentoGrande);
-`;
-
-const SelectOrdenacao = styled.select`
-  width: 100%;
-  padding: var(--espacamentoMedio);
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  background: var(--corFundoTerciaria);
-  color: var(--corTextoPrimaria);
-  cursor: pointer;
-  opacity: ${props => props.recolhido ? 0 : 1};
-  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
-  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
-
-  &:focus {
-    outline: none;
-    border-color: var(--corBordaFoco);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const OpcaoOrdenacao = styled.option`
-  background: var(--corFundoTerciaria);
-  color: var(--corTextoPrimaria);
 `;
 
 const SecaoConfiguracoes = styled.div`
   margin-top: auto;
   padding-top: var(--espacamentoGrande);
   border-top: 1px solid var(--corBordaPrimaria);
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
+  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
+  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
 `;
 
 const BotaoConfiguracoes = styled.button`
   width: 100%;
   display: flex;
   align-items: center;
-  gap: var(--espacamentoMedio);
-  padding: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
   background: transparent;
   color: var(--corTextoPrimaria);
-  border: none;
+  border: 1px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   cursor: pointer;
   transition: all var(--transicaoRapida);
   text-align: left;
-  font-size: var(--tamanhoFonteMedia);
-  white-space: nowrap;
-  overflow: hidden;
 
   &:hover {
     background: var(--corFundoSecundaria);
-    transform: translateX(2px);
-  }
-
-  &:active {
+    border-color: var(--corPrimaria);
     transform: translateX(2px) scale(0.98);
   }
 `;
@@ -284,7 +249,8 @@ const BotaoConfiguracoes = styled.button`
 const MenuLateral = ({ 
   onAbrirConfiguracoes, 
   telaAtiva, 
-  onTelaChange 
+  onTelaChange,
+  totalLinks = 0
 }) => {
   const {
     categoriaAtiva,
@@ -380,7 +346,7 @@ const MenuLateral = ({
       id: 'links',
       titulo: 'Meus Links',
       icone: faLink,
-      contador: 0 // TODO: Adicionar contador de links
+      contador: totalLinks
     }
   ];
 
@@ -404,7 +370,7 @@ const MenuLateral = ({
       </MenuHeader>
 
       <MenuContent>
-        <SecaoBusca>
+        <SecaoBusca recolhido={menuRecolhido}>
           <TituloSecao recolhido={menuRecolhido}>Buscar</TituloSecao>
           <ContainerBusca>
             <IconeBusca recolhido={menuRecolhido}>
@@ -420,44 +386,19 @@ const MenuLateral = ({
           </ContainerBusca>
         </SecaoBusca>
 
-        <SecaoOrdenacao>
-          <TituloSecao recolhido={menuRecolhido}>Ordenar por</TituloSecao>
-          <SelectOrdenacao
-            value={ordenacao}
-            onChange={(e) => definirOrdenacao(e.target.value)}
-            recolhido={menuRecolhido}
+        <SecaoConfiguracoes recolhido={menuRecolhido}>
+          <BotaoConfiguracoes
+            onClick={onAbrirConfiguracoes}
+            title={menuRecolhido ? 'Configurações' : ''}
           >
-            {opcoesOrdenacao.map(opcao => (
-              <OpcaoOrdenacao key={opcao.valor} value={opcao.valor}>
-                {opcao.label}
-              </OpcaoOrdenacao>
-            ))}
-          </SelectOrdenacao>
-        </SecaoOrdenacao>
-
-        <SecaoMenu recolhido={menuRecolhido}>
-          <TituloSecao recolhido={menuRecolhido}>Tópicos</TituloSecao>
-          <ListaNavegacao>
-            {estatisticas.notasPorTopico.map(({ topico, quantidade }) => (
-              <ItemNavegacao key={topico}>
-                <BotaoNavegacao
-                  onClick={() => definirCategoriaAtiva(topico)}
-                  title={menuRecolhido ? topico : ''}
-                >
-                  <IconeNavegacao>
-                    <FontAwesomeIcon icon={faTag} size="sm" />
-                  </IconeNavegacao>
-                  <TextoNavegacao recolhido={menuRecolhido}>
-                    {topico}
-                  </TextoNavegacao>
-                  <Contador recolhido={menuRecolhido}>
-                    {quantidade}
-                  </Contador>
-                </BotaoNavegacao>
-              </ItemNavegacao>
-            ))}
-          </ListaNavegacao>
-        </SecaoMenu>
+            <IconeNavegacao>
+              <FontAwesomeIcon icon={faCog} size="sm" />
+            </IconeNavegacao>
+            <TextoNavegacao recolhido={menuRecolhido}>
+              Configurações
+            </TextoNavegacao>
+          </BotaoConfiguracoes>
+        </SecaoConfiguracoes>
 
         <SecaoMenu recolhido={menuRecolhido}>
           <TituloSecao recolhido={menuRecolhido}>Navegação</TituloSecao>
@@ -483,20 +424,6 @@ const MenuLateral = ({
             ))}
           </ListaNavegacao>
         </SecaoMenu>
-
-        <SecaoConfiguracoes>
-          <BotaoConfiguracoes
-            onClick={onAbrirConfiguracoes}
-            title={menuRecolhido ? 'Configurações' : ''}
-          >
-            <IconeNavegacao>
-              <FontAwesomeIcon icon={faCog} size="sm" />
-            </IconeNavegacao>
-            <TextoNavegacao recolhido={menuRecolhido}>
-              Configurações
-            </TextoNavegacao>
-          </BotaoConfiguracoes>
-        </SecaoConfiguracoes>
       </MenuContent>
     </MenuContainer>
   );

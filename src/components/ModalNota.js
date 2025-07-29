@@ -303,11 +303,23 @@ const ModalNota = ({
               disabled={modo === 'visualizar'}
             >
               <option value="">Selecione um tópico...</option>
-              {categorias.map((categoria) => (
-                <option key={categoria.id} value={categoria.nome}>
-                  {categoria.nome}
-                </option>
-              ))}
+              {Array.isArray(categorias) && categorias.map((categoria) => {
+                if (typeof categoria === 'object' && categoria.nome) {
+                  return (
+                    <option key={categoria.id || categoria.nome} value={categoria.nome}>
+                      {categoria.nome}
+                    </option>
+                  );
+                }
+                if (typeof categoria === 'string') {
+                  return (
+                    <option key={categoria} value={categoria}>
+                      {categoria}
+                    </option>
+                  );
+                }
+                return null;
+              })}
             </Select>
           </FormGroup>
 

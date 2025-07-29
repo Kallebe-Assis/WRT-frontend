@@ -215,10 +215,24 @@ export const NotasAPIProvider = ({ children }) => {
     totalNotas: notasAtivas ? notasAtivas.length : 0,
     totalCategorias: categorias ? categorias.length : 0,
     notasDeletadas: notasDeletadas ? notasDeletadas.length : 0,
-    notasPorCategoria: categorias ? categorias.map(categoria => ({
-      categoria: categoria.nome,
-      quantidade: notasAtivas ? notasAtivas.filter(nota => nota.topico === categoria.nome).length : 0
-    })) : [],
+    notasPorCategoria: categorias.reduce((acc, categoria) => {
+      let nomeCategoria = '';
+      if (typeof categoria === 'object' && categoria.nome) {
+        nomeCategoria = categoria.nome;
+      } else if (typeof categoria === 'string') {
+        nomeCategoria = categoria;
+      } else {
+        console.error('❌ Categoria inválida em estatísticas:', categoria);
+        return acc;
+      }
+      acc[nomeCategoria] = notasAtivas.filter(nota => {
+        if (typeof nota.categoria === 'object' && nota.categoria.nome) {
+          return nota.categoria.nome === nomeCategoria;
+        }
+        return nota.categoria === nomeCategoria;
+      }).length;
+      return acc;
+    }, {}),
     notasPorTopico: topicos ? topicos.map(topico => ({
       topico: topico,
       quantidade: notasAtivas ? notasAtivas.filter(nota => nota.topico === topico).length : 0

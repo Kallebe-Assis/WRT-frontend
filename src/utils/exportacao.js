@@ -43,38 +43,31 @@ export const exportarComoJSON = (item) => {
 
 // Função para exportar como HTML
 export const exportarComoHTML = (item) => {
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${item.titulo}</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
             line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
+            color: #333;
             max-width: 800px;
             margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
         }
-        h1 {
-            color: #333;
+        h1 { 
+            color: #333; 
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
-        .content {
-            color: #555;
-            font-size: 16px;
+        .content { 
+            margin-bottom: 30px;
+            white-space: pre-wrap;
         }
         .metadata {
             margin-top: 30px;
@@ -94,7 +87,7 @@ export const exportarComoHTML = (item) => {
         <h1>${item.titulo}</h1>
         <div class="content">${item.conteudo}</div>
         <div class="metadata">
-            <span><strong>Categoria:</strong> ${item.categoria || 'Não definida'}</span>
+            <span><strong>Categoria:</strong> ${typeof item.categoria === 'object' ? item.categoria.nome || 'Não definida' : item.categoria || 'Não definida'}</span>
             <span><strong>Tópico:</strong> ${item.topico || 'Não definido'}</span>
             <span><strong>Criado em:</strong> ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}</span>
             <span><strong>Modificado em:</strong> ${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}</span>
@@ -123,7 +116,7 @@ export const exportarComoCSV = (itens) => {
     ...itens.map(item => [
       `"${item.titulo.replace(/"/g, '""')}"`,
       `"${item.conteudo.replace(/"/g, '""').replace(/<[^>]*>/g, '')}"`,
-      `"${item.categoria || ''}"`,
+      `"${typeof item.categoria === 'object' ? item.categoria.nome || '' : item.categoria || ''}"`,
       `"${item.topico || ''}"`,
       `"${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}"`,
       `"${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}"`
@@ -189,7 +182,6 @@ export const imprimirNota = (item) => {
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
           }
         </style>
       </head>
@@ -198,7 +190,7 @@ export const imprimirNota = (item) => {
         <h1>${item.titulo}</h1>
         <div class="content">${item.conteudo}</div>
         <div class="metadata">
-          <span><strong>Categoria:</strong> ${item.categoria || 'Não definida'}</span>
+          <span><strong>Categoria:</strong> ${typeof item.categoria === 'object' ? item.categoria.nome || 'Não definida' : item.categoria || 'Não definida'}</span>
           <span><strong>Tópico:</strong> ${item.topico || 'Não definido'}</span>
           <span><strong>Criado em:</strong> ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}</span>
           <span><strong>Modificado em:</strong> ${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}</span>

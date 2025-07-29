@@ -81,35 +81,18 @@ export const capitalizarPrimeiraLetra = (texto) => {
   return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
 };
 
-export const formatarCategoria = (categoria) => {
-  const categorias = {
-    // Projetos
-    'desenvolvimento': 'Desenvolvimento',
-    'design': 'Design',
-    'marketing': 'Marketing',
-    'vendas': 'Vendas',
-    'rh': 'Recursos Humanos',
-    'financeiro': 'Financeiro',
-    'operacoes': 'Operações',
-    'outros': 'Outros',
-    
-    // Anotações
-    'trabalho': 'Trabalho',
-    'pessoal': 'Pessoal',
-    'estudo': 'Estudo',
-    'ideias': 'Ideias',
-    'lembretes': 'Lembretes',
-    
-    // Reuniões
-    'equipe': 'Equipe',
-    'cliente': 'Cliente',
-    'fornecedor': 'Fornecedor',
-    'planejamento': 'Planejamento',
-    'revisao': 'Revisão'
-  };
-  
-  return categorias[categoria] || capitalizarPrimeiraLetra(categoria);
-};
+export function formatarCategoria(categoria) {
+  if (!categoria) return '';
+  if (typeof categoria === 'string') return categoria;
+  if (typeof categoria === 'object') {
+    if (categoria.nome) return categoria.nome;
+    if (categoria.id) return categoria.id;
+    console.warn('⚠️ formatarCategoria recebeu objeto em vez de string:', categoria);
+    return '';
+  }
+  console.error('❌ formatarCategoria recebeu tipo inválido:', typeof categoria, categoria);
+  return '';
+}
 
 export const formatarStatus = (status) => {
   const statusMap = {

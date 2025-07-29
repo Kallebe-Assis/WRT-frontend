@@ -381,7 +381,9 @@ const ModalVisualizar = ({
             {item.categoria && (
               <InfoSection>
                 <InfoLabel>Categoria</InfoLabel>
-                <InfoValue>{item.categoria}</InfoValue>
+                <InfoValue>
+                  {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
+                </InfoValue>
               </InfoSection>
             )}
           </LinkInfo>

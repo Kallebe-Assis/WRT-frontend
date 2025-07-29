@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faLink,
-  faHeart,
   faEdit,
   faTrash,
   faExternalLinkAlt
@@ -94,7 +93,7 @@ const SelectFiltro = styled.select`
 
 const GridLinks = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--espacamentoMedio);
 `;
 
@@ -102,7 +101,7 @@ const CardLink = styled.div`
   background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioGrande);
-  padding: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno);
   transition: all var(--transicaoMedia);
   cursor: pointer;
   position: relative;
@@ -130,17 +129,21 @@ const CardLink = styled.div`
       opacity: 1;
     }
   }
+  
+  &:active {
+    transform: translateY(-2px);
+  }
 `;
 
 const CardHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
 `;
 
 const CardTitle = styled.h3`
-  font-size: var(--tamanhoFonteGrande);
+  font-size: var(--tamanhoFontePequena);
   font-weight: 600;
   color: var(--corTextoPrimaria);
   margin: 0;
@@ -153,7 +156,7 @@ const CardTitle = styled.h3`
 const CardActions = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--espacamentoPequeno);
+  gap: 2px;
   opacity: 0;
   transition: opacity var(--transicaoRapida);
   
@@ -167,14 +170,15 @@ const CardActionButton = styled.button`
   border: 1px solid var(--corBordaPrimaria);
   color: var(--corTextoSecundaria);
   cursor: pointer;
-  padding: 6px;
+  padding: 2px;
   border-radius: var(--bordaRaioMedia);
   transition: all var(--transicaoRapida);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
   
   &:hover {
     background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
@@ -187,10 +191,10 @@ const CardActionButton = styled.button`
 
 const CardImage = styled.div`
   width: 100%;
-  height: 120px;
+  height: 70px;
   background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
   border-radius: var(--bordaRaioMedia);
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,25 +204,27 @@ const CardImage = styled.div`
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: var(--bordaRaioMedia);
+    padding: 4px;
   }
   
   .placeholder {
     color: var(--corTextoTerciaria);
-    font-size: 2rem;
+    font-size: 1rem;
   }
 `;
 
 const CardContent = styled.div`
   color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFontePequena);
-  line-height: 1.4;
-  margin-bottom: var(--espacamentoMedio);
+  line-height: 1.3;
+  margin-bottom: var(--espacamentoPequeno);
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  min-height: 2.6em;
 `;
 
 const CardFooter = styled.div`
@@ -227,7 +233,7 @@ const CardFooter = styled.div`
   justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
-  padding-top: var(--espacamentoMedio);
+  padding-top: var(--espacamentoPequeno);
   border-top: 1px solid var(--corBordaPrimaria);
 `;
 
@@ -235,41 +241,7 @@ const CardMeta = styled.div`
   display: flex;
   align-items: center;
   gap: var(--espacamentoPequeno);
-`;
-
-const CardDate = styled.span`
-  background: var(--corFundoTerciaria);
-  padding: 2px 6px;
-  border-radius: var(--bordaRaioPequena);
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-`;
-
-const FavoriteButton = styled.button`
-  background: ${props => props.favorito ? 
-    'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)' : 
-    'linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%)'};
-  color: ${props => props.favorito ? 'white' : 'var(--corTextoSecundaria)'};
-  border: 1px solid ${props => props.favorito ? '#ff6b6b' : 'var(--corBordaPrimaria)'};
-  border-radius: var(--bordaRaioMedia);
-  padding: 6px;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  
-  &:hover {
-    background: ${props => props.favorito ? 
-      'linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%)' : 
-      'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
-    color: white;
-    border-color: ${props => props.favorito ? '#ee5a52' : 'var(--corPrimaria)'};
-    transform: scale(1.1);
-    box-shadow: var(--sombraLeve);
-  }
+  flex: 1;
 `;
 
 const EstadoVazio = styled.div`
@@ -291,11 +263,22 @@ const TelaLinks = ({
   onEditarItem, 
   onVisualizarItem, 
   onExcluirItem,
-  onFavoritarItem 
+  forcarAtualizacao
 }) => {
   const [termoBusca, setTermoBusca] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('dataCriacao');
+
+  // Reagir à atualização forçada
+  useEffect(() => {
+    if (forcarAtualizacao > 0) {
+      console.log('🔄 TelaLinks: Atualização forçada detectada');
+      // Limpar filtros para mostrar todos os dados atualizados
+      setTermoBusca('');
+      setFiltroCategoria('todos');
+      setOrdenacao('dataCriacao');
+    }
+  }, [forcarAtualizacao]);
 
   // Filtrar e ordenar links
   const linksFiltrados = links
@@ -324,16 +307,6 @@ const TelaLinks = ({
 
   // Obter categorias únicas
   const categorias = [...new Set(links.map(link => link.categoria).filter(Boolean))];
-
-  const formatarData = (data) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const handleAbrirLink = (url) => {
     window.open(url, '_blank');
@@ -377,9 +350,23 @@ const TelaLinks = ({
           onChange={(e) => setFiltroCategoria(e.target.value)}
         >
           <option value="todos">Todas as categorias</option>
-          {categorias.map(categoria => (
-            <option key={categoria} value={categoria}>{categoria}</option>
-          ))}
+          {Array.isArray(categorias) && categorias.map((categoria) => {
+            let categoriaValue = '';
+            let categoriaKey = '';
+            if (typeof categoria === 'object' && categoria.nome) {
+              categoriaValue = categoria.nome;
+              categoriaKey = categoria.id || categoria.nome;
+            } else if (typeof categoria === 'string') {
+              categoriaValue = categoria;
+              categoriaKey = categoria;
+            }
+            if (!categoriaValue) return null;
+            return (
+              <option key={categoriaKey} value={categoriaValue}>
+                {categoriaValue}
+              </option>
+            );
+          })}
         </SelectFiltro>
         <SelectFiltro
           value={ordenacao}
@@ -407,17 +394,26 @@ const TelaLinks = ({
       ) : (
         <GridLinks>
           {linksFiltrados.map(link => (
-            <CardLink key={link.id}>
+            <CardLink key={link.id} onClick={() => handleAbrirLink(link.url)}>
               <CardHeader>
                 <CardTitle>{link.nome}</CardTitle>
                 <CardActions>
-                  <FavoriteButton favorito={link.favorito} onClick={() => onFavoritarItem(link.id)}>
-                    <FontAwesomeIcon icon={faHeart} />
-                  </FavoriteButton>
-                  <CardActionButton onClick={() => onEditarItem(link)}>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    handleAbrirLink(link.url);
+                  }}>
+                    <FontAwesomeIcon icon={faExternalLinkAlt} />
+                  </CardActionButton>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    onEditarItem(link);
+                  }}>
                     <FontAwesomeIcon icon={faEdit} />
                   </CardActionButton>
-                  <CardActionButton onClick={() => onExcluirItem(link.id)}>
+                  <CardActionButton onClick={(e) => {
+                    e.stopPropagation();
+                    onExcluirItem(link.id);
+                  }}>
                     <FontAwesomeIcon icon={faTrash} />
                   </CardActionButton>
                 </CardActions>
@@ -441,12 +437,12 @@ const TelaLinks = ({
               
               <CardFooter>
                 <CardMeta>
-                  {link.categoria && <span>{link.categoria}</span>}
-                  <CardDate>{formatarData(link.createdAt)}</CardDate>
+                  {link.categoria && (
+                    <span>
+                      {typeof link.categoria === 'object' ? link.categoria.nome || 'Categoria' : link.categoria}
+                    </span>
+                  )}
                 </CardMeta>
-                <CardActionButton onClick={() => handleAbrirLink(link.url)}>
-                  <FontAwesomeIcon icon={faExternalLinkAlt} />
-                </CardActionButton>
               </CardFooter>
             </CardLink>
           ))}

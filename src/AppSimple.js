@@ -347,7 +347,7 @@ const AppSimple = () => {
                 <FontAwesomeIcon icon={faCog} />
               </StatIcon>
               <StatTitle>Categorias</StatTitle>
-              <StatValue>{categorias.length}</StatValue>
+              <StatValue>{Array.isArray(categorias) ? categorias.length : 0}</StatValue>
             </StatCard>
           </StatsGrid>
 

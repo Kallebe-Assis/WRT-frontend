@@ -338,7 +338,9 @@ const CardItem = ({
             <CardTag>{item.topico}</CardTag>
           )}
           {tipo === 'link' && item.categoria && (
-            <CardTag>{item.categoria}</CardTag>
+            <CardTag>
+              {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
+            </CardTag>
           )}
           <CardDate>{formatarData(getDate())}</CardDate>
         </CardMeta>

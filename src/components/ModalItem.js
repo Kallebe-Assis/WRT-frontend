@@ -324,7 +324,9 @@ const ModalItem = ({
               />
             </FormGroup>
 
-            {categorias.length > 0 && (
+            {Array.isArray(categorias) && categorias.filter(cat => 
+              (typeof cat === 'object' && cat.nome) || typeof cat === 'string'
+            ).length > 0 && (
               <FormGroup>
                 <Label htmlFor="categoria">Categoria</Label>
                 <Select
@@ -335,11 +337,23 @@ const ModalItem = ({
                   disabled={modo === 'visualizar'}
                 >
                   <option value="">Selecione uma categoria</option>
-                  {categorias.map(categoria => (
-                    <option key={categoria.id} value={categoria.nome}>
-                      {categoria.nome}
-                    </option>
-                  ))}
+                  {categorias.map((categoria) => {
+                    if (typeof categoria === 'object' && categoria.nome) {
+                      return (
+                        <option key={categoria.id || categoria.nome} value={categoria.nome}>
+                          {categoria.nome}
+                        </option>
+                      );
+                    }
+                    if (typeof categoria === 'string') {
+                      return (
+                        <option key={categoria} value={categoria}>
+                          {categoria}
+                        </option>
+                      );
+                    }
+                    return null;
+                  })}
                 </Select>
               </FormGroup>
             )}
