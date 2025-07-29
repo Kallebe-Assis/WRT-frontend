@@ -193,7 +193,8 @@ function useSyncStatus() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/sync/status`);
+      // Usar a URL correta da API
+      const response = await fetch('https://wrt-back.vercel.app/api/sync/status');
       if (response.ok) {
         const data = await response.json();
         setSyncStatus(data.status || 'online');
@@ -258,6 +259,7 @@ const AppContent = () => {
   const [modalAberto, setModalAberto] = useState(false);
   const [itemAtual, setItemAtual] = useState(null);
   const [modoModal, setModoModal] = useState('editar'); // 'editar', 'visualizar', 'novo'
+  const [carregandoModal, setCarregandoModal] = useState(false);
   const [telaCheiaAberta, setTelaCheiaAberta] = useState(false);
   const [itemTelaCheia, setItemTelaCheia] = useState(null);
   const [logModalAberto, setLogModalAberto] = useState(false);
@@ -483,6 +485,11 @@ const AppContent = () => {
 
   const handleSalvarItem = async (id, formData) => {
     try {
+      setCarregandoModal(true);
+      console.log('🔄 === INÍCIO DO SALVAMENTO DE ITEM ===');
+      console.log('🔄 ID:', id);
+      console.log('🔄 FormData:', formData);
+      
       // Determinar se é nota ou link baseado no tipo de dados
       const isLink = formData.url !== undefined;
       
@@ -495,17 +502,23 @@ const AppContent = () => {
         }
       } else {
         // É uma nota
+        console.log('🔄 Salvando nota com tópico:', formData.topico);
         if (id) {
+          console.log('🔄 Atualizando nota existente');
           await editarNota(id, formData);
         } else {
+          console.log('🔄 Criando nova nota');
           await adicionarNota(formData);
         }
       }
       
+      console.log('✅ Item salvo com sucesso');
       setModalAberto(false);
       setItemAtual(null);
     } catch (error) {
-      console.error('Erro ao salvar item:', error);
+      console.error('❌ Erro ao salvar item:', error);
+    } finally {
+      setCarregandoModal(false);
     }
   };
 
@@ -751,7 +764,7 @@ const AppContent = () => {
         console.log('🔄 Renderizando tela de favoritos');
         return (
           <ListaItens
-            itens={notasAtivas.filter(nota => nota.favorito)}
+            itens={(notasAtivas || []).filter(nota => nota.favorito)}
             tipo="nota"
             titulo="Favoritos"
             icone={faHeart}
@@ -771,7 +784,7 @@ const AppContent = () => {
         console.log('🔄 Renderizando tela de lixeira');
         return (
           <TelaLixeira
-            notas={notasAtivas.filter(nota => !nota.ativo)}
+            notas={(notasAtivas || []).filter(nota => !nota.ativo)}
             onRestaurar={(id) => console.log('Restaurar:', id)}
             onExcluirDefinitivamente={(id) => console.log('Excluir definitivamente:', id)}
           />
@@ -868,6 +881,7 @@ const AppContent = () => {
         onSave={handleSalvarItem}
         onDelete={handleExcluirItem}
         onClose={handleFecharModal}
+        carregando={carregandoModal}
       />
 
       <ModalLink

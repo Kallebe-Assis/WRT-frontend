@@ -281,12 +281,12 @@ const TelaLinks = ({
   }, [forcarAtualizacao]);
 
   // Filtrar e ordenar links
-  const linksFiltrados = links
+  const linksFiltrados = (links || [])
     .filter(link => {
       const matchBusca = termoBusca === '' || 
-        link.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        link.descricao.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        link.url.toLowerCase().includes(termoBusca.toLowerCase());
+        (link.nome && link.nome.toLowerCase().includes(termoBusca.toLowerCase())) ||
+        (link.descricao && link.descricao.toLowerCase().includes(termoBusca.toLowerCase())) ||
+        (link.url && link.url.toLowerCase().includes(termoBusca.toLowerCase()));
       
       const matchCategoria = filtroCategoria === 'todos' || link.categoria === filtroCategoria;
       
@@ -295,18 +295,18 @@ const TelaLinks = ({
     .sort((a, b) => {
       switch (ordenacao) {
         case 'nome':
-          return a.nome.localeCompare(b.nome);
+          return (a.nome || '').localeCompare(b.nome || '');
         case 'dataCriacao':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         case 'dataModificacao':
-          return new Date(b.updatedAt) - new Date(a.updatedAt);
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         default:
           return 0;
       }
     });
 
   // Obter categorias únicas
-  const categorias = [...new Set(links.map(link => link.categoria).filter(Boolean))];
+  const categorias = [...new Set((links || []).map(link => link.categoria).filter(Boolean))];
 
   const handleAbrirLink = (url) => {
     window.open(url, '_blank');

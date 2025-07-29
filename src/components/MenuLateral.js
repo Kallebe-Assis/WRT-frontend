@@ -354,7 +354,7 @@ const MenuLateral = ({
     { valor: 'dataCriacao', label: 'Data de Criação' },
     { valor: 'dataModificacao', label: 'Data de Modificação' },
     { valor: 'titulo', label: 'Título' },
-    { valor: 'topico', label: 'Tópico' }
+    { valor: 'categoria', label: 'Categoria' }
   ];
 
   return (

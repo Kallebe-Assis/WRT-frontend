@@ -20,14 +20,9 @@ export const exportarComoJSON = (item) => {
     titulo: item.titulo,
     conteudo: item.conteudo,
     categoria: item.categoria,
-    topico: item.topico,
     dataCriacao: item.dataCriacao,
     dataModificacao: item.dataModificacao,
-    tags: item.tags || [],
-    metadata: {
-      exportadoEm: new Date().toISOString(),
-      versao: '1.0'
-    }
+    favorito: item.favorito
   };
   
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
@@ -88,7 +83,6 @@ export const exportarComoHTML = (item) => {
         <div class="content">${item.conteudo}</div>
         <div class="metadata">
             <span><strong>Categoria:</strong> ${typeof item.categoria === 'object' ? item.categoria.nome || 'Não definida' : item.categoria || 'Não definida'}</span>
-            <span><strong>Tópico:</strong> ${item.topico || 'Não definido'}</span>
             <span><strong>Criado em:</strong> ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}</span>
             <span><strong>Modificado em:</strong> ${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}</span>
             <span><strong>Exportado em:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</span>
@@ -110,14 +104,13 @@ export const exportarComoHTML = (item) => {
 
 // Função para exportar como CSV (para múltiplas notas)
 export const exportarComoCSV = (itens) => {
-  const headers = ['Título', 'Conteúdo', 'Categoria', 'Tópico', 'Data Criação', 'Data Modificação'];
+  const headers = ['Título', 'Conteúdo', 'Categoria', 'Data Criação', 'Data Modificação'];
   const csvContent = [
     headers.join(','),
     ...itens.map(item => [
       `"${item.titulo.replace(/"/g, '""')}"`,
       `"${item.conteudo.replace(/"/g, '""').replace(/<[^>]*>/g, '')}"`,
       `"${typeof item.categoria === 'object' ? item.categoria.nome || '' : item.categoria || ''}"`,
-      `"${item.topico || ''}"`,
       `"${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}"`,
       `"${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}"`
     ].join(','))
@@ -191,7 +184,6 @@ export const imprimirNota = (item) => {
         <div class="content">${item.conteudo}</div>
         <div class="metadata">
           <span><strong>Categoria:</strong> ${typeof item.categoria === 'object' ? item.categoria.nome || 'Não definida' : item.categoria || 'Não definida'}</span>
-          <span><strong>Tópico:</strong> ${item.topico || 'Não definido'}</span>
           <span><strong>Criado em:</strong> ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}</span>
           <span><strong>Modificado em:</strong> ${new Date(item.dataModificacao).toLocaleDateString('pt-BR')}</span>
           <span><strong>Impresso em:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</span>

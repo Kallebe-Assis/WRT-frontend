@@ -423,18 +423,17 @@ const criarNota = async (nota) => {
     
     // Para POST, usar fetch diretamente com userId no body
     const url = `${config.API_BASE_URL}/notas`;
+    const dadosCompletos = { ...nota, userId };
     console.log('🌐 API - criarNota URL:', url);
-    console.log('🌐 API - criarNota dados:', { ...nota, userId });
+    console.log('🌐 API - criarNota dados completos:', dadosCompletos);
+    console.log('🌐 API - tópico nos dados:', dadosCompletos.topico);
     
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        ...nota,
-        userId: userId
-      })
+      body: JSON.stringify(dadosCompletos)
     });
     
     if (!response.ok) {
@@ -454,6 +453,7 @@ const criarNota = async (nota) => {
 const atualizarNota = async (id, nota) => {
   try {
     console.log('🌐 API - atualizarNota chamado com ID:', id, 'dados:', nota);
+    console.log('🌐 API - tópico nos dados:', nota.topico);
     
     // Usar fetch diretamente com query parameter
     const url = `${config.API_BASE_URL}/notas?id=${id}`;

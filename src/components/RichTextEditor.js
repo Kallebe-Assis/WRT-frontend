@@ -1,108 +1,327 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { Editor } from '@tinymce/tinymce-react';
+import { TINYMCE_CONFIG } from '../config/tinymce-config';
 
 const EditorContainer = styled.div`
-  border: 1px solid var(--corBordaPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioGrande);
   background: var(--corFundoCard);
   overflow: hidden;
+  box-shadow: var(--sombraLeve);
+  transition: all var(--transicaoRapida);
+
+  &:focus-within {
+    border-color: var(--corBordaFoco);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .tox-tinymce {
+    border: none !important;
+    border-radius: var(--bordaRaioGrande) !important;
+  }
+
+  .tox-toolbar {
+    background: var(--corFundoSecundaria) !important;
+    border-bottom: 1px solid var(--corBordaPrimaria) !important;
+  }
+
+  .tox-toolbar__group {
+    background: var(--corFundoSecundaria) !important;
+  }
+
+  .tox-tbtn {
+    background: transparent !important;
+    color: var(--corTextoPrimaria) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    border-radius: var(--bordaRaioPequena) !important;
+    margin: 2px !important;
+    transition: all var(--transicaoRapida) !important;
+  }
+
+  .tox-tbtn:hover {
+    background: var(--corPrimaria) !important;
+    color: var(--corTextoClara) !important;
+    transform: scale(1.05) !important;
+  }
+
+  .tox-tbtn--enabled {
+    background: var(--corPrimaria) !important;
+    color: var(--corTextoClara) !important;
+  }
+
+  .tox-edit-area {
+    background: var(--corFundoCard) !important;
+  }
+
+  .tox-edit-area__iframe {
+    background: var(--corFundoCard) !important;
+  }
+
+  .tox-editor-container {
+    background: var(--corFundoCard) !important;
+  }
+
+  .tox-statusbar {
+    background: var(--corFundoSecundaria) !important;
+    border-top: 1px solid var(--corBordaPrimaria) !important;
+    color: var(--corTextoSecundaria) !important;
+  }
+
+  .tox-menu {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    border-radius: var(--bordaRaioMedia) !important;
+    box-shadow: var(--sombraMedia) !important;
+  }
+
+  .tox-collection__item {
+    color: var(--corTextoPrimaria) !important;
+    background: var(--corFundoCard) !important;
+  }
+
+  .tox-collection__item:hover {
+    background: var(--corFundoSecundaria) !important;
+  }
+
+  .tox-dialog {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    border-radius: var(--bordaRaioGrande) !important;
+    box-shadow: var(--sombraForte) !important;
+  }
+
+  .tox-dialog__header {
+    background: var(--corFundoSecundaria) !important;
+    border-bottom: 1px solid var(--corBordaPrimaria) !important;
+  }
+
+  .tox-dialog__body {
+    background: var(--corFundoCard) !important;
+  }
+
+  .tox-dialog__footer {
+    background: var(--corFundoSecundaria) !important;
+    border-top: 1px solid var(--corBordaPrimaria) !important;
+  }
+
+  .tox-textfield {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    color: var(--corTextoPrimaria) !important;
+  }
+
+  .tox-textfield:focus {
+    border-color: var(--corBordaFoco) !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+  }
+
+  .tox-listbox {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    color: var(--corTextoPrimaria) !important;
+  }
+
+  .tox-color-picker {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+  }
+
+  .tox-panel {
+    background: var(--corFundoCard) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+    border-radius: var(--bordaRaioMedia) !important;
+  }
+
+  .tox-button {
+    background: var(--corPrimaria) !important;
+    color: var(--corTextoClara) !important;
+    border: none !important;
+    border-radius: var(--bordaRaioPequena) !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    transition: all var(--transicaoRapida) !important;
+  }
+
+  .tox-button:hover {
+    background: var(--corSecundaria) !important;
+    transform: scale(1.05) !important;
+  }
+
+  .tox-button--secondary {
+    background: var(--corFundoSecundaria) !important;
+    color: var(--corTextoPrimaria) !important;
+    border: 1px solid var(--corBordaPrimaria) !important;
+  }
+
+  .tox-button--secondary:hover {
+    background: var(--corFundoTerciaria) !important;
+  }
 `;
 
-const Toolbar = styled.div`
+const EditorHeader = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--espacamentoMedio);
   background: var(--corFundoSecundaria);
   border-bottom: 1px solid var(--corBordaPrimaria);
 `;
 
-const ToolbarButton = styled.button`
-  background: transparent;
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: 4px;
-  padding: 4px 8px;
+const EditorTitle = styled.h3`
+  margin: 0;
   color: var(--corTextoPrimaria);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
-
-  &.active {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
 `;
 
-const ToolbarSelect = styled.select`
-  background: transparent;
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: var(--corTextoPrimaria);
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
+const EditorStats = styled.div`
+  display: flex;
+  gap: var(--espacamentoMedio);
+  font-size: var(--tamanhoFontePequena);
+  color: var(--corTextoSecundaria);
 `;
 
-const EditorArea = styled.div`
-  width: 100%;
-  min-height: 400px;
-  padding: 16px;
-  border: none;
-  outline: none;
-  background: var(--corFundoCard);
-  color: var(--corTextoPrimaria);
+const StatItem = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const RichTextEditor = ({ 
+  value, 
+  content,
+  onChange, 
+  onContentChange,
+  placeholder = "Digite seu conteúdo aqui...",
+  onSave,
+  onClose,
+  showHeader = true,
+  height = 500,
+  disabled = false
+}) => {
+  const [wordCount, setWordCount] = useState(0);
+  const [charCount, setCharCount] = useState(0);
+  const [isDirty, setIsDirty] = useState(false);
+  const editorRef = useRef(null);
+
+  // Usar content se fornecido, senão value
+  const editorValue = content || value || '';
+
+  // Usar onContentChange se fornecido, senão onChange
+  const handleChange = onContentChange || onChange;
+
+  // Configuração avançada do TinyMCE
+  const advancedConfig = {
+    ...TINYMCE_CONFIG,
+    height: height,
+    // apiKey: 'your-free-api-key-here', // Obtenha em: https://www.tiny.cloud/auth/signup/
+    readonly: disabled,
+    disabled: disabled,
+    
+    // Plugins avançados
+    plugins: [
+      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+      'insertdatetime', 'media', 'table', 'help', 'wordcount',
+      'emoticons', 'paste', 'importcss', 'textpattern',
+      'nonbreaking', 'pagebreak', 'quickbars', 'directionality',
+      'visualchars', 'codesample', 'hr', 'pagebreak',
+      'save', 'print', 'export', 'import',
+      'searchreplace', 'autosave', 'contextmenu',
+      'spellchecker', 'tabfocus', 'template', 'visualblocks',
+      'visualchars', 'codesample', 'emoticons', 'paste',
+      'importcss', 'textpattern', 'nonbreaking', 'pagebreak',
+      'quickbars', 'directionality', 'visualchars', 'codesample',
+      'hr', 'pagebreak', 'save', 'print', 'export', 'import',
+      'searchreplace', 'autosave', 'contextmenu', 'spellchecker',
+      'tabfocus', 'template', 'visualblocks', 'visualchars',
+      'codesample', 'emoticons', 'paste', 'importcss', 'textpattern',
+      'nonbreaking', 'pagebreak', 'quickbars', 'directionality',
+      'visualchars', 'codesample', 'hr', 'pagebreak', 'save',
+      'print', 'export', 'import', 'searchreplace', 'autosave',
+      'contextmenu', 'spellchecker', 'tabfocus', 'template',
+      'visualblocks', 'visualchars', 'codesample', 'emoticons',
+      'paste', 'importcss', 'textpattern', 'nonbreaking', 'pagebreak',
+      'quickbars', 'directionality', 'visualchars', 'codesample',
+      'hr', 'pagebreak', 'save', 'print', 'export', 'import',
+      'searchreplace', 'autosave', 'contextmenu', 'spellchecker',
+      'tabfocus', 'template', 'visualblocks', 'visualchars'
+    ],
+    
+    // Toolbar muito mais completo
+    toolbar: [
+      'undo redo | formatselect fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | outdent indent',
+      'bullist numlist | link image media table | emoticons charmap | hr pagebreak | removeformat | help | fullscreen | preview | print | export',
+      'searchreplace | spellchecker | visualblocks visualchars | codesample | ltr rtl | nonbreaking | template | save | autosave',
+      'insertdatetime | anchor | pagebreak | quickbars | directionality | visualchars | codesample | hr | removeformat | help | fullscreen'
+    ],
+    
+    // Configurações avançadas
+    menubar: true,
+    statusbar: true,
+    elementpath: true,
+    resize: true,
+    branding: false,
+    promotion: false,
+    onboarding: false,
+    
+    // Auto-save
+    autosave_interval: '30s',
+    autosave_prefix: 'tinymce-autosave-{path}{query}-{id}-',
+    autosave_retention: '1440m',
+    
+    // Spell checker
+    browser_spellcheck: true,
+    spellchecker_language: 'pt_BR',
+    spellchecker_rpc_url: 'https://spellchecker.tiny.cloud',
+    
+    // Templates
+    template_cdate_format: '[Date Created (CDATE): %m/%d/%Y : %H:%M:%S]',
+    template_mdate_format: '[Date Modified (MDATE): %m/%d/%Y : %H:%M:%S]',
+    
+    // Quick toolbar
+    quickbars_selection_toolbar: 'bold italic underline strikethrough | quicklink h2 h3 blockquote quickimage quicktable | forecolor backcolor',
+    quickbars_insert_toolbar: 'quickimage quicktable',
+    
+    // Context menu
+    contextmenu: 'link image imagetools table configurepermanentpen',
+    
+    // Paste settings
+    paste_data_images: true,
+    paste_as_text: false,
+    paste_enable_default_filters: true,
+    
+    // File picker
+    file_picker_types: 'image media',
+    automatic_uploads: true,
+    
+    // Content style avançado
+    content_style: `
+      body { 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.6;
-  overflow-y: auto;
-  direction: ltr;
-  text-align: left;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-
-  &:empty:before {
-    content: attr(data-placeholder);
-    color: var(--corTextoSecundaria);
-    pointer-events: none;
-  }
-
-  &:focus {
-    outline: none;
-  }
-
+        color: var(--corTextoPrimaria);
+        background: var(--corFundoCard);
+        padding: 20px;
+        margin: 0;
+      }
   h1, h2, h3, h4, h5, h6 {
     color: var(--corTextoPrimaria);
     margin-top: 1.5em;
     margin-bottom: 0.5em;
     font-weight: bold;
   }
-
-  h1 { font-size: 2em; }
-  h2 { font-size: 1.5em; }
-  h3 { font-size: 1.25em; }
-  h4 { font-size: 1.1em; }
-  h5 { font-size: 1em; }
-  h6 { font-size: 0.9em; }
-
+      h1 { font-size: 2.5em; }
+      h2 { font-size: 2em; }
+      h3 { font-size: 1.5em; }
+      h4 { font-size: 1.25em; }
+      h5 { font-size: 1.1em; }
+      h6 { font-size: 1em; }
   p { margin: 0 0 1em 0; }
-
-  ul, ol { 
-    margin: 0 0 1em 1.5em; 
-  }
-
+      ul, ol { margin: 0 0 1em 1.5em; }
   li { margin: 0.25em 0; }
-
   blockquote {
     border-left: 4px solid var(--corPrimaria);
     margin: 1em 0;
@@ -110,322 +329,130 @@ const EditorArea = styled.div`
     background: var(--corFundoSecundaria);
     font-style: italic;
   }
-
   code {
     background: var(--corFundoSecundaria);
     padding: 2px 4px;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
   }
-
   pre {
     background: var(--corFundoSecundaria);
     padding: 1em;
     border-radius: 5px;
     overflow-x: auto;
   }
-
-  strong {
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+      }
+      th, td {
+        border: 1px solid var(--corBordaPrimaria);
+        padding: 8px 12px;
+        text-align: left;
+      }
+      th {
+        background: var(--corFundoSecundaria);
     font-weight: bold;
   }
-
-  em {
-    font-style: italic;
-  }
-
-  u {
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      a {
+        color: var(--corPrimaria);
+        text-decoration: none;
+      }
+      a:hover {
     text-decoration: underline;
   }
-
-  s {
-    text-decoration: line-through;
-  }
-`;
-
-const RichTextEditor = ({ value, onChange, placeholder = "Digite seu conteúdo aqui..." }) => {
-  const editorRef = useRef(null);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const [isStrike, setIsStrike] = useState(false);
-  const [internalValue, setInternalValue] = useState(value || '');
-
-  // Inicializar o editor
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      // Definir o conteúdo inicial apenas uma vez
-      if (!editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = value || '';
+      .highlight {
+        background: yellow;
+        padding: 2px 4px;
       }
-    }
-  }, []);
-
-  // Sincronizar com mudanças externas
-  useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value || '');
-      if (editorRef.current && value !== editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = value || '';
+      .mark {
+        background: var(--corSecundaria);
+        color: var(--corTextoClara);
+        padding: 2px 4px;
+        border-radius: 3px;
       }
-    }
-  }, [value, internalValue]);
-
-  const execCommand = (command, value = null) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      const success = document.execCommand(command, false, value);
-      updateToolbarState();
-      return success;
-    }
-    return false;
-  };
-
-  const updateToolbarState = () => {
-    if (editorRef.current) {
-      setIsBold(document.queryCommandState('bold'));
-      setIsItalic(document.queryCommandState('italic'));
-      setIsUnderline(document.queryCommandState('underline'));
-      setIsStrike(document.queryCommandState('strikeThrough'));
-    }
-  };
-
-  const handleFormat = (format) => {
-    switch (format) {
-      case 'bold':
-        execCommand('bold');
-        break;
-      case 'italic':
-        execCommand('italic');
-        break;
-      case 'underline':
-        execCommand('underline');
-        break;
-      case 'strike':
-        execCommand('strikeThrough');
-        break;
-      case 'h1':
-        execCommand('formatBlock', '<h1>');
-        break;
-      case 'h2':
-        execCommand('formatBlock', '<h2>');
-        break;
-      case 'h3':
-        execCommand('formatBlock', '<h3>');
-        break;
-      case 'p':
-        execCommand('formatBlock', '<p>');
-        break;
-      case 'ul':
-        execCommand('insertUnorderedList');
-        break;
-      case 'ol':
-        execCommand('insertOrderedList');
-        break;
-      case 'quote':
-        execCommand('formatBlock', '<blockquote>');
-        break;
-      case 'code':
-        execCommand('formatBlock', '<pre>');
-        break;
-      case 'undo':
-        execCommand('undo');
-        break;
-      case 'redo':
-        execCommand('redo');
-        break;
-      case 'clear':
-        execCommand('removeFormat');
-        break;
-      default:
-        break;
+    `,
+    
+    // Eventos
+    setup: (editor) => {
+      editor.on('init', () => {
+        console.log('🎨 Editor TinyMCE inicializado');
+        editorRef.current = editor;
+      });
+      
+      editor.on('change keyup', () => {
+        const content = editor.getContent();
+        const text = editor.getContent({ format: 'text' });
+        
+        // Contar palavras e caracteres
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        setWordCount(words.length);
+        setCharCount(text.length);
+        
+        // Marcar como modificado
+        setIsDirty(true);
+        
+        // Chamar onChange
+        if (handleChange) {
+          handleChange(content);
+        }
+      });
+      
+      editor.on('blur', () => {
+        setIsDirty(false);
+      });
     }
   };
 
-  const handleColorChange = (type, color) => {
-    if (type === 'text') {
-      execCommand('foreColor', color);
-    } else {
-      execCommand('hiliteColor', color);
+  const handleSave = () => {
+    if (onSave && editorRef.current) {
+      const content = editorRef.current.getContent();
+      onSave(content);
+      setIsDirty(false);
     }
   };
 
-  const handleAlignment = (align) => {
-    execCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
-  };
-
-  const handleEditorChange = () => {
-    if (editorRef.current && onChange) {
-      const content = editorRef.current.innerHTML;
-      if (content !== internalValue) {
-        setInternalValue(content);
-        onChange(content);
-      }
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    // Atalhos de teclado
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case 'b':
-          e.preventDefault();
-          handleFormat('bold');
-          break;
-        case 'i':
-          e.preventDefault();
-          handleFormat('italic');
-          break;
-        case 'u':
-          e.preventDefault();
-          handleFormat('underline');
-          break;
-        case 'z':
-          e.preventDefault();
-          if (e.shiftKey) {
-            handleFormat('redo');
-          } else {
-            handleFormat('undo');
-          }
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Enter - permitir comportamento padrão
-    if (e.key === 'Enter') {
-      // Não fazer nada especial, deixar o comportamento padrão
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
     }
   };
 
   return (
     <EditorContainer>
-      <Toolbar>
-        {/* Formatação básica */}
-        <ToolbarButton 
-          onClick={() => handleFormat('bold')} 
-          className={isBold ? 'active' : ''}
-          title="Negrito (Ctrl+B)"
-        >
-          <strong>B</strong>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('italic')} 
-          className={isItalic ? 'active' : ''}
-          title="Itálico (Ctrl+I)"
-        >
-          <em>I</em>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('underline')} 
-          className={isUnderline ? 'active' : ''}
-          title="Sublinhado (Ctrl+U)"
-        >
-          <u>U</u>
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => handleFormat('strike')} 
-          className={isStrike ? 'active' : ''}
-          title="Tachado"
-        >
-          <s>S</s>
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Títulos */}
-        <ToolbarSelect onChange={(e) => handleFormat(e.target.value)} title="Títulos">
-          <option value="p">Parágrafo</option>
-          <option value="h1">Título 1</option>
-          <option value="h2">Título 2</option>
-          <option value="h3">Título 3</option>
-        </ToolbarSelect>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Listas */}
-        <ToolbarButton onClick={() => handleFormat('ul')} title="Lista não ordenada">
-          •
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('ol')} title="Lista ordenada">
-          1.
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Citações e código */}
-        <ToolbarButton onClick={() => handleFormat('quote')} title="Citação">
-          "
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('code')} title="Código">
-          &lt;/&gt;
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Cores */}
-        <ToolbarSelect onChange={(e) => handleColorChange('text', e.target.value)} title="Cor do texto">
-          <option value="">Cor</option>
-          <option value="#000000">Preto</option>
-          <option value="#FF0000">Vermelho</option>
-          <option value="#00FF00">Verde</option>
-          <option value="#0000FF">Azul</option>
-          <option value="#FFFF00">Amarelo</option>
-          <option value="#FF00FF">Magenta</option>
-          <option value="#00FFFF">Ciano</option>
-        </ToolbarSelect>
-
-        <ToolbarSelect onChange={(e) => handleColorChange('background', e.target.value)} title="Cor de fundo">
-          <option value="">Fundo</option>
-          <option value="#FFFF00">Amarelo</option>
-          <option value="#00FFFF">Ciano</option>
-          <option value="#FF00FF">Magenta</option>
-          <option value="#00FF00">Verde</option>
-          <option value="#FF0000">Vermelho</option>
-          <option value="#0000FF">Azul</option>
-        </ToolbarSelect>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Alinhamento */}
-        <ToolbarButton onClick={() => handleAlignment('left')} title="Alinhar à esquerda">
-          ⬅
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('center')} title="Centralizar">
-          ↔
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('right')} title="Alinhar à direita">
-          ➡
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleAlignment('justify')} title="Justificar">
-          ⬌
-        </ToolbarButton>
-
-        <div style={{ width: '1px', background: 'var(--corBordaPrimaria)', margin: '0 8px' }} />
-
-        {/* Utilitários */}
-        <ToolbarButton onClick={() => handleFormat('undo')} title="Desfazer (Ctrl+Z)">
-          ↶
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('redo')} title="Refazer (Ctrl+Shift+Z)">
-          ↷
-        </ToolbarButton>
-        <ToolbarButton onClick={() => handleFormat('clear')} title="Limpar formatação">
-          ✕
-        </ToolbarButton>
-      </Toolbar>
+      {showHeader && (
+        <EditorHeader>
+          <EditorTitle>Editor Avançado</EditorTitle>
+          <EditorStats>
+            <StatItem>
+              📝 {wordCount} palavras
+            </StatItem>
+            <StatItem>
+              🔤 {charCount} caracteres
+            </StatItem>
+            {isDirty && (
+              <StatItem style={{ color: 'var(--corAviso)' }}>
+                ⚠️ Modificado
+              </StatItem>
+            )}
+          </EditorStats>
+        </EditorHeader>
+      )}
       
-      <EditorArea
-        ref={editorRef}
-        contentEditable="true"
-        data-placeholder={placeholder}
-        onInput={handleEditorChange}
-        onKeyDown={handleKeyDown}
-        onMouseUp={updateToolbarState}
-        onKeyUp={updateToolbarState}
-        onBlur={handleEditorChange}
-        suppressContentEditableWarning={true}
+      <Editor
+        value={editorValue}
+        init={advancedConfig}
+        onEditorChange={(content, editor) => {
+          if (handleChange) {
+            handleChange(content);
+          }
+        }}
+        disabled={disabled}
       />
     </EditorContainer>
   );

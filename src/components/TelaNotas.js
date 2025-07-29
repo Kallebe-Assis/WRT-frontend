@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -96,21 +96,50 @@ const GridNotas = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: var(--espacamentoGrande);
+  margin-top: var(--espacamentoGrande);
 `;
 
 const CardNota = styled.div`
   background: var(--corFundoCard);
   border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
+  border-radius: var(--bordaRaioGrande);
   padding: var(--espacamentoGrande);
   transition: all var(--transicaoRapida);
   cursor: pointer;
+  position: relative;
+  box-shadow: var(--sombraLeve);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    border-radius: var(--bordaRaioGrande) var(--bordaRaioGrande) 0 0;
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
 
   &:hover {
     border-color: var(--corPrimaria);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--sombraMedia);
+    
+    &::before {
+      opacity: 1;
+    }
   }
+`;
+
+const CategoriaTag = styled.span`
+  background: ${props => props.cor || 'var(--corPrimaria)'};
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--bordaRaioPequena);
+  font-size: 0.7rem;
+  font-weight: 500;
 `;
 
 const CardHeader = styled.div`
@@ -122,7 +151,7 @@ const CardHeader = styled.div`
 
 const CardTitulo = styled.h3`
   color: var(--corTextoPrimaria);
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
   flex: 1;
@@ -150,14 +179,17 @@ const BotaoAcao = styled.button`
 
 const CardConteudo = styled.div`
   color: var(--corTextoSecundaria);
-  line-height: 1.6;
+  line-height: 1.5;
   margin-bottom: var(--espacamentoMedio);
-  max-height: 100px;
+  max-height: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  font-size: 0.9rem;
 `;
 
 const CardFooter = styled.div`
@@ -206,16 +238,14 @@ const TelaNotas = ({
   forcarAtualizacao 
 }) => {
   const [termoBusca, setTermoBusca] = useState('');
-  const [filtroTopico, setFiltroTopico] = useState('todos');
+  const [filtroCategoria, setFiltroCategoria] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('dataCriacao');
 
-  // Reagir à atualização forçada
+  // Resetar filtros quando forcarAtualizacao mudar
   useEffect(() => {
     if (forcarAtualizacao > 0) {
-      console.log('🔄 TelaNotas: Atualização forçada detectada');
-      // Limpar filtros para mostrar todos os dados atualizados
       setTermoBusca('');
-      setFiltroTopico('todos');
+      setFiltroCategoria('todos');
       setOrdenacao('dataCriacao');
     }
   }, [forcarAtualizacao]);
@@ -225,35 +255,50 @@ const TelaNotas = ({
   console.log('🔍 TelaNotas - carregando:', carregando);
   console.log('🔍 TelaNotas - total de notas:', notas?.length || 0);
 
-  // Filtrar e ordenar notas
-  const notasFiltradas = notas
-    .filter(nota => {
-      const matchBusca = termoBusca === '' || 
-        nota.titulo.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        nota.conteudo.toLowerCase().includes(termoBusca.toLowerCase());
-      
-      const matchTopico = filtroTopico === 'todos' || nota.topico === filtroTopico;
-      
-      return matchBusca && matchTopico;
-    })
-    .sort((a, b) => {
-      switch (ordenacao) {
-        case 'titulo':
-          return a.titulo.localeCompare(b.titulo);
-        case 'dataCriacao':
-          return new Date(b.dataCriacao) - new Date(a.dataCriacao);
-        case 'dataModificacao':
-          return new Date(b.dataModificacao || b.dataCriacao) - new Date(a.dataModificacao || a.dataCriacao);
-        default:
-          return 0;
-      }
-    });
+  const notasFiltradas = (notas || []).filter(nota => {
+    const matchBusca = !termoBusca || 
+      (nota.titulo && nota.titulo.toLowerCase().includes(termoBusca.toLowerCase())) ||
+      (nota.conteudo && nota.conteudo.toLowerCase().includes(termoBusca.toLowerCase()));
+    
+    const matchCategoria = filtroCategoria === 'todos' || nota.topico === filtroCategoria;
+    
+    return matchBusca && matchCategoria;
+  });
 
   console.log('🔍 TelaNotas - notas filtradas:', notasFiltradas);
   console.log('🔍 TelaNotas - total de notas filtradas:', notasFiltradas?.length || 0);
 
-  // Obter tópicos únicos
-  const topicos = [...new Set(notas.map(nota => nota.topico).filter(Boolean))];
+  // Obter categorias únicas das notas
+  const categoriasUnicas = useMemo(() => {
+    const categorias = (notas || [])
+      .map(nota => nota.topico)
+      .filter(categoria => categoria && categoria.trim() !== '')
+      .filter((categoria, index, array) => array.indexOf(categoria) === index);
+    
+    return ['todos', ...categorias];
+  }, [notas]);
+
+  // Função para obter cor da categoria baseada no nome
+  const getCorCategoria = (nomeCategoria) => {
+    const coresCategorias = {
+      'Mapeamento': '#667eea',
+      'G2 Office': '#764ba2',
+      'Unit': '#f093fb',
+      'Rede': '#4facfe',
+      'Trabalho': '#ff6b6b',
+      'Pessoal': '#4ecdc4',
+      'Estudo': '#45b7d1',
+      'Saúde': '#96ceb4',
+      'Finanças': '#feca57',
+      'Ideias': '#ff9ff3',
+      'Lembretes': '#54a0ff',
+      'Receitas': '#5f27cd',
+      'Dicas': '#00d2d3',
+      'Notas': '#ff9f43'
+    };
+    
+    return coresCategorias[nomeCategoria] || '#667eea';
+  };
 
   const formatarData = (data) => {
     return new Date(data).toLocaleDateString('pt-BR', {
@@ -299,12 +344,12 @@ const TelaNotas = ({
           onChange={(e) => setTermoBusca(e.target.value)}
         />
         <SelectFiltro
-          value={filtroTopico}
-          onChange={(e) => setFiltroTopico(e.target.value)}
+          value={filtroCategoria}
+          onChange={(e) => setFiltroCategoria(e.target.value)}
         >
-          <option value="todos">Todos os tópicos</option>
-          {topicos.map(topico => (
-            <option key={topico} value={topico}>{topico}</option>
+          <option value="todos">Todas as categorias</option>
+          {categoriasUnicas.map(categoria => (
+            <option key={categoria} value={categoria}>{categoria}</option>
           ))}
         </SelectFiltro>
         <SelectFiltro
@@ -322,8 +367,8 @@ const TelaNotas = ({
           <IconeVazio>
             <FontAwesomeIcon icon={faStickyNote} />
           </IconeVazio>
-          <p>{termoBusca || filtroTopico !== 'todos' ? 'Nenhuma nota encontrada' : 'Você ainda não tem notas'}</p>
-          {!termoBusca && filtroTopico === 'todos' && (
+          <p>{termoBusca || filtroCategoria !== 'todos' ? 'Nenhuma nota encontrada' : 'Você ainda não tem notas'}</p>
+          {!termoBusca && filtroCategoria === 'todos' && (
             <BotaoPrimario onClick={onNovoItem}>
               <FontAwesomeIcon icon={faPlus} />
               Criar Primeira Nota
@@ -333,7 +378,7 @@ const TelaNotas = ({
       ) : (
         <GridNotas>
           {notasFiltradas.map(nota => (
-            <CardNota key={nota.id} onClick={() => onVisualizarItem(nota)}>
+            <CardNota key={nota.id} onClick={() => onEditarItem(nota)}>
               <CardHeader>
                 <CardTitulo>{nota.titulo}</CardTitulo>
                 <CardAcoes onClick={(e) => e.stopPropagation()}>
@@ -342,27 +387,44 @@ const TelaNotas = ({
                       <FontAwesomeIcon icon={faHeart} style={{ color: '#e74c3c' }} />
                     </BotaoAcao>
                   )}
-                  <BotaoAcao onClick={() => onEditarItem(nota)}>
-                    <FontAwesomeIcon icon={faEdit} />
-                  </BotaoAcao>
-                  <BotaoAcao onClick={() => onExcluirItem(nota.id)}>
-                    <FontAwesomeIcon icon={faTrash} />
-                  </BotaoAcao>
                 </CardAcoes>
               </CardHeader>
               
-              <CardConteudo>
+              <CardConteudo onClick={(e) => {
+                e.stopPropagation();
+                onEditarItem(nota);
+              }}>
                 {nota.conteudo.replace(/<[^>]*>/g, '').substring(0, 150)}...
               </CardConteudo>
               
               <CardFooter>
                 <CardMeta>
-                  {nota.topico && <Tag>{nota.topico}</Tag>}
-                  <span>{formatarData(nota.dataCriacao)}</span>
+                  {nota.topico && (
+                    <CategoriaTag cor={getCorCategoria(nota.topico)}>
+                      {nota.topico}
+                    </CategoriaTag>
+                  )}
                 </CardMeta>
-                <BotaoAcao onClick={(e) => e.stopPropagation()}>
-                  <FontAwesomeIcon icon={faEye} />
-                </BotaoAcao>
+                <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)' }}>
+                  <BotaoAcao onClick={(e) => {
+                    e.stopPropagation();
+                    onVisualizarItem(nota);
+                  }}>
+                    <FontAwesomeIcon icon={faEye} />
+                  </BotaoAcao>
+                  <BotaoAcao onClick={(e) => {
+                    e.stopPropagation();
+                    onEditarItem(nota);
+                  }}>
+                    <FontAwesomeIcon icon={faEdit} />
+                  </BotaoAcao>
+                  <BotaoAcao onClick={(e) => {
+                    e.stopPropagation();
+                    onExcluirItem(nota.id);
+                  }}>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </BotaoAcao>
+                </div>
               </CardFooter>
             </CardNota>
           ))}

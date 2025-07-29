@@ -187,8 +187,8 @@ export const ordenarPorData = (a, b, campo = 'dataCriacao', ordem = 'desc') => {
 };
 
 export const ordenarPorTexto = (a, b, campo = 'titulo', ordem = 'asc') => {
-  const textoA = a[campo].toLowerCase();
-  const textoB = b[campo].toLowerCase();
+  const textoA = (a[campo] || '').toLowerCase();
+  const textoB = (b[campo] || '').toLowerCase();
   
   if (ordem === 'desc') {
     return textoB.localeCompare(textoA);

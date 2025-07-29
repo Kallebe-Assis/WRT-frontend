@@ -24,12 +24,10 @@ export const NotasAPIProvider = ({ children }) => {
   const {
     notas,
     categorias,
-    topicos,
     carregando,
     erro,
     carregarNotas,
     carregarCategorias,
-    carregarTopicos,
     criarNota,
     atualizarNota,
     deletarNota,
@@ -53,14 +51,13 @@ export const NotasAPIProvider = ({ children }) => {
     window.notasContext = {
       carregarNotas,
       carregarCategorias,
-      carregarTopicos,
       recarregarDados
     };
     
     return () => {
       delete window.notasContext;
     };
-  }, [carregarNotas, carregarCategorias, carregarTopicos]);
+  }, [carregarNotas, carregarCategorias]);
 
   // Filtrar e ordenar notas usando useMemo para otimização
   const notasFiltradas = useMemo(() => {
@@ -73,15 +70,15 @@ export const NotasAPIProvider = ({ children }) => {
 
     // Filtrar por categoria ativa (tópico específico)
     if (categoriaAtiva && categoriaAtiva !== 'anotacoes') {
-      notasParaFiltrar = notasParaFiltrar.filter(nota => nota.topico === categoriaAtiva);
+      notasParaFiltrar = notasParaFiltrar.filter(nota => nota.categoria === categoriaAtiva);
     }
 
     // Filtrar por termo de busca
     if (termoBusca && termoBusca.trim()) {
       const termo = termoBusca.toLowerCase().trim();
       notasParaFiltrar = notasParaFiltrar.filter(nota =>
-        nota.titulo.toLowerCase().includes(termo) ||
-        nota.conteudo.toLowerCase().includes(termo)
+        (nota.titulo && nota.titulo.toLowerCase().includes(termo)) ||
+        (nota.conteudo && nota.conteudo.toLowerCase().includes(termo))
       );
     }
 
@@ -102,9 +99,9 @@ export const NotasAPIProvider = ({ children }) => {
           a.titulo.localeCompare(b.titulo)
         );
         break;
-      case 'topico':
+      case 'categoria':
         notasParaFiltrar.sort((a, b) => 
-          a.topico.localeCompare(b.topico)
+          (a.categoria || '').localeCompare(b.categoria || '')
         );
         break;
       default:
@@ -146,8 +143,6 @@ export const NotasAPIProvider = ({ children }) => {
       throw error;
     }
   };
-
-
 
   const visualizarNota = async (id) => {
     try {
@@ -200,21 +195,30 @@ export const NotasAPIProvider = ({ children }) => {
     try {
       await carregarNotas({ ativo: true });
       await carregarCategorias();
-      await carregarTopicos();
     } catch (error) {
       console.error('Erro ao recarregar dados:', error);
     }
   };
 
+  // Função para ordenar notas (alias para definirOrdenacao)
+  const ordenarNotas = (novaOrdenacao) => {
+    definirOrdenacao(novaOrdenacao);
+  };
 
+  // Função para buscar notas (alias para buscarNotas)
+  const buscarNotasPorTermo = async (termo) => {
+    return await buscarNotas(termo);
+  };
 
-
+  // Função para filtrar por categoria (alias para filtrarPorCategoriaEspecifica)
+  const filtrarNotasPorCategoria = async (categoria) => {
+    return await filtrarPorCategoriaEspecifica(categoria);
+  };
 
   // Estatísticas
   const estatisticas = {
     totalNotas: notasAtivas ? notasAtivas.length : 0,
-    totalCategorias: categorias ? categorias.length : 0,
-    notasDeletadas: notasDeletadas ? notasDeletadas.length : 0,
+    notasFavoritas: notasAtivas ? notasAtivas.filter(nota => nota.favorito).length : 0,
     notasPorCategoria: categorias.reduce((acc, categoria) => {
       let nomeCategoria = '';
       if (typeof categoria === 'object' && categoria.nome) {
@@ -233,67 +237,40 @@ export const NotasAPIProvider = ({ children }) => {
       }).length;
       return acc;
     }, {}),
-    notasPorTopico: topicos ? topicos.map(topico => ({
-      topico: topico,
-      quantidade: notasAtivas ? notasAtivas.filter(nota => nota.topico === topico).length : 0
+    notasPorCategoria: categorias ? categorias.map(categoria => ({
+      categoria: categoria,
+      quantidade: notasAtivas ? notasAtivas.filter(nota => nota.categoria === categoria).length : 0
     })) : []
   };
 
-  const valor = {
-    // Estado
-    notas: notasFiltradas,
-    todasAsNotas: notas,
+  // Criar o valor do contexto
+  const contextValue = {
+    // Estados
+    notas: notasAtivas,
+    notasAtivas,
+    notasDeletadas,
     categorias,
-    topicos,
     carregando,
     erro,
-    categoriaAtiva,
-    menuRecolhido,
-    termoBusca,
-    ordenacao,
-    estatisticas,
-
-    // Ações de CRUD
+    
+    // Funções
+    carregarNotas,
+    carregarCategorias,
     adicionarNota,
     editarNota,
     excluirNota,
-    excluirNotaDefinitivamente,
-    visualizarNota,
     restaurarNota,
-
-    // Ações de carregamento
-    carregarNotas,
-    carregarCategorias,
-    carregarTopicos,
-
-    // Ações de gerenciamento de categorias
-    adicionarCategoria,
-    editarCategoria,
-    removerCategoria,
-
-    // Ações de filtro e busca
-    filtrarPorCategoria: filtrarPorCategoriaEspecifica,
-    buscarNotas,
-    recarregarDados,
-
-    // Ações de interface
-    definirCategoriaAtiva,
-    alternarMenu,
-    definirTermoBusca,
-    definirOrdenacao,
-    limparErro,
-
-    // Utilitários
-    notasAtivas,
-    notasDeletadas,
+    alternarFavorito,
+    filtrarPorCategoria,
+    ordenarNotas,
     
-    // Funções de favoritos
-    buscarFavoritas,
-    alternarFavorito
+    // Estatísticas
+    estatisticas
   };
 
+  // Retornar o provider com o valor do contexto
   return (
-    <NotasAPIContext.Provider value={valor}>
+    <NotasAPIContext.Provider value={contextValue}>
       {children}
     </NotasAPIContext.Provider>
   );
