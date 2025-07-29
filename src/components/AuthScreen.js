@@ -20,7 +20,6 @@ const AuthCard = styled.div`
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  animation: fadeIn 0.5s ease-out;
 `;
 
 const Logo = styled.div`
@@ -179,11 +178,13 @@ const AuthScreen = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
+  // Dados do login - SIMPLES
   const [loginData, setLoginData] = useState({
-    email: 'teste@wrtmind.com',
-    senha: '123456'
+    email: '',
+    senha: ''
   });
   
+  // Dados do cadastro - SIMPLES
   const [cadastroData, setCadastroData] = useState({
     nome: '',
     email: '',
@@ -191,89 +192,123 @@ const AuthScreen = ({ onLogin }) => {
     confirmarSenha: ''
   });
 
+  // LOGIN SIMPLES
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
+    // Validação dos campos
+    if (!loginData.email || !loginData.email.trim()) {
+      setError('Email é obrigatório');
+      setLoading(false);
+      return;
+    }
+    
+    if (!loginData.senha || !loginData.senha.trim()) {
+      setError('Senha é obrigatória');
+      setLoading(false);
+      return;
+    }
+    
     try {
+      console.log('Enviando login:', loginData);
+      
       const response = await fetch(getApiUrl('/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(loginData),
+        body: JSON.stringify({
+          email: loginData.email.trim(),
+          senha: loginData.senha.trim()
+        }),
       });
 
       const data = await response.json();
+      console.log('Resposta do login:', data);
 
       if (response.ok) {
         setSuccess('Login realizado com sucesso!');
-        // Salvar dados do usuário no localStorage
-        localStorage.setItem('user', JSON.stringify(data.usuario));
         
-        // Disparar evento customizado para notificar o login
-        window.dispatchEvent(new CustomEvent('userLogin', { 
-          detail: { user: data.usuario } 
-        }));
+        // Verificar se a resposta tem 'usuario' ou 'user'
+        const userData = data.usuario || data.user;
         
-        // Chamar callback de login
-        setTimeout(() => {
-          onLogin(data.usuario);
-        }, 1000);
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+          console.log('🔍 Dados do usuário para onLogin:', userData);
+          onLogin(userData);
+        } else {
+          setError('Dados do usuário inválidos na resposta');
+        }
       } else {
         setError(data.error || 'Erro ao fazer login');
       }
     } catch (error) {
+      console.error('Erro no login:', error);
       setError('Erro de conexão. Verifique se o servidor está rodando.');
     } finally {
       setLoading(false);
     }
   };
 
+  // CADASTRO SIMPLES
   const handleCadastro = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    // Validar senhas
+    // Validação dos campos
+    if (!cadastroData.nome || !cadastroData.nome.trim()) {
+      setError('Nome é obrigatório');
+      setLoading(false);
+      return;
+    }
+    
+    if (!cadastroData.email || !cadastroData.email.trim()) {
+      setError('Email é obrigatório');
+      setLoading(false);
+      return;
+    }
+    
+    if (!cadastroData.senha || !cadastroData.senha.trim()) {
+      setError('Senha é obrigatória');
+      setLoading(false);
+      return;
+    }
+    
     if (cadastroData.senha !== cadastroData.confirmarSenha) {
       setError('As senhas não coincidem');
       setLoading(false);
       return;
     }
-    
-    if (cadastroData.senha.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      setLoading(false);
-      return;
-    }
 
     try {
+      console.log('Enviando cadastro:', cadastroData);
+      
       const response = await fetch(getApiUrl('/auth/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          nome: cadastroData.nome,
-          email: cadastroData.email,
-          senha: cadastroData.senha
+          nome: cadastroData.nome.trim(),
+          email: cadastroData.email.trim(),
+          senha: cadastroData.senha.trim()
         }),
       });
 
       const data = await response.json();
+      console.log('Resposta do cadastro:', data);
 
       if (response.ok) {
         setSuccess('Cadastro realizado com sucesso! Faça login para continuar.');
-        // Limpar formulário
         setCadastroData({
           nome: '',
           email: '',
           senha: '',
           confirmarSenha: ''
         });
-        // Mudar para aba de login
         setTimeout(() => {
           setActiveTab('login');
           setSuccess('');
@@ -282,6 +317,7 @@ const AuthScreen = ({ onLogin }) => {
         setError(data.error || 'Erro ao fazer cadastro');
       }
     } catch (error) {
+      console.error('Erro no cadastro:', error);
       setError('Erro de conexão. Verifique se o servidor está rodando.');
     } finally {
       setLoading(false);
@@ -294,7 +330,6 @@ const AuthScreen = ({ onLogin }) => {
     } else {
       setCadastroData(prev => ({ ...prev, [field]: value }));
     }
-    // Limpar mensagens ao digitar
     setError('');
     setSuccess('');
   };
@@ -336,7 +371,6 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Email"
                 value={loginData.email}
                 onChange={(e) => handleInputChange('login', 'email', e.target.value)}
-                autoComplete="email"
                 required
               />
             </FormGroup>
@@ -350,7 +384,6 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Senha"
                 value={loginData.senha}
                 onChange={(e) => handleInputChange('login', 'senha', e.target.value)}
-                autoComplete="current-password"
                 required
               />
               <PasswordToggle
@@ -377,7 +410,6 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Nome completo"
                 value={cadastroData.nome}
                 onChange={(e) => handleInputChange('cadastro', 'nome', e.target.value)}
-                autoComplete="name"
                 required
               />
             </FormGroup>
@@ -391,7 +423,6 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Email"
                 value={cadastroData.email}
                 onChange={(e) => handleInputChange('cadastro', 'email', e.target.value)}
-                autoComplete="email"
                 required
               />
             </FormGroup>
@@ -405,7 +436,6 @@ const AuthScreen = ({ onLogin }) => {
                 placeholder="Senha"
                 value={cadastroData.senha}
                 onChange={(e) => handleInputChange('cadastro', 'senha', e.target.value)}
-                autoComplete="new-password"
                 required
               />
               <PasswordToggle

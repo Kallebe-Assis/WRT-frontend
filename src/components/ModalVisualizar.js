@@ -6,12 +6,9 @@ import {
   faEdit, 
   faTrash, 
   faCopy, 
-  faExternalLinkAlt,
   faCalendarAlt,
   faTag,
-  faFolder,
-  faEye,
-  faEyeSlash
+  faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 import GerenciadorTopicos from './GerenciadorTopicos';

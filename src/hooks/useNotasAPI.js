@@ -9,33 +9,24 @@ export const useNotasAPI = () => {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Carregar todas as notas
+  // Carregar notas
   const carregarNotas = useCallback(async (filtros = {}) => {
-    console.log('📡 Fazendo requisição para API...');
-    
-    // Debug de autenticação
-    debugAuth();
-    
-    // Verificar se o usuário está logado
-    const user = localStorage.getItem('user');
-    if (!user) {
-      console.log('❌ Usuário não logado, pulando carregamento de notas');
-      setNotas([]);
-      return [];
-    }
-    
     setCarregando(true);
     setErro(null);
     
     try {
-      const response = await notasAPI.listar(filtros);
-      console.log('📦 Resposta da API:', response);
-      setNotas(response.notas || []);
-      return response.notas || [];
+      const response = await notasAPI.buscarTodos(filtros);
+      
+      if (response && response.success) {
+        setNotas(response.notas || []);
+        console.log('✅ Notas carregadas:', response.notas?.length || 0);
+      } else {
+        console.error('❌ Resposta inválida da API:', response);
+        setErro('Resposta inválida da API');
+      }
     } catch (error) {
-      console.error('❌ Erro ao carregar notas:', error);
+      console.error('Erro ao carregar notas:', error);
       setErro(error.message);
-      return [];
     } finally {
       setCarregando(false);
     }
@@ -44,45 +35,36 @@ export const useNotasAPI = () => {
   // Carregar categorias
   const carregarCategorias = useCallback(async () => {
     try {
-      const response = await categoriasAPI.listar();
-      const categoriasData = response.categorias || [];
-      setCategorias(categoriasData);
-      return categoriasData;
+      const response = await categoriasAPI.buscarTodos();
+      setCategorias(response.categorias || []);
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
       setErro(error.message);
-      setCategorias([]);
-      return [];
     }
   }, []);
 
-  // Carregar tópicos
+  // Carregar tópicos (categorias)
   const carregarTopicos = useCallback(async () => {
     try {
-      const response = await categoriasAPI.listar();
-      const topicosData = response.topicos || [];
-      setTopicos(topicosData);
-      return topicosData;
+      const response = await categoriasAPI.buscarTodos();
+      setTopicos(response.categorias || []);
     } catch (error) {
       console.error('Erro ao carregar tópicos:', error);
       setErro(error.message);
-      setTopicos([]);
-      return [];
     }
   }, []);
 
-  // Criar nova nota
+  // Criar nota
   const criarNota = useCallback(async (nota) => {
     setCarregando(true);
     setErro(null);
     
     try {
       const response = await notasAPI.criar(nota);
-      const novaNota = response.nota;
       
       // Recarregar notas do servidor para garantir sincronização
       await carregarNotas({ ativo: true });
-      return novaNota;
+      return response;
     } catch (error) {
       console.error('Erro ao criar nota:', error);
       setErro(error.message);
@@ -99,11 +81,10 @@ export const useNotasAPI = () => {
     
     try {
       const response = await notasAPI.atualizar(id, nota);
-      const notaAtualizada = response.nota;
       
       // Recarregar notas do servidor para garantir sincronização
       await carregarNotas({ ativo: true });
-      return notaAtualizada;
+      return response;
     } catch (error) {
       console.error('Erro ao atualizar nota:', error);
       setErro(error.message);
@@ -123,7 +104,6 @@ export const useNotasAPI = () => {
       
       // Recarregar notas do servidor para garantir sincronização
       await carregarNotas({ ativo: true });
-      return true;
     } catch (error) {
       console.error('Erro ao deletar nota:', error);
       setErro(error.message);
@@ -174,34 +154,42 @@ export const useNotasAPI = () => {
     }
   }, [carregarNotas]);
 
-  // Alternar favorito (DESABILITADO)
-  // const alternarFavorito = useCallback(async (id) => {
-  //   setCarregando(true);
-  //   setErro(null);
-  //   
-  //   try {
-  //     const response = await notasAPI.alternarFavorito(id);
-  //     const notaAtualizada = response.nota;
-  //       
-  //     // Atualizar a nota na lista local
-  //     setNotas(prev => prev.map(nota => 
-  //       nota.id === id ? notaAtualizada : nota
-  //     ));
-  //       
-  //     // Disparar evento para notificar outros componentes
-  //     window.dispatchEvent(new CustomEvent('favoritosAlterados', {
-  //       detail: { notaId: id, favorito: notaAtualizada.favorito }
-  //     }));
-  //       
-  //     return notaAtualizada;
-  //   } catch (error) {
-  //     console.error('Erro ao alternar favorito:', error);
-  //     setErro(error.message);
-  //     throw error;
-  //   } finally {
-  //     setCarregando(false);
-  //   }
-  // }, []);
+  // Alternar favorito
+  const alternarFavorito = useCallback(async (id) => {
+    setCarregando(true);
+    setErro(null);
+    
+    try {
+      const response = await notasAPI.alternarFavorito(id);
+      
+      // Recarregar notas do servidor para garantir sincronização
+      await carregarNotas({ ativo: true });
+      return response;
+    } catch (error) {
+      console.error('Erro ao alternar favorito:', error);
+      setErro(error.message);
+      throw error;
+    } finally {
+      setCarregando(false);
+    }
+  }, [carregarNotas]);
+
+  // Buscar favoritas
+  const buscarFavoritas = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    
+    try {
+      const response = await notasAPI.buscarFavoritas();
+      return response.notas || [];
+    } catch (error) {
+      console.error('Erro ao buscar favoritas:', error);
+      setErro(error.message);
+      return [];
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
 
   // Alternar fixado
   const alternarFixado = useCallback(async (id) => {
@@ -424,10 +412,10 @@ export const useNotasAPI = () => {
         console.log('✅ Usuário logado, carregando dados...');
         
         // Usar as funções diretamente sem dependências circulares
-        const responseNotas = await notasAPI.listar(); // Carregar todas as notas (ativas e deletadas)
+        const responseNotas = await notasAPI.buscarTodos(); // Carregar todas as notas (ativas e deletadas)
         setNotas(responseNotas.notas || []);
         
-        const responseCategorias = await categoriasAPI.listar();
+        const responseCategorias = await categoriasAPI.buscarTodos();
         const categoriasIniciais = responseCategorias.categorias || [];
         setCategorias(categoriasIniciais);
       } catch (error) {
@@ -452,10 +440,10 @@ export const useNotasAPI = () => {
           console.log('✅ Usuário logado, carregando dados...');
           const carregarDadosIniciais = async () => {
             try {
-              const responseNotas = await notasAPI.listar();
+              const responseNotas = await notasAPI.buscarTodos();
               setNotas(responseNotas.notas || []);
               
-              const responseCategorias = await categoriasAPI.listar();
+              const responseCategorias = await categoriasAPI.buscarTodos();
               const categoriasIniciais = responseCategorias.categorias || [];
               setCategorias(categoriasIniciais);
             } catch (error) {
@@ -480,10 +468,10 @@ export const useNotasAPI = () => {
       console.log('✅ Usuário logado, carregando dados...');
       const carregarDadosIniciais = async () => {
         try {
-          const responseNotas = await notasAPI.listar();
+          const responseNotas = await notasAPI.buscarTodos();
           setNotas(responseNotas.notas || []);
           
-          const responseCategorias = await categoriasAPI.listar();
+          const responseCategorias = await categoriasAPI.buscarTodos();
           const categoriasIniciais = responseCategorias.categorias || [];
           setCategorias(categoriasIniciais);
         } catch (error) {
@@ -545,6 +533,8 @@ export const useNotasAPI = () => {
     atualizarMultiplasOrdenacoes,
     // buscarFavoritas, // DESABILITADO
     buscarFixadas,
+    alternarFavorito,
+    buscarFavoritas,
     
     // Gerenciamento de categorias
     adicionarCategoria,
@@ -552,9 +542,9 @@ export const useNotasAPI = () => {
     removerCategoria,
     
     // Utilitários
-    notasAtivas: notas.filter(nota => nota.ativo),
-    notasDeletadas: notas.filter(nota => !nota.ativo),
+    notasAtivas: notas ? notas.filter(nota => nota.ativo !== false) : [],
+    notasDeletadas: notas ? notas.filter(nota => nota.ativo === false) : [],
     // notasFavoritas: notas.filter(nota => nota.favorito && nota.ativo), // DESABILITADO
-    notasFixadas: notas.filter(nota => nota.fixado && nota.ativo)
+    notasFixadas: notas ? notas.filter(nota => nota.fixado && nota.ativo !== false) : []
   };
 }; 

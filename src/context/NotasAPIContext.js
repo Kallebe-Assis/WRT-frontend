@@ -44,8 +44,8 @@ export const NotasAPIProvider = ({ children }) => {
     adicionarCategoria,
     editarCategoria,
     removerCategoria,
-    // buscarFavoritas, // DESABILITADO
-    // alternarFavorito // DESABILITADO
+    alternarFavorito,
+    buscarFavoritas
   } = useNotasAPI();
 
   // Expor funções no window para uso pela sincronização
@@ -118,6 +118,7 @@ export const NotasAPIProvider = ({ children }) => {
   const adicionarNota = async (nota) => {
     try {
       const novaNota = await criarNota(nota);
+      // O hook já recarrega os dados automaticamente
       return novaNota;
     } catch (error) {
       console.error('Erro ao adicionar nota:', error);
@@ -128,6 +129,7 @@ export const NotasAPIProvider = ({ children }) => {
   const editarNota = async (id, nota) => {
     try {
       const notaAtualizada = await atualizarNota(id, nota);
+      // O hook já recarrega os dados automaticamente
       return notaAtualizada;
     } catch (error) {
       console.error('Erro ao editar nota:', error);
@@ -138,6 +140,7 @@ export const NotasAPIProvider = ({ children }) => {
   const excluirNota = async (id) => {
     try {
       await deletarNota(id);
+      // O hook já recarrega os dados automaticamente
     } catch (error) {
       console.error('Erro ao excluir nota:', error);
       throw error;
@@ -215,6 +218,10 @@ export const NotasAPIProvider = ({ children }) => {
     notasPorCategoria: categorias ? categorias.map(categoria => ({
       categoria: categoria.nome,
       quantidade: notasAtivas ? notasAtivas.filter(nota => nota.topico === categoria.nome).length : 0
+    })) : [],
+    notasPorTopico: topicos ? topicos.map(topico => ({
+      topico: topico,
+      quantidade: notasAtivas ? notasAtivas.filter(nota => nota.topico === topico).length : 0
     })) : []
   };
 
@@ -240,6 +247,11 @@ export const NotasAPIProvider = ({ children }) => {
     visualizarNota,
     restaurarNota,
 
+    // Ações de carregamento
+    carregarNotas,
+    carregarCategorias,
+    carregarTopicos,
+
     // Ações de gerenciamento de categorias
     adicionarCategoria,
     editarCategoria,
@@ -259,9 +271,11 @@ export const NotasAPIProvider = ({ children }) => {
 
     // Utilitários
     notasAtivas,
-    notasDeletadas
-    // buscarFavoritas, // DESABILITADO
-    // alternarFavorito // DESABILITADO
+    notasDeletadas,
+    
+    // Funções de favoritos
+    buscarFavoritas,
+    alternarFavorito
   };
 
   return (

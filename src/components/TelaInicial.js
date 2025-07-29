@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
-  faEdit,
-  faTrash,
   faTimes,
-  faExternalLinkAlt,
-  faHeart
+  faHeart,
+  faStickyNote,
+  faLink
 } from '@fortawesome/free-solid-svg-icons';
-import { linksAPI } from '../config/api';
 import Loading from './Loading';
-import { useNotasAPIContext } from '../context/NotasAPIContext';
 import { formatarData } from '../utils/formatacao';
 
 const Container = styled.div`
@@ -36,7 +33,7 @@ const Subtitulo = styled.p`
 
 const GradeContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-top: 1rem;
 `;
@@ -184,708 +181,204 @@ const BotaoFechar = styled.button`
   }
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  color: var(--corTextoPrimaria);
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioPequena);
-  background: var(--corFundo);
-  color: var(--corTextoPrimaria);
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--corPrimaria);
-  }
-`;
-
-const BotaoSalvar = styled.button`
+const Contador = styled.span`
   background: var(--corPrimaria);
   color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--bordaRaioPequena);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: var(--corPrimariaHover);
-  }
-
-  &:disabled {
-    background: var(--corTextoSecundaria);
-    cursor: not-allowed;
-  }
-`;
-
-const AcoesIcone = styled.div`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  display: flex;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-`;
-
-const BotaoAcao = styled.button`
-  background: var(--corFundoCard);
-  border: 1px solid var(--corBordaPrimaria);
-  color: var(--corTextoSecundaria);
-  padding: 0.25rem;
-  border-radius: var(--bordaRaioPequena);
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 0.8rem;
-
-  &:hover {
-    background: var(--corPrimaria);
-    color: white;
-    border-color: var(--corPrimaria);
-  }
-
-  &.danger:hover {
-    background: var(--corErro);
-    border-color: var(--corErro);
-  }
-`;
-
-const SecaoFavoritos = styled.div`
-  background: var(--corFundoSecundaria);
-  border-radius: var(--bordaRaioGrande);
-  padding: var(--espacamentoGrande);
-  margin-bottom: var(--espacamentoGrande);
-  border: 1px solid var(--corBordaPrimaria);
-  box-shadow: var(--sombraLeve);
-`;
-
-const ListaFavoritos = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: var(--espacamentoMedio);
-`;
-
-const ItemFavorito = styled.div`
-  padding: var(--espacamentoMedio);
-  background: var(--corFundoTerciaria);
-  border-radius: var(--bordaRaioMedia);
-  border-left: 4px solid #FF6B6B;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-
-  &:hover {
-    transform: translateX(4px);
-    box-shadow: var(--sombraLeve);
-  }
-`;
-
-const TituloFavorito = styled.h4`
-  color: var(--corTextoPrimaria);
-  margin: 0 0 var(--espacamentoPequeno) 0;
-  font-size: var(--tamanhoFonteMedia);
   font-weight: 600;
+  margin-left: 0.5rem;
 `;
 
-const DataFavorito = styled.span`
-  color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFontePequena);
-`;
+const TelaInicial = ({ 
+  notas, 
+  links, 
+  carregando, 
+  carregandoLinks,
+  onNovoItem,
+  onEditarItem,
+  onVisualizarItem,
+  onTelaCheia
+}) => {
+  const [itensRecentes, setItensRecentes] = useState([]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [tipoNovoItem, setTipoNovoItem] = useState(null);
 
-const TituloSecao = styled.h3`
-  color: var(--corTextoSecundaria);
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const TelaInicial = () => {
-  const [icones, setIcones] = useState([]);
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [editando, setEditando] = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState(null);
-  const [formData, setFormData] = useState({
-    nome: '',
-    urlIcone: '',
-    urlDestino: ''
-  });
-
-  // Drag & Drop state
-  const [arrastando, setArrastando] = useState(null);
-  const [sobre, setSobre] = useState(null);
-  const [reordenando, setReordenando] = useState(false);
-
-  // const { buscarFavoritas } = useNotasAPIContext(); // DESABILITADO
-  // const [favoritos, setFavoritos] = useState([]); // DESABILITADO
-  // const [carregandoFavoritos, setCarregandoFavoritos] = useState(false); // DESABILITADO
-
-  // Carregar links do banco de dados
-  const carregarLinks = useCallback(async () => {
-    try {
-      setCarregando(true);
-      setErro(null);
-      
-      console.log('🔄 Carregando links do banco...');
-      const response = await linksAPI.buscarTodos();
-      const links = response.links || [];
-      console.log('📊 Links carregados:', links.length);
-      
-      // Converter para o formato esperado pelo componente
-      const iconesFormatados = links.map(link => ({
-        id: link.id,
-        nome: link.nome,
-        urlIcone: link.urlIcone,
-        urlDestino: link.urlDestino,
-        posicao: link.posicao
-      }));
-      
-      setIcones(iconesFormatados);
-      console.log('✅ Links atualizados na interface');
-    } catch (error) {
-      console.error('❌ Erro ao carregar links:', error);
-      setErro('Erro ao carregar links de atalho');
-    } finally {
-      setCarregando(false);
-    }
-  }, []); // Sem dependências para evitar loops
-
-  // Carregar links apenas uma vez ao montar o componente
+  // Combinar notas e links recentes
   useEffect(() => {
-    carregarLinks();
-  }, [carregarLinks]); // Usar a função carregarLinks definida acima
+    const todosItens = [
+      ...(notas || []).map(nota => ({ ...nota, tipo: 'nota' })),
+      ...(links || []).map(link => ({ ...link, tipo: 'link' }))
+    ];
 
-  // useEffect(() => {
-  //   const carregarFavoritos = async () => {
-  //     setCarregandoFavoritos(true);
-  //     try {
-  //       // Verificar se o usuário está logado
-  //       const user = localStorage.getItem('user');
-  //       if (!user) {
-  //         console.log('⚠️ Usuário não logado, pulando carregamento de favoritos');
-  //         setFavoritos([]);
-  //         return;
-  //       }
+    // Ordenar por data de criação (mais recentes primeiro)
+    const itensOrdenados = todosItens
+      .sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao))
+      .slice(0, 6); // Mostrar apenas os 6 mais recentes
 
-  //       // Verificar se os dados do usuário são válidos
-  //       let userData;
-  //       try {
-  //         userData = JSON.parse(user);
-  //         if (!userData.id) {
-  //         console.log('⚠️ Dados do usuário inválidos, pulando carregamento de favoritos');
-  //         setFavoritos([]);
-  //         return;
-  //       } catch (error) {
-  //         console.log('⚠️ Erro ao parsear dados do usuário, pulando carregamento de favoritos');
-  //         setFavoritos([]);
-  //         return;
-  //       }
+    setItensRecentes(itensOrdenados);
+  }, [notas, links]);
 
-  //       const favoritas = await buscarFavoritas();
-  //       setFavoritos(favoritas.slice(0, 5)); // Mostrar apenas os 5 primeiros
-  //     } catch (error) {
-  //       console.error('Erro ao carregar favoritos:', error);
-  //       setFavoritos([]);
-  //     } finally {
-  //       setCarregandoFavoritos(false);
-  //     }
-  //   };
-
-  //   carregarFavoritos();
-  // }, []); // Remover buscarFavoritas da dependência para evitar loop
-
-  // Listener para favoritos alterados (DESABILITADO)
-  // useEffect(() => {
-  //   const handleFavoritosAlterados = async () => {
-  //     setCarregandoFavoritos(true);
-  //     try {
-  //       const favoritas = await buscarFavoritas();
-  //       setFavoritos(favoritas.slice(0, 5));
-  //     } catch (error) {
-  //       console.error('Erro ao atualizar favoritos:', error);
-  //     } finally {
-  //       setCarregandoFavoritos(false);
-  //     }
-  //   };
-
-  //   window.addEventListener('favoritosAlterados', handleFavoritosAlterados);
-
-  //   return () => {
-  //     window.removeEventListener('favoritosAlterados', handleFavoritosAlterados);
-  //   };
-  // }, []);
-
-  // Listener para logout (DESABILITADO)
-  // useEffect(() => {
-  //   const handleUserLogout = () => {
-  //     console.log('🚪 Evento de logout detectado no TelaInicial');
-  //     setFavoritos([]);
-  //   };
-
-  //   window.addEventListener('userLogout', handleUserLogout);
-
-  //   return () => {
-  //     window.removeEventListener('userLogout', handleUserLogout);
-  //   };
-  // }, []);
-
-  const handleAdicionar = useCallback((posicao = null) => {
-    setEditando(null);
-    setFormData({ nome: '', urlIcone: '', urlDestino: '' });
-    setMostrarModal(true);
-    // Se uma posição foi especificada, vamos usá-la
-    if (posicao !== null) {
-      setEditando({ posicao }); // Usar objeto para indicar posição específica
+  const handleItemClick = (item) => {
+    if (item.tipo === 'nota') {
+      onVisualizarItem(item);
+    } else if (item.tipo === 'link') {
+      window.open(item.url, '_blank');
     }
-  }, []);
+  };
 
-  const handleClick = useCallback((icone) => {
-    window.open(icone.urlDestino, '_blank');
-  }, []);
+  const handleNovoItem = (tipo) => {
+    setTipoNovoItem(tipo);
+    setModalAberto(true);
+  };
 
-  const handleEditar = useCallback((icone, index) => {
-    setEditando(icone.id);
-    setFormData({
-      nome: icone.nome,
-      urlIcone: icone.urlIcone,
-      urlDestino: icone.urlDestino
-    });
-    setMostrarModal(true);
-  }, []);
+  const handleConfirmarNovo = () => {
+    onNovoItem();
+    setModalAberto(false);
+    setTipoNovoItem(null);
+  };
 
-  const handleSalvar = useCallback(async () => {
-    if (formData.nome.trim() && formData.urlIcone.trim() && formData.urlDestino.trim()) {
-      try {
-        // Determinar a posição
-        let posicao;
-        if (editando && typeof editando === 'object' && editando.posicao !== undefined) {
-          // Nova posição específica
-          posicao = editando.posicao;
-        } else if (editando && typeof editando === 'string') {
-          // Editando link existente - manter posição atual
-          const linkExistente = icones.find(icon => icon.id === editando);
-          posicao = linkExistente ? linkExistente.posicao : icones.length;
-        } else {
-          // Novo link - encontrar próxima posição vazia ou adicionar ao final
-          const posicoesOcupadas = icones.map(icon => icon.posicao).sort((a, b) => a - b);
-          posicao = 0;
-          for (let i = 0; i < posicoesOcupadas.length; i++) {
-            if (posicoesOcupadas[i] !== i) {
-              posicao = i;
-              break;
-            }
-            posicao = i + 1;
-          }
-        }
+  const handleFecharModal = () => {
+    setModalAberto(false);
+    setTipoNovoItem(null);
+  };
 
-        const linkData = {
-          nome: formData.nome.trim(),
-          urlIcone: formData.urlIcone.trim(),
-          urlDestino: formData.urlDestino.trim(),
-          posicao: posicao
-        };
-
-        if (editando && typeof editando === 'string') {
-          // Atualizar link existente
-          console.log('🔄 Atualizando link existente:', editando);
-          await linksAPI.atualizar(editando, linkData);
-          console.log('✅ Link atualizado com sucesso');
-        } else {
-          // Criar novo link
-          console.log('🔄 Criando novo link:', linkData);
-          await linksAPI.criar(linkData);
-          console.log('✅ Link criado com sucesso');
-        }
-
-        // Recarregar links do banco
-        console.log('🔄 Recarregando links após salvar...');
-        await carregarLinks();
-        console.log('✅ Links recarregados com sucesso');
-        
-        setMostrarModal(false);
-        setEditando(null);
-        setFormData({ nome: '', urlIcone: '', urlDestino: '' });
-      } catch (error) {
-        console.error('Erro ao salvar link:', error);
-        alert('Erro ao salvar link. Tente novamente.');
-      }
-    }
-  }, [formData, editando, icones, carregarLinks]);
-
-  const handleCancelar = useCallback(() => {
-    setMostrarModal(false);
-    setEditando(null);
-    setFormData({ nome: '', urlIcone: '', urlDestino: '' });
-  }, []);
-
-  const handleRemover = useCallback(async (index) => {
-    const icone = icones.find(icon => icon.posicao === index);
-    if (!icone) {
-      console.log('❌ Ícone não encontrado para posição:', index);
-      return;
-    }
-
-    console.log('🔄 Tentando remover ícone:', icone);
-    console.log('🆔 ID do ícone:', icone.id);
-
-    if (window.confirm('Tem certeza que deseja remover este ícone?')) {
-      try {
-        console.log('🗑️ Executando exclusão do link ID:', icone.id);
-        await linksAPI.excluir(icone.id);
-        console.log('✅ Link excluído com sucesso');
-        
-        console.log('🔄 Recarregando links após exclusão...');
-        await carregarLinks();
-        console.log('✅ Links recarregados após exclusão');
-      } catch (error) {
-        console.error('❌ Erro ao remover link:', error);
-        alert('Erro ao remover link. Tente novamente.');
-      }
-    }
-  }, [icones, carregarLinks]);
-
-  // Drag & Drop - Reordenação livre
-  const handleDragStart = useCallback((e, index) => {
-    setArrastando(index);
-    e.dataTransfer.effectAllowed = 'move';
-  }, []);
-
-  const handleDragOver = useCallback((e, index) => {
-    e.preventDefault();
-    if (arrastando !== null && arrastando !== index) {
-      setSobre(index);
-    }
-  }, [arrastando]);
-
-  const handleDragLeave = useCallback(() => {
-    setSobre(null);
-  }, []);
-
-  const handleDrop = useCallback(async (e, index) => {
-    e.preventDefault();
-    if (arrastando !== null && arrastando !== index) {
-      try {
-        setReordenando(true);
-        
-        // Encontrar o link que está sendo movido
-        const linkMovido = icones.find(icon => icon.posicao === arrastando);
-        if (!linkMovido) return;
-
-        // Encontrar o link que está na posição de destino (se houver)
-        const linkDestino = icones.find(icon => icon.posicao === index);
-        
-        // Criar nova lista com as posições atualizadas
-        const novosIcones = icones.map(icon => {
-          if (icon.posicao === arrastando) {
-            // Link movido vai para a nova posição
-            return { ...icon, posicao: index };
-          } else if (linkDestino && icon.posicao === index) {
-            // Link que estava na posição de destino vai para a posição do link movido
-            return { ...icon, posicao: arrastando };
-          }
-          return icon;
-        });
-        
-        // Atualizar posições no banco
-        const linksComPosicoes = novosIcones.map(icone => ({
-          id: icone.id,
-          posicao: icone.posicao
-        }));
-        
-        // Salvar no banco
-        await linksAPI.atualizarPosicoes(linksComPosicoes);
-        
-        // Recarregar do banco
-        await carregarLinks();
-      } catch (error) {
-        console.error('Erro ao reordenar links:', error);
-        alert('Erro ao reordenar links. Tente novamente.');
-      } finally {
-        setReordenando(false);
-      }
-    }
-    setArrastando(null);
-    setSobre(null);
-  }, [arrastando, icones, carregarLinks]);
-
-  const handleDragEnd = useCallback(() => {
-    setArrastando(null);
-    setSobre(null);
-  }, []);
-
-  // const handleFavoritoClick = (nota) => {
-  //   // Disparar evento customizado para abrir a nota
-  //   window.dispatchEvent(new CustomEvent('abrirNota', { 
-  //     detail: { nota } 
-  //   }));
-  // };
-
-  // Criar grade 7x5 (35 posições)
-  const posicoes = Array.from({ length: 35 }, (_, i) => i);
-
-  // Mostrar loading
-  if (carregando) {
-    return (
-      <Container>
-        <Loading texto="Carregando links de atalho..." />
-      </Container>
-    );
-  }
-
-  // Mostrar erro
-  if (erro) {
-    return (
-      <Container>
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '50px',
-          color: 'var(--corErro)'
-        }}>
-          <h3>Erro ao carregar links</h3>
-          <p>{erro}</p>
-          <button 
-            onClick={carregarLinks}
-            style={{
-              padding: '10px 20px',
-              background: 'var(--corPrimaria)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--bordaRaioMedia)',
-              cursor: 'pointer',
-              marginTop: '20px'
-            }}
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </Container>
-    );
+  if (carregando || carregandoLinks) {
+    return <Loading />;
   }
 
   return (
     <Container>
-      <Titulo>Links de atalho</Titulo>
-        <Subtitulo>
-          Organize seus links de atalho favoritos. Clique em "Adicionar Ícone" para começar,
-          ou arraste e solte para reorganizar
-        </Subtitulo>
+      <Titulo>Bem-vindo ao WRTmind</Titulo>
+      <Subtitulo>
+        Gerencie suas notas e links de forma organizada e eficiente.
+      </Subtitulo>
 
-      <GradeContainer style={{ position: 'relative' }}>
-        {reordenando && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            borderRadius: 'var(--bordaRaioMedia)'
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                border: '4px solid var(--corPrimaria)',
-                borderTop: '4px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }}></div>
-              <span style={{ color: 'var(--corPrimaria)', fontWeight: 'bold' }}>
-                Reposicionando...
-              </span>
-            </div>
-          </div>
-        )}
-        
-        {posicoes.map((posicao) => {
-          const icone = icones.find(icon => icon.posicao === posicao);
-          
-          if (!icone) {
-            // Posição vazia - mostrar botão de adicionar
-            return (
-              <BotaoAdicionar 
-                key={`empty-${posicao}`} 
-                onClick={() => !reordenando && handleAdicionar(posicao)}
-                className={`${sobre === posicao ? 'sobre' : ''}`}
-                onDragOver={(e) => !reordenando && handleDragOver(e, posicao)}
-                onDragLeave={!reordenando ? handleDragLeave : undefined}
-                onDrop={(e) => !reordenando && handleDrop(e, posicao)}
-                style={{ 
-                  pointerEvents: reordenando ? 'none' : 'auto',
-                  opacity: reordenando ? 0.6 : 1
-                }}
-              >
-                <IconeAdicionar>
-                  <FontAwesomeIcon icon={faPlus} />
-                </IconeAdicionar>
-                <TextoAdicionar>Adicionar Ícone</TextoAdicionar>
-              </BotaoAdicionar>
-            );
-          }
+      <GradeContainer>
+        {/* Notas */}
+        <IconeItem onClick={() => handleNovoItem('nota')}>
+          <FontAwesomeIcon 
+            icon={faStickyNote} 
+            style={{ fontSize: '48px', color: 'var(--corPrimaria)' }}
+          />
+          <IconeTexto>
+            Notas
+            <Contador>{notas?.length || 0}</Contador>
+          </IconeTexto>
+        </IconeItem>
 
-          return (
-            <IconeItem
-              key={icone.id}
-              className={`${arrastando === posicao ? 'arrastando' : ''} ${sobre === posicao ? 'sobre' : ''}`}
-              draggable={!reordenando}
-              onDragStart={(e) => !reordenando && handleDragStart(e, posicao)}
-              onDragOver={(e) => !reordenando && handleDragOver(e, posicao)}
-              onDragLeave={!reordenando ? handleDragLeave : undefined}
-              onDrop={(e) => !reordenando && handleDrop(e, posicao)}
-              onDragEnd={!reordenando ? handleDragEnd : undefined}
-              onClick={() => !reordenando && handleClick(icone)}
-              onMouseEnter={(e) => {
-                if (!reordenando) {
-                  e.currentTarget.querySelector('.acoes-icone').style.opacity = '1';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!reordenando) {
-                  e.currentTarget.querySelector('.acoes-icone').style.opacity = '0';
-                }
-              }}
-              style={{ 
-                pointerEvents: reordenando ? 'none' : 'auto',
-                opacity: reordenando ? 0.6 : 1
-              }}
-            >
-              <IconeImagem 
-                src={icone.urlIcone} 
-                alt={icone.nome}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-              <IconeTexto>{icone.nome}</IconeTexto>
-              
-              <AcoesIcone className="acoes-icone" onClick={(e) => e.stopPropagation()}>
-                <BotaoAcao
-                  onClick={() => !reordenando && handleEditar(icone, posicao)}
-                  title="Editar"
-                  disabled={reordenando}
-                  style={{ opacity: reordenando ? 0.5 : 1, cursor: reordenando ? 'not-allowed' : 'pointer' }}
-                >
-                  <FontAwesomeIcon icon={faEdit} size="sm" />
-                </BotaoAcao>
-                <BotaoAcao
-                  className="danger"
-                  onClick={() => !reordenando && handleRemover(posicao)}
-                  title="Remover"
-                  disabled={reordenando}
-                  style={{ opacity: reordenando ? 0.5 : 1, cursor: reordenando ? 'not-allowed' : 'pointer' }}
-                >
-                  <FontAwesomeIcon icon={faTrash} size="sm" />
-                </BotaoAcao>
-                <BotaoAcao
-                  onClick={() => !reordenando && handleClick(icone)}
-                  title="Abrir"
-                  disabled={reordenando}
-                  style={{ opacity: reordenando ? 0.5 : 1, cursor: reordenando ? 'not-allowed' : 'pointer' }}
-                >
-                  <FontAwesomeIcon icon={faExternalLinkAlt} size="sm" />
-                </BotaoAcao>
-              </AcoesIcone>
-            </IconeItem>
-          );
-        })}
+        {/* Links */}
+        <IconeItem onClick={() => handleNovoItem('link')}>
+          <FontAwesomeIcon 
+            icon={faLink} 
+            style={{ fontSize: '48px', color: 'var(--corSecundaria)' }}
+          />
+          <IconeTexto>
+            Links
+            <Contador>{links?.length || 0}</Contador>
+          </IconeTexto>
+        </IconeItem>
+
+        {/* Favoritos */}
+        <IconeItem onClick={() => window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'favoritos' }))}>
+          <FontAwesomeIcon 
+            icon={faHeart} 
+            style={{ fontSize: '48px', color: '#FF6B6B' }}
+          />
+          <IconeTexto>
+            Favoritos
+            <Contador>
+              {(notas?.filter(n => n.favorito) || []).length}
+            </Contador>
+          </IconeTexto>
+        </IconeItem>
+
+        {/* Adicionar novo */}
+        <BotaoAdicionar onClick={() => handleNovoItem('nota')}>
+          <IconeAdicionar>
+            <FontAwesomeIcon icon={faPlus} />
+          </IconeAdicionar>
+          <TextoAdicionar>Adicionar</TextoAdicionar>
+        </BotaoAdicionar>
       </GradeContainer>
 
-      {/* <SecaoFavoritos>
-        <TituloSecao>
-          <FontAwesomeIcon icon={faHeart} style={{ color: '#FF6B6B' }} />
-          Favoritos Recentes
-        </TituloSecao>
-        {carregandoFavoritos ? (
-          <p>Carregando favoritos...</p>
-        ) : favoritos.length > 0 ? (
-          <ListaFavoritos>
-            {favoritos.map(nota => (
-              <ItemFavorito 
-                key={nota.id || nota._id}
-                onClick={() => handleFavoritoClick(nota)}
-                title={`Clique para abrir: ${nota.titulo}`}
+      {/* Itens Recentes */}
+      {itensRecentes.length > 0 && (
+        <>
+          <Titulo style={{ marginTop: '3rem', fontSize: '1.8rem' }}>
+            Itens Recentes
+          </Titulo>
+          <GradeContainer>
+            {itensRecentes.map((item) => (
+              <IconeItem 
+                key={`${item.tipo}-${item.id}`}
+                onClick={() => handleItemClick(item)}
               >
-                <TituloFavorito>{nota.titulo}</TituloFavorito>
-                <DataFavorito>{formatarData(nota.dataModificacao)}</DataFavorito>
-              </ItemFavorito>
+                <FontAwesomeIcon 
+                  icon={item.tipo === 'nota' ? faStickyNote : faLink}
+                  style={{ 
+                    fontSize: '32px', 
+                    color: item.tipo === 'nota' ? 'var(--corPrimaria)' : 'var(--corSecundaria)' 
+                  }}
+                />
+                <IconeTexto>
+                  {item.titulo || item.nome}
+                  <br />
+                  <small style={{ color: 'var(--corTextoSecundaria)' }}>
+                    {formatarData(item.dataCriacao)}
+                  </small>
+                </IconeTexto>
+              </IconeItem>
             ))}
-          </ListaFavoritos>
-        ) : (
-          <p>Nenhum favorito encontrado.</p>
-        )}
-      </SecaoFavoritos> */}
+          </GradeContainer>
+        </>
+      )}
 
-      {/* Modal */}
-      {mostrarModal && (
-        <ModalOverlay onClick={handleCancelar}>
+      {/* Modal de confirmação */}
+      {modalAberto && (
+        <ModalOverlay onClick={handleFecharModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
-                {editando && typeof editando === 'string' ? 'Editar Ícone' : 'Adicionar Ícone'}
+                Novo {tipoNovoItem === 'nota' ? 'Nota' : 'Link'}
               </ModalTitle>
-              <BotaoFechar onClick={handleCancelar}>
+              <BotaoFechar onClick={handleFecharModal}>
                 <FontAwesomeIcon icon={faTimes} />
               </BotaoFechar>
             </ModalHeader>
-
-            <FormGroup>
-              <Label>Nome do Ícone</Label>
-              <Input
-                type="text"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Ex: Google"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>URL do Ícone</Label>
-              <Input
-                type="url"
-                value={formData.urlIcone}
-                onChange={(e) => setFormData({ ...formData, urlIcone: e.target.value })}
-                placeholder="https://exemplo.com/favicon.ico"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>URL de Destino</Label>
-              <Input
-                type="url"
-                value={formData.urlDestino}
-                onChange={(e) => setFormData({ ...formData, urlDestino: e.target.value })}
-                placeholder="https://exemplo.com"
-              />
-            </FormGroup>
-
-            <BotaoSalvar onClick={handleSalvar}>
-              {editando && typeof editando === 'string' ? 'Atualizar' : 'Adicionar'}
-            </BotaoSalvar>
+            
+            <p style={{ marginBottom: '1.5rem', color: 'var(--corTextoSecundaria)' }}>
+              Deseja criar um novo {tipoNovoItem === 'nota' ? 'nota' : 'link'}?
+            </p>
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={handleFecharModal}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: '1px solid var(--corBordaPrimaria)',
+                  background: 'transparent',
+                  borderRadius: 'var(--bordaRaioMedia)',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmarNovo}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: 'none',
+                  background: 'var(--corPrimaria)',
+                  color: 'white',
+                  borderRadius: 'var(--bordaRaioMedia)',
+                  cursor: 'pointer'
+                }}
+              >
+                Criar
+              </button>
+            </div>
           </ModalContent>
         </ModalOverlay>
       )}

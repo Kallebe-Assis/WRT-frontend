@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faTimes, 
-  faSync, 
-  faTrashAlt, 
+import {
+  faTimes,
   faDownload,
-  faEye,
-  faEyeSlash,
-  faFilter
+  faTrash,
+  faSync,
+  faFileAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 const ModalOverlay = styled.div`
@@ -17,29 +15,28 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  padding: 20px;
+  z-index: 1000;
+  padding: var(--espacamentoMedio);
 `;
 
 const ModalContent = styled.div`
-  background: var(--corFundoTerciaria);
+  background: var(--corFundoCard);
   border-radius: var(--bordaRaioGrande);
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--sombraForte);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 `;
 
 const ModalHeader = styled.div`
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: var(--espacamentoGrande);
   border-bottom: 1px solid var(--corBordaPrimaria);
 `;
@@ -47,135 +44,128 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h2`
   color: var(--corTextoPrimaria);
   margin: 0;
+  font-size: 1.5rem;
   display: flex;
   align-items: center;
   gap: var(--espacamentoMedio);
 `;
 
-const CloseButton = styled.button`
+const BotaoFechar = styled.button`
   background: none;
   border: none;
   color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFonteTitulo);
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: var(--espacamentoPequeno);
-  border-radius: var(--bordaRaioMedia);
-  transition: all var(--transicaoRapida);
+  padding: 0.5rem;
+  border-radius: var(--bordaRaioPequena);
 
   &:hover {
-    background: var(--corFundoSecundaria);
+    background: var(--corFundoHover);
     color: var(--corTextoPrimaria);
   }
 `;
 
 const ModalBody = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  padding: var(--espacamentoGrande);
 `;
 
-const ControlsBar = styled.div`
+const ContainerBotoes = styled.div`
   display: flex;
   gap: var(--espacamentoMedio);
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-  background: var(--corFundoSecundaria);
+  margin-bottom: var(--espacamentoGrande);
   flex-wrap: wrap;
 `;
 
-const ControlButton = styled.button`
-  background: ${props => props.variant === 'danger' ? '#dc3545' : 
-                     props.variant === 'success' ? '#28a745' : 
-                     props.variant === 'warning' ? '#ffc107' : 'var(--corPrimaria)'};
+const BotaoAcao = styled.button`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  background: var(--corPrimaria);
   color: white;
   border: none;
   border-radius: var(--bordaRaioMedia);
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
   cursor: pointer;
-  font-size: var(--tamanhoFontePequena);
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
   transition: all var(--transicaoRapida);
 
   &:hover {
-    opacity: 0.8;
+    background: var(--corSecundaria);
     transform: translateY(-1px);
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
   }
 `;
 
-const FilterSelect = styled.select`
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  background: var(--corFundoPrimaria);
+const BotaoSecundario = styled(BotaoAcao)`
+  background: var(--corFundoSecundaria);
   color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFontePequena);
+  border: 2px solid var(--corBordaPrimaria);
+
+  &:hover {
+    background: var(--corFundoTerciaria);
+    border-color: var(--corPrimaria);
+  }
+`;
+
+const BotaoPerigo = styled(BotaoAcao)`
+  background: var(--corErro);
+  color: white;
+
+  &:hover {
+    background: var(--corErroHover);
+  }
 `;
 
 const LogsContainer = styled.div`
-  flex: 1;
+  max-height: 400px;
   overflow-y: auto;
-  padding: var(--espacamentoGrande);
+  border: 1px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
   background: var(--corFundoPrimaria);
 `;
 
-const LogEntry = styled.div`
-  background: var(--corFundoSecundaria);
-  border-radius: var(--bordaRaioMedia);
+const LogItem = styled.div`
   padding: var(--espacamentoMedio);
-  margin-bottom: var(--espacamentoMedio);
-  border-left: 4px solid ${props => {
-    switch (props.type) {
-      case 'firebase': return '#ff6b35';
-      case 'api': return '#007bff';
-      case 'error': return '#dc3545';
-      case 'info': return '#6c757d';
-      case 'success': return '#28a745';
-      default: return '#6c757d';
-    }
-  }};
-`;
-
-const LogHeader = styled.div`
+  border-bottom: 1px solid var(--corBordaPrimaria);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--espacamentoMedio);
-  margin-bottom: var(--espacamentoPequeno);
+  background: ${props => props.tipo === 'error' ? 'rgba(220, 53, 69, 0.1)' : 
+                       props.tipo === 'success' ? 'rgba(40, 167, 69, 0.1)' : 
+                       'rgba(0, 123, 255, 0.1)'};
+  border-left: 4px solid ${props => 
+    props.tipo === 'error' ? '#dc3545' : 
+    props.tipo === 'success' ? '#28a745' : '#007bff'
+  };
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const LogIcon = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${props => {
-    switch (props.type) {
-      case 'firebase': return '#ff6b35';
-      case 'api': return '#007bff';
-      case 'error': return '#dc3545';
-      case 'info': return '#6c757d';
-      case 'success': return '#28a745';
-      default: return '#6c757d';
-    }
-  }};
-  color: white;
-  font-size: 12px;
+  color: ${props => 
+    props.tipo === 'error' ? '#dc3545' : 
+    props.tipo === 'success' ? '#28a745' : '#007bff'
+  };
+  font-size: var(--tamanhoFonteMedia);
+  margin-top: 2px;
+`;
+
+const LogContent = styled.div`
+  flex: 1;
 `;
 
 const LogMessage = styled.div`
-  font-weight: bold;
+  font-weight: 500;
   color: var(--corTextoPrimaria);
-  flex: 1;
+  margin-bottom: var(--espacamentoPequeno);
 `;
 
 const LogTimestamp = styled.div`
@@ -184,174 +174,147 @@ const LogTimestamp = styled.div`
 `;
 
 const LogDetails = styled.div`
-  background: var(--corFundoPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  padding: var(--espacamentoMedio);
-  margin-top: var(--espacamentoMedio);
-  font-family: 'Courier New', monospace;
+  color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFontePequena);
-  white-space: pre-wrap;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid var(--corBordaPrimaria);
-`;
-
-const StatsBar = styled.div`
-  display: flex;
-  gap: var(--espacamentoGrande);
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  margin-top: var(--espacamentoPequeno);
+  font-family: monospace;
   background: var(--corFundoSecundaria);
-  border-bottom: 1px solid var(--corBordaPrimaria);
+  padding: var(--espacamentoPequeno);
+  border-radius: var(--bordaRaioPequena);
+  white-space: pre-wrap;
 `;
 
-const StatItem = styled.div`
+const EstadoVazio = styled.div`
   text-align: center;
-  
-  .stat-number {
-    font-size: var(--tamanhoFonteTitulo);
-    font-weight: bold;
-    color: var(--corPrimaria);
-  }
-  
-  .stat-label {
-    font-size: var(--tamanhoFontePequena);
-    color: var(--corTextoSecundaria);
-  }
+  padding: var(--espacamentoExtraGrande);
+  color: var(--corTextoSecundaria);
 `;
 
-const LogModal = ({ isVisible, onClose, logs = [], stats = null, onRefresh, onClear, onExport, filter, onFilterChange }) => {
-  const [autoScroll, setAutoScroll] = useState(true);
-  const logsContainerRef = React.useRef(null);
+const LogModal = ({
+  isVisible,
+  onClose,
+  onCarregarLogs,
+  onLimparLogs,
+  onExportarLogs
+}) => {
+  const [logs, setLogs] = useState([]);
+  const [carregando, setCarregando] = useState(false);
 
-  // Auto-scroll para o final quando novos logs chegarem
   useEffect(() => {
-    if (autoScroll && logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    if (isVisible) {
+      carregarLogs();
     }
-  }, [logs, autoScroll]);
+  }, [isVisible]);
 
-  if (!isVisible) return null;
+  const carregarLogs = async () => {
+    setCarregando(true);
+    try {
+      const data = await onCarregarLogs();
+      setLogs(data.logs || []);
+    } catch (error) {
+      console.error('Erro ao carregar logs:', error);
+      setLogs([]);
+    } finally {
+      setCarregando(false);
+    }
+  };
 
-  const getEmoji = (type) => {
-    switch (type) {
-      case 'firebase': return '🔥';
-      case 'api': return '🌐';
+  const handleLimparLogs = async () => {
+    if (window.confirm('Tem certeza que deseja limpar todos os logs?')) {
+      try {
+        await onLimparLogs();
+        await carregarLogs();
+        alert('Logs limpos com sucesso!');
+      } catch (error) {
+        console.error('Erro ao limpar logs:', error);
+        alert('Erro ao limpar logs: ' + error.message);
+      }
+    }
+  };
+
+  const handleExportarLogs = async () => {
+    try {
+      await onExportarLogs();
+      alert('Logs exportados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar logs:', error);
+      alert('Erro ao exportar logs: ' + error.message);
+    }
+  };
+
+  const formatarTimestamp = (timestamp) => {
+    return new Date(timestamp).toLocaleString('pt-BR');
+  };
+
+  const getIconeTipo = (tipo) => {
+    switch (tipo) {
       case 'error': return '❌';
-      case 'info': return 'ℹ️';
       case 'success': return '✅';
+      case 'info': return 'ℹ️';
       default: return '📝';
     }
   };
 
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString('pt-BR');
-  };
+  if (!isVisible) return null;
 
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
           <ModalTitle>
-            <FontAwesomeIcon icon={faEye} />
-            Logs em Tempo Real
+            <FontAwesomeIcon icon={faFileAlt} />
+            Logs do Sistema
           </ModalTitle>
-          <CloseButton onClick={onClose}>
+          <BotaoFechar onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
-          </CloseButton>
+          </BotaoFechar>
         </ModalHeader>
 
         <ModalBody>
-          {/* Estatísticas */}
-          {stats && (
-            <StatsBar>
-              <StatItem>
-                <div className="stat-number">{stats.total}</div>
-                <div className="stat-label">Total</div>
-              </StatItem>
-              <StatItem>
-                <div className="stat-number" style={{ color: '#ff6b35' }}>{stats.firebase}</div>
-                <div className="stat-label">Firebase</div>
-              </StatItem>
-              <StatItem>
-                <div className="stat-number" style={{ color: '#007bff' }}>{stats.api}</div>
-                <div className="stat-label">API</div>
-              </StatItem>
-              <StatItem>
-                <div className="stat-number" style={{ color: '#dc3545' }}>{stats.error}</div>
-                <div className="stat-label">Erros</div>
-              </StatItem>
-              <StatItem>
-                <div className="stat-number" style={{ color: '#28a745' }}>{stats.info}</div>
-                <div className="stat-label">Info</div>
-              </StatItem>
-            </StatsBar>
-          )}
+          <ContainerBotoes>
+            <BotaoSecundario onClick={carregarLogs} disabled={carregando}>
+              <FontAwesomeIcon icon={faSync} spin={carregando} />
+              {carregando ? 'Carregando...' : 'Atualizar'}
+            </BotaoSecundario>
 
-          {/* Controles */}
-          <ControlsBar>
-            <FilterSelect value={filter} onChange={(e) => onFilterChange(e.target.value)}>
-              <option value="all">Todos os tipos</option>
-              <option value="firebase">Firebase</option>
-              <option value="api">API</option>
-              <option value="error">Erros</option>
-              <option value="info">Informações</option>
-              <option value="success">Sucessos</option>
-            </FilterSelect>
-
-            <ControlButton onClick={onRefresh}>
-              <FontAwesomeIcon icon={faSync} />
-              Atualizar
-            </ControlButton>
-
-            <ControlButton variant="success" onClick={onExport}>
+            <BotaoAcao onClick={handleExportarLogs}>
               <FontAwesomeIcon icon={faDownload} />
               Exportar
-            </ControlButton>
+            </BotaoAcao>
 
-            <ControlButton variant="danger" onClick={onClear}>
-              <FontAwesomeIcon icon={faTrashAlt} />
-              Limpar
-            </ControlButton>
+            <BotaoPerigo onClick={handleLimparLogs}>
+              <FontAwesomeIcon icon={faTrash} />
+              Limpar Logs
+            </BotaoPerigo>
+          </ContainerBotoes>
 
-            <ControlButton 
-              variant={autoScroll ? "success" : "warning"}
-              onClick={() => setAutoScroll(!autoScroll)}
-            >
-              <FontAwesomeIcon icon={autoScroll ? faEye : faEyeSlash} />
-              {autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
-            </ControlButton>
-          </ControlsBar>
-
-          {/* Lista de Logs */}
-          <LogsContainer ref={logsContainerRef}>
-            {logs.length === 0 ? (
-              <div style={{ 
-                textAlign: 'center', 
-                padding: 'var(--espacamentoExtraGrande)',
-                color: 'var(--corTextoSecundaria)'
-              }}>
-                Nenhum log encontrado.
-              </div>
+          <LogsContainer>
+            {carregando ? (
+              <EstadoVazio>
+                <FontAwesomeIcon icon={faSync} spin style={{ fontSize: '2rem', marginBottom: '1rem' }} />
+                <p>Carregando logs...</p>
+              </EstadoVazio>
+            ) : logs.length === 0 ? (
+              <EstadoVazio>
+                <FontAwesomeIcon icon={faFileAlt} style={{ fontSize: '2rem', marginBottom: '1rem' }} />
+                <p>Nenhum log encontrado.</p>
+              </EstadoVazio>
             ) : (
               logs.map((log) => (
-                <LogEntry key={log.id} type={log.type}>
-                  <LogHeader>
-                    <LogIcon type={log.type}>
-                      {getEmoji(log.type)}
-                    </LogIcon>
+                <LogItem key={log.id} tipo={log.type}>
+                  <LogIcon tipo={log.type}>
+                    {getIconeTipo(log.type)}
+                  </LogIcon>
+                  <LogContent>
                     <LogMessage>{log.message}</LogMessage>
-                    <LogTimestamp>{formatTimestamp(log.timestamp)}</LogTimestamp>
-                  </LogHeader>
-                  
-                  {log.details && (
-                    <LogDetails>
-                      {typeof log.details === 'object' 
-                        ? JSON.stringify(log.details, null, 2)
-                        : log.details
-                      }
-                    </LogDetails>
-                  )}
-                </LogEntry>
+                    <LogTimestamp>{formatarTimestamp(log.timestamp)}</LogTimestamp>
+                    {log.details && Object.keys(log.details).length > 0 && (
+                      <LogDetails>
+                        {JSON.stringify(log.details, null, 2)}
+                      </LogDetails>
+                    )}
+                  </LogContent>
+                </LogItem>
               ))
             )}
           </LogsContainer>

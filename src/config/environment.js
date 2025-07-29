@@ -10,7 +10,7 @@ console.log('🌐 Configuração de ambiente:', {
 });
 
 export const config = {
-  // API Configuration
+  // API Configuration - Usando backend da Vercel
   API_BASE_URL: 'https://wrt-back.vercel.app/api',
   
   // Environment
@@ -55,16 +55,27 @@ export const apiRequest = async (endpoint, options = {}) => {
   
   // Adicionar user-id se disponível
   const user = localStorage.getItem('user');
+  console.log('🔍 apiRequest - User do localStorage:', user);
+  
   if (user) {
     try {
       const userData = JSON.parse(user);
+      console.log('🔍 apiRequest - UserData:', userData);
+      
       if (userData.id) {
         defaultOptions.headers['user-id'] = userData.id;
+        console.log('🔍 apiRequest - Header user-id adicionado:', userData.id);
+      } else {
+        console.log('❌ apiRequest - UserData.id não encontrado');
       }
     } catch (error) {
-      console.error('Erro ao obter ID do usuário:', error);
+      console.error('❌ apiRequest - Erro ao obter ID do usuário:', error);
     }
+  } else {
+    console.log('❌ apiRequest - User não encontrado no localStorage');
   }
+  
+  console.log('🔍 apiRequest - Headers finais:', defaultOptions.headers);
   
   return fetch(url, defaultOptions);
 };

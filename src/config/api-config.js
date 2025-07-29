@@ -1,65 +1,40 @@
-// Configuração da API para diferentes ambientes
+// Configuração da API - Usando backend da Vercel
 const API_CONFIG = {
-  development: {
-    baseURL: 'http://localhost:5000/api',
-    timeout: 10000,
-    retries: 3
-  },
-  production: {
+  vercel: {
     baseURL: 'https://wrt-back.vercel.app/api',
     timeout: 15000,
     retries: 5
   },
-  // URL alternativa para teste
-  alternative: {
-    baseURL: 'https://wrt-back.vercel.app/api',
+  local: {
+    baseURL: 'http://localhost:5000/api',
     timeout: 15000,
     retries: 5
   }
 };
 
-// Detectar ambiente
-const isDevelopment = process.env.NODE_ENV === 'development' || 
-                     window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1';
+// Usar backend da Vercel em produção, local em desenvolvimento
+const currentConfig = API_CONFIG.vercel;
 
-// Selecionar configuração
-const currentConfig = isDevelopment ? API_CONFIG.development : API_CONFIG.production;
-
-// Função para alternar configuração manualmente
-export const switchToAlternative = () => {
-  console.log('🔄 Alternando para configuração alternativa');
-  return API_CONFIG.alternative;
-};
-
-// Função para testar conectividade
+// Função para testar conectividade com back-end da Vercel
 export const testConnection = async () => {
-  const configs = [
-    { name: 'Development', config: API_CONFIG.development },
-    { name: 'Production', config: API_CONFIG.production },
-    { name: 'Alternative', config: API_CONFIG.alternative }
-  ];
-
-  for (const { name, config } of configs) {
-    try {
-      console.log(`🧪 Testando ${name}: ${config.baseURL}/health`);
-      const response = await fetch(`${config.baseURL}/health`, {
-        method: 'GET',
-        timeout: config.timeout
-      });
-      
-      if (response.ok) {
-        console.log(`✅ ${name} está funcionando!`);
-        return config;
-      } else {
-        console.log(`❌ ${name} retornou status: ${response.status}`);
-      }
-    } catch (error) {
-      console.log(`❌ ${name} falhou:`, error.message);
+  try {
+    console.log('🧪 Testando Back-end da Vercel:', currentConfig.baseURL);
+    const response = await fetch(`${currentConfig.baseURL}/test`, {
+      method: 'GET',
+      timeout: currentConfig.timeout
+    });
+    
+    if (response.ok) {
+      console.log('✅ Back-end da Vercel está funcionando!');
+      return currentConfig;
+    } else {
+      console.log(`❌ Back-end da Vercel retornou status: ${response.status}`);
     }
+  } catch (error) {
+    console.log('❌ Back-end da Vercel falhou:', error.message);
   }
   
-  console.log('❌ Nenhuma configuração funcionou');
+  console.log('❌ Back-end da Vercel não está acessível');
   return null;
 };
 

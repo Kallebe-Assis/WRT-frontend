@@ -1,527 +1,293 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faEdit, 
-  faTrash, 
-  faEye, 
-  faCopy,
-  faCalendar,
-  faClock,
-  faTag,
-  faFlag,
-  faCheckCircle,
-  faUsers,
-  faStickyNote,
-  faExpand,
-  faShare,
-  faWhatsapp,
-  faTelegram,
-  faEnvelope,
-  faDownload,
-  faPrint,
-  faBookmark,
-  faBookmark as faBookmarkSolid,
-  faHeart,
-  faHeart as faHeartSolid,
-  faStar,
-  faStar as faStarSolid,
-  faMagic,
-  faRocket,
-  faLightbulb,
-  faQrcode,
-  faLink,
-  faFileExport,
-  faFileImport,
-  faCog,
-  faPalette,
-  faFont,
-  faSearch,
-  faUndo,
-  faRedo,
-  faSave,
-  faEyeSlash,
-  faCompress,
-  faExternalLinkAlt,
-  faShareAlt,
-  faCrown,
-  faFire,
-  faRainbow
-} from '@fortawesome/free-solid-svg-icons';
 import {
-  formatarData,
-  truncarTexto,
-  formatarCategoria,
-  formatarStatus,
-  formatarPrioridade,
-  obterCorStatus,
-  obterCorPrioridade,
-  copiarParaClipboard
-} from '../utils/formatacao';
+  faEdit,
+  faTrash,
+  faExternalLinkAlt,
+  faCopy,
+  faExpand,
+  faFileExport,
+  faPrint,
+  faStar
+} from '@fortawesome/free-solid-svg-icons';
+import { formatarData } from '../utils/formatacao';
 
-const CardContainer = styled.div`
+const Card = styled.div`
   background: var(--corFundoCard);
-  border: 1px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioGrande);
-  padding: ${props => props.tipo === 'nota' ? 'var(--espacamentoMedio)' : 'var(--espacamentoGrande)'};
-  margin-bottom: var(--espacamentoMedio);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio);
   transition: all var(--transicaoMedia);
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-
+  
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--sombraHover);
     border-color: var(--corPrimaria);
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: ${props => props.corDestaque || 'var(--corPrimaria)'};
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
   }
 `;
 
 const CardHeader = styled.div`
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: var(--espacamentoMedio);
 `;
 
 const CardTitle = styled.h3`
-  color: var(--corTextoPrimaria);
-  font-size: ${props => props.tipo === 'nota' ? 'var(--tamanhoFonteGrande)' : 'var(--tamanhoFonteExtraGrande)'};
+  font-size: var(--tamanhoFonteGrande);
   font-weight: 600;
+  color: var(--corTextoPrimaria);
   margin: 0;
-  line-height: 1.3;
   flex: 1;
-  margin-right: var(--espacamentoMedio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const CardActions = styled.div`
   display: flex;
+  align-items: center;
   gap: var(--espacamentoPequeno);
   opacity: 0;
   transition: opacity var(--transicaoRapida);
-  flex-shrink: 0;
-
-  ${CardContainer}:hover & {
+  
+  ${Card}:hover & {
     opacity: 1;
   }
 `;
 
-const ActionButton = styled.button`
-  background: var(--corFundoSecundaria);
-  color: var(--corTextoSecundaria);
+const CardActionButton = styled.button`
+  background: none;
   border: none;
-  border-radius: var(--bordaRaioPequena);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--corTextoSecundaria);
   cursor: pointer;
+  padding: 4px;
+  border-radius: var(--bordaRaioPequena);
   transition: all var(--transicaoRapida);
-  font-size: var(--tamanhoFontePequena);
-
+  
   &:hover {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-    transform: scale(1.1);
+    background: var(--corFundoTerciaria);
+    color: var(--corTextoPrimaria);
   }
-
-  &.danger:hover {
-    background: var(--corErro);
-  }
-`;
-
-const CardMeta = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--espacamentoMedio);
-  margin-bottom: var(--espacamentoMedio);
-`;
-
-const Badge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  padding: 4px 12px;
-  border-radius: 15px;
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 500;
-  background: ${props => props.background || 'var(--corFundoSecundaria)'};
-  color: ${props => props.color || 'var(--corTextoPrimaria)'};
-  border: 1px solid ${props => props.border || 'transparent'};
 `;
 
 const CardContent = styled.div`
   color: var(--corTextoSecundaria);
-  line-height: 1.6;
+  font-size: var(--tamanhoFontePequena);
+  line-height: 1.5;
   margin-bottom: var(--espacamentoMedio);
-  max-height: 120px;
   overflow: hidden;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 50px;
-    height: 20px;
-    background: linear-gradient(transparent, var(--corFundoCard));
-    pointer-events: none;
-  }
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 `;
 
 const CardFooter = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
 `;
 
-const CardDates = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const DateItem = styled.div`
+const CardMeta = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--espacamentoPequeno);
+  gap: var(--espacamentoMedio);
 `;
 
-const PriorityIndicator = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: var(--bordaRaioCircular);
-  background: ${props => props.cor};
-  flex-shrink: 0;
+const CardTag = styled.span`
+  background: var(--corPrimaria);
+  color: white;
+  padding: 2px 8px;
+  border-radius: var(--bordaRaioPequena);
+  font-size: var(--tamanhoFontePequena);
+  font-weight: 500;
 `;
 
-const StatusIndicator = styled.div`
-  width: 12px;
-  height: 12px;
-  border-radius: var(--bordaRaioCircular);
-  background: ${props => props.cor};
-  border: 2px solid var(--corFundoCard);
-  flex-shrink: 0;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: var(--espacamentoExtraGrande);
-  color: var(--corTextoSecundaria);
-`;
-
-const EmptyIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: var(--espacamentoMedio);
-  opacity: 0.5;
-`;
-
-const EmptyTitle = styled.h3`
-  color: var(--corTextoPrimaria);
-  margin-bottom: var(--espacamentoPequeno);
-`;
-
-const EmptyText = styled.p`
-  margin: 0;
-  line-height: 1.6;
-`;
-
-const CardItem = ({ 
-  item, 
-  tipo, 
-  onEditar, 
-  onExcluir, 
+const CardItem = ({
+  item,
+  tipo,
+  onEditar,
+  onExcluir,
   onVisualizar,
   onCopiar,
-  onTelaCheia,
-  onCompartilhar,
-  onFavoritar,
-  onBookmark,
   onExportar,
-  onImprimir
+  onImprimir,
+  onTelaCheia,
+  onFavoritar
 }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => {
-    // Carregar estado de favorito e bookmark do localStorage
-    const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
-    const bookmarks = JSON.parse(localStorage.getItem('notasBookmarks') || '[]');
-    
-    setIsFavorite(favorites.includes(item.id || item._id));
-    setIsBookmarked(bookmarks.includes(item.id || item._id));
-  }, [item]);
-
-  const handleCopiar = async () => {
-    const textoParaCopiar = `${item.titulo}\n\n${item.conteudo || ''}`;
-    const sucesso = await copiarParaClipboard(textoParaCopiar);
-    
-    if (sucesso && onCopiar) {
-      onCopiar('Conteúdo copiado para a área de transferência!');
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (tipo === 'link') {
+      window.open(item.url, '_blank');
+    } else {
+      onVisualizar(item);
     }
   };
 
-  const handleClickCard = () => {
-    // Ao clicar em qualquer lugar da nota, vai direto para edição
+  const handleFavoritar = (e) => {
+    e.stopPropagation();
+    onFavoritar(item.id);
+  };
+
+  const handleEditar = (e) => {
+    e.stopPropagation();
     onEditar(item);
   };
 
   const handleExcluir = (e) => {
     e.stopPropagation();
-    
-    // Confirmação antes de deletar
-    const confirmacao = window.confirm(
-      `Tem certeza que deseja excluir a nota "${item.titulo}"?\n\nEsta ação não pode ser desfeita.`
-    );
-    
-    if (confirmacao) {
-      onExcluir(item._id || item.id);
+    if (window.confirm('Tem certeza que deseja excluir este item?')) {
+      onExcluir(item.id);
     }
   };
 
-  const handleFavoritar = async (e) => {
+  const handleCopiar = (e) => {
     e.stopPropagation();
-    
-    try {
-      if (onFavoritar) {
-        await onFavoritar(item._id || item.id);
-        
-        // Atualizar estado local
-        setIsFavorite(!isFavorite);
-        
-        // Atualizar localStorage
-        const favorites = JSON.parse(localStorage.getItem('notasFavoritas') || '[]');
-        const notaId = item.id || item._id;
-        
-        if (isFavorite) {
-          const newFavorites = favorites.filter(id => id !== notaId);
-          localStorage.setItem('notasFavoritas', JSON.stringify(newFavorites));
-        } else {
-          favorites.push(notaId);
-          localStorage.setItem('notasFavoritas', JSON.stringify(favorites));
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao favoritar nota:', error);
-    }
+    onCopiar(item);
   };
 
-  const handleBookmark = (e) => {
+  const handleTelaCheia = (e) => {
     e.stopPropagation();
-    
-    const bookmarks = JSON.parse(localStorage.getItem('notasBookmarks') || '[]');
-    const notaId = item.id || item._id;
-    
-    if (isBookmarked) {
-      const newBookmarks = bookmarks.filter(id => id !== notaId);
-      localStorage.setItem('notasBookmarks', JSON.stringify(newBookmarks));
-    } else {
-      bookmarks.push(notaId);
-      localStorage.setItem('notasBookmarks', JSON.stringify(bookmarks));
+    onTelaCheia(item);
+  };
+
+  const handleExportar = (e) => {
+    e.stopPropagation();
+    onExportar(item);
+  };
+
+  const handleImprimir = (e) => {
+    e.stopPropagation();
+    onImprimir(item);
+  };
+
+  const getContent = () => {
+    if (tipo === 'nota') {
+      return item.conteudo?.length > 150 
+        ? `${item.conteudo.substring(0, 150)}...`
+        : item.conteudo;
+    } else if (tipo === 'link') {
+      return item.url;
     }
-    
-    setIsBookmarked(!isBookmarked);
-    
-    if (onBookmark) {
-      onBookmark(item);
-    }
+    return '';
   };
 
-  const obterIconeTipo = () => {
-    return faStickyNote; // Sempre nota para o novo sistema
+  const getDate = () => {
+    return item.dataCriacao || item.dataModificacao;
   };
-
-  const obterCorDestaque = () => {
-    return 'var(--corPrimaria)'; // Cor padrão para notas
-  };
-
-  const renderizarConteudo = () => {
-    if (!item.conteudo) {
-      return <em>Sem conteúdo</em>;
-    }
-    
-    // Remove tags HTML para exibição no card
-    const textoLimpo = item.conteudo.replace(/<[^>]*>/g, '');
-    const limite = tipo === 'nota' ? 80 : 150;
-    return truncarTexto(textoLimpo, limite);
-  };
-
-  const renderizarBadges = () => {
-    const badges = [];
-
-    // Badge de tópico
-    if (item.topico) {
-      badges.push(
-        <Badge key="topico" background="var(--corFundoSecundaria)">
-          <FontAwesomeIcon icon={faTag} size="xs" />
-          {item.topico}
-        </Badge>
-      );
-    }
-
-    return badges;
-  };
-
-  if (!item) {
-    return (
-      <EmptyState>
-        <EmptyIcon>
-          <FontAwesomeIcon icon={obterIconeTipo()} />
-        </EmptyIcon>
-        <EmptyTitle>Nenhum {tipo} encontrado</EmptyTitle>
-        <EmptyText>
-          Clique no botão "Novo {tipo}" para criar seu primeiro {tipo}.
-        </EmptyText>
-      </EmptyState>
-    );
-  }
 
   return (
-    <CardContainer 
-      tipo={tipo}
-      corDestaque={obterCorDestaque()}
-      onClick={handleClickCard}
-      title="Clique para editar esta nota"
-    >
+    <Card onClick={handleClick}>
       <CardHeader>
-        <CardTitle tipo={tipo}>{item.titulo}</CardTitle>
+        <CardTitle>
+          {tipo === 'nota' ? item.titulo : item.nome}
+        </CardTitle>
         <CardActions>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onTelaCheia && onTelaCheia(item);
-            }}
-            title="Visualizar em tela cheia"
-          >
-            <FontAwesomeIcon icon={faExpand} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onCompartilhar && onCompartilhar(item);
-            }}
-            title="Compartilhar"
-          >
-            <FontAwesomeIcon icon={faShare} />
-          </ActionButton>
-          <ActionButton
-            onClick={handleFavoritar}
-            title="Favoritar"
-            style={{ color: isFavorite ? '#FF6B6B' : 'inherit' }}
-          >
-            <FontAwesomeIcon icon={isFavorite ? faHeartSolid : faHeart} />
-          </ActionButton>
-          <ActionButton
-            onClick={handleBookmark}
-            title="Adicionar aos favoritos"
-            style={{ color: isBookmarked ? '#FFD700' : 'inherit' }}
-          >
-            <FontAwesomeIcon icon={isBookmarked ? faBookmarkSolid : faBookmark} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopiar();
-            }}
-            title="Copiar conteúdo"
-          >
-            <FontAwesomeIcon icon={faCopy} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onExportar && onExportar(item);
-            }}
-            title="Exportar"
-          >
-            <FontAwesomeIcon icon={faDownload} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onImprimir && onImprimir(item);
-            }}
-            title="Imprimir"
-          >
-            <FontAwesomeIcon icon={faPrint} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onVisualizar(item);
-            }}
-            title="Visualizar (não editar)"
-          >
-            <FontAwesomeIcon icon={faEye} />
-          </ActionButton>
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditar(item);
-            }}
-            title="Editar nota"
+          {tipo === 'nota' && onFavoritar && (
+            <CardActionButton
+              onClick={handleFavoritar}
+              title={item.favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            >
+              <FontAwesomeIcon 
+                icon={faStar} 
+                style={{ color: item.favorito ? '#FF6B6B' : 'inherit' }}
+              />
+            </CardActionButton>
+          )}
+          
+          <CardActionButton
+            onClick={handleEditar}
+            title="Editar"
           >
             <FontAwesomeIcon icon={faEdit} />
-          </ActionButton>
-          <ActionButton
+          </CardActionButton>
+          
+          <CardActionButton
             onClick={handleExcluir}
-            className="danger"
-            title="Excluir nota"
+            title="Excluir"
           >
             <FontAwesomeIcon icon={faTrash} />
-          </ActionButton>
+          </CardActionButton>
+          
+          {tipo === 'link' && (
+            <CardActionButton
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(item.url, '_blank');
+              }}
+              title="Abrir link"
+            >
+              <FontAwesomeIcon icon={faExternalLinkAlt} />
+            </CardActionButton>
+          )}
+          
+          {tipo === 'nota' && (
+            <>
+              <CardActionButton
+                onClick={handleCopiar}
+                title="Copiar"
+              >
+                <FontAwesomeIcon icon={faCopy} />
+              </CardActionButton>
+              
+              <CardActionButton
+                onClick={handleTelaCheia}
+                title="Tela cheia"
+              >
+                <FontAwesomeIcon icon={faExpand} />
+              </CardActionButton>
+              
+              {onExportar && (
+                <CardActionButton
+                  onClick={handleExportar}
+                  title="Exportar"
+                >
+                  <FontAwesomeIcon icon={faFileExport} />
+                </CardActionButton>
+              )}
+              
+              {onImprimir && (
+                <CardActionButton
+                  onClick={handleImprimir}
+                  title="Imprimir"
+                >
+                  <FontAwesomeIcon icon={faPrint} />
+                </CardActionButton>
+              )}
+            </>
+          )}
         </CardActions>
       </CardHeader>
-
-      {tipo !== 'nota' && (
-        <CardMeta>
-          {renderizarBadges()}
-        </CardMeta>
-      )}
-
+      
       <CardContent>
-        {renderizarConteudo()}
+        {getContent()}
       </CardContent>
-
-      {tipo !== 'nota' && (
-        <CardFooter>
-          <CardDates>
-            <DateItem>
-              <FontAwesomeIcon icon={faCalendar} />
-              Criado: {formatarData(item.dataCriacao, 'relativo')}
-            </DateItem>
-            {item.dataModificacao && item.dataCriacao !== item.dataModificacao && (
-              <DateItem>
-                <FontAwesomeIcon icon={faClock} />
-                Editado: {formatarData(item.dataModificacao, 'relativo')}
-              </DateItem>
-            )}
-          </CardDates>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--espacamentoPequeno)' }}>
-            {item.ativo === false && (
-              <Badge background="var(--corErro)" color="white">
-                Deletado
-              </Badge>
-            )}
-          </div>
-        </CardFooter>
-      )}
-    </CardContainer>
+      
+      <CardFooter>
+        <CardMeta>
+          {tipo === 'nota' && item.topico && (
+            <CardTag>{item.topico}</CardTag>
+          )}
+          {tipo === 'link' && item.categoria && (
+            <CardTag>{item.categoria}</CardTag>
+          )}
+          <span>{formatarData(getDate())}</span>
+        </CardMeta>
+        
+        <div>
+          {tipo === 'nota' && item.favorito && (
+            <FontAwesomeIcon icon={faStar} style={{ color: '#FFD700' }} />
+          )}
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

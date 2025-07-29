@@ -13,6 +13,8 @@ const GlobalStyles = createGlobalStyle`
     --corInfo: #2196f3;
     --corErroHover: #d32f2f;
     --corSucessoHover: #45a049;
+    --corAvisoHover: #e68900;
+    --corInfoHover: #1976d2;
     
     /* Cores de fundo */
     --corFundoPrincipal: #f8fafc;

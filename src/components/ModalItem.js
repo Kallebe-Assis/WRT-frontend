@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faSave, faTrash, faCheck, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { useNotasAPIContext } from '../context/NotasAPIContext';
-import EditorTexto from './EditorTexto';
-import Loading from './Loading';
+import {
+  faTimes,
+  faSave,
+  faTrash,
+  faHeart,
+  faStar
+} from '@fortawesome/free-solid-svg-icons';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -12,90 +15,66 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--corFundoModal);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--zIndexModal);
-  backdrop-filter: blur(5px);
-  padding: var(--espacamentoGrande);
+  z-index: 1000;
+  padding: var(--espacamentoMedio);
 `;
 
-const ModalContainer = styled.div`
-  background: var(--corFundoTerciaria);
+const ModalContent = styled.div`
+  background: var(--corFundoCard);
   border-radius: var(--bordaRaioGrande);
-  box-shadow: var(--sombraForte);
   width: 100%;
-  max-width: 1000px;
-  max-height: 85vh;
-  overflow: hidden;
-  animation: fadeIn 0.3s ease-out;
-  display: flex;
-  flex-direction: column;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 `;
 
 const ModalHeader = styled.div`
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: var(--espacamentoMedio);
+  align-items: center;
+  padding: var(--espacamentoGrande);
   border-bottom: 1px solid var(--corBordaPrimaria);
-  background: var(--corFundoSecundaria);
-  flex-shrink: 0;
 `;
 
 const ModalTitle = styled.h2`
   color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFonteExtraGrande);
   margin: 0;
+  font-size: 1.5rem;
 `;
 
 const BotaoFechar = styled.button`
   background: none;
   border: none;
   color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFonteExtraGrande);
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: var(--espacamentoPequeno);
+  padding: 0.5rem;
   border-radius: var(--bordaRaioPequena);
-  transition: all var(--transicaoRapida);
 
   &:hover {
-    background: var(--corFundoSecundaria);
+    background: var(--corFundoHover);
     color: var(--corTextoPrimaria);
   }
 `;
 
-const ModalContent = styled.div`
-  padding: var(--espacamentoMedio);
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  max-height: calc(85vh - 80px); /* Altura máxima menos o header */
+const ModalBody = styled.div`
+  padding: var(--espacamentoGrande);
 `;
 
 const FormGroup = styled.div`
   margin-bottom: var(--espacamentoMedio);
 `;
 
-const FormGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--espacamentoMedio);
-  margin-bottom: var(--espacamentoMedio);
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: var(--espacamentoMedio);
-  }
-`;
-
 const Label = styled.label`
   display: block;
-  margin-bottom: var(--espacamentoPequeno);
   color: var(--corTextoPrimaria);
-  font-weight: 600;
-  font-size: var(--tamanhoFonteMedia);
+  margin-bottom: var(--espacamentoPequeno);
+  font-weight: 500;
 `;
 
 const Input = styled.input`
@@ -103,19 +82,35 @@ const Input = styled.input`
   padding: var(--espacamentoMedio);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  background: var(--corFundoTerciaria);
+  background: var(--corFundoPrimaria);
   color: var(--corTextoPrimaria);
-  transition: all var(--transicaoRapida);
+  font-size: var(--tamanhoFonteMedia);
+  transition: all var(--transicaoMedia);
 
   &:focus {
     outline: none;
-    border-color: var(--corBordaFoco);
+    border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
+`;
 
-  &::placeholder {
-    color: var(--corTextoTerciaria);
+const Textarea = styled.textarea`
+  width: 100%;
+  padding: var(--espacamentoMedio);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  background: var(--corFundoPrimaria);
+  color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteMedia);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 200px;
+  transition: all var(--transicaoMedia);
+
+  &:focus {
+    outline: none;
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
 
@@ -124,26 +119,18 @@ const Select = styled.select`
   padding: var(--espacamentoMedio);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  background: var(--corFundoTerciaria);
+  background: var(--corFundoPrimaria);
   color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteMedia);
   cursor: pointer;
-  transition: all var(--transicaoRapida);
+  transition: all var(--transicaoMedia);
 
   &:focus {
     outline: none;
-    border-color: var(--corBordaFoco);
+    border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
-
-const Option = styled.option`
-  background: var(--corFundoTerciaria);
-  color: var(--corTextoPrimaria);
-  padding: var(--espacamentoPequeno);
-`;
-
-
 
 const ModalFooter = styled.div`
   display: flex;
@@ -151,8 +138,7 @@ const ModalFooter = styled.div`
   align-items: center;
   padding: var(--espacamentoGrande);
   border-top: 1px solid var(--corBordaPrimaria);
-  background: var(--corFundoSecundaria);
-  flex-shrink: 0;
+  gap: var(--espacamentoMedio);
 `;
 
 const BotaoAcao = styled.button`
@@ -173,418 +159,230 @@ const BotaoAcao = styled.button`
   }
 `;
 
-const BotaoSalvar = styled(BotaoAcao)`
+const BotaoPrimario = styled(BotaoAcao)`
   background: var(--corPrimaria);
-  color: var(--corTextoClara);
+  color: white;
 
   &:hover:not(:disabled) {
     background: var(--corSecundaria);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 `;
 
-const BotaoExcluir = styled.button`
-  background: var(--corErro);
-  color: var(--corTextoClara);
-  border: none;
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
+const BotaoSecundario = styled(BotaoAcao)`
+  background: var(--corFundoSecundaria);
+  color: var(--corTextoPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
 
-  &:hover {
+  &:hover:not(:disabled) {
+    background: var(--corFundoTerciaria);
+    border-color: var(--corPrimaria);
+  }
+`;
+
+const BotaoPerigo = styled(BotaoAcao)`
+  background: var(--corErro);
+  color: white;
+
+  &:hover:not(:disabled) {
     background: var(--corErroHover);
     transform: translateY(-1px);
   }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
 `;
 
-const BotaoCancelar = styled(BotaoAcao)`
-  background: var(--corTextoSecundaria);
-  color: var(--corTextoClara);
+const BotaoFavorito = styled(BotaoAcao)`
+  background: ${props => props.favorito ? '#FF6B6B' : 'var(--corFundoSecundaria)'};
+  color: ${props => props.favorito ? 'white' : 'var(--corTextoPrimaria)'};
+  border: 2px solid ${props => props.favorito ? '#FF6B6B' : 'var(--corBordaPrimaria)'};
 
   &:hover:not(:disabled) {
-    background: var(--corTextoPrimaria);
-    transform: translateY(-2px);
+    background: ${props => props.favorito ? '#FF5252' : 'var(--corFundoTerciaria)'};
+    border-color: ${props => props.favorito ? '#FF5252' : 'var(--corPrimaria)'};
   }
 `;
 
-const MensagemErro = styled.div`
-  color: var(--corErro);
-  font-size: var(--tamanhoFontePequena);
-  margin-top: var(--espacamentoPequeno);
-`;
-
-const ContainerBotoes = styled.div`
-  display: flex;
-  gap: var(--espacamentoMedio);
-`;
-
-const StatusIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-  margin-left: auto;
-  margin-right: var(--espacamentoMedio);
-`;
-
-const StatusText = styled.span`
-  color: ${props => {
-    if (props.status === 'salvando') return 'var(--corAviso)';
-    if (props.status === 'salvo') return 'var(--corSucesso)';
-    if (props.status === 'erro') return 'var(--corErro)';
-    return 'var(--corTextoSecundaria)';
-  }};
-`;
-
-const ModalItem = ({ 
-  visivel, 
-  tipo, 
-  item = null, 
-  onSalvar, 
-  onExcluir, 
-  onFechar,
-  carregando = false 
+const ModalItem = ({
+  isVisible,
+  item,
+  modo,
+  categorias = [],
+  onSave,
+  onDelete,
+  onClose,
+  carregando = false
 }) => {
-  // Função para converter HEX para RGB
-  const hexToRgb = (hex) => {
-    if (!hex) return 'rgb(102, 126, 234)';
-    
-    // Remove o # se presente
-    const cleanHex = hex.replace('#', '');
-    
-    // Converte para RGB
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-  const { categorias } = useNotasAPIContext();
   const [formData, setFormData] = useState({
     titulo: '',
     conteudo: '',
-    topico: ''
+    topico: '',
+    categoria: ''
   });
 
-  const [statusSalvamento, setStatusSalvamento] = useState('salvo'); // 'salvo', 'salvando', 'erro'
-  const [ultimoSalvamento, setUltimoSalvamento] = useState(null);
-
-  const ultimaModificacaoRef = useRef(null);
-
-  // Inicializar dados do formulário quando item mudar
+  // Atualizar formData quando item mudar
   useEffect(() => {
     if (item) {
       setFormData({
-        titulo: item.titulo || '',
+        titulo: item.titulo || item.nome || '',
         conteudo: item.conteudo || '',
-        topico: item.topico || ''
+        topico: item.topico || '',
+        categoria: item.categoria || ''
       });
-      setStatusSalvamento('salvo');
-      setUltimoSalvamento(new Date());
     } else {
       setFormData({
         titulo: '',
         conteudo: '',
-        topico: ''
+        topico: '',
+        categoria: ''
       });
-      setStatusSalvamento('salvo');
-      setUltimoSalvamento(null);
     }
   }, [item]);
 
-  // Executar salvamento
-  const executarSalvamento = useCallback(async () => {
-    if (!validarFormulario()) return;
-
-    console.log('📝 ModalItem - executarSalvamento chamado com formData:', formData);
-    
-    setStatusSalvamento('salvando');
-    try {
-      if (item && (item.id || item._id)) {
-        // Atualizar nota existente
-        const notaId = item.id || item._id;
-        console.log('📝 ModalItem - Atualizando nota com ID:', notaId);
-        await onSalvar(notaId, formData);
-      } else {
-        // Criar nova nota
-        console.log('📝 ModalItem - Criando nova nota');
-        await onSalvar(null, formData);
-      }
-      setStatusSalvamento('salvo');
-      setUltimoSalvamento(new Date());
-    } catch (error) {
-      console.error('Erro ao salvar automaticamente:', error);
-      setStatusSalvamento('erro');
-    }
-  }, [formData, item, onSalvar]);
-
-  // Auto-save desabilitado - notas só são salvas manualmente
-  // useEffect(() => {
-  //   // Só agenda auto-save se estiver ativo e houver modificações
-  //   if (modificacoes && autoSaveAtivo) {
-  //     const timeoutId = setTimeout(() => {
-  //       if (modificacoes && validarFormulario()) {
-  //         executarSalvamento();
-  //       }
-  //     }, 2000);
-  //     
-  //     return () => clearTimeout(timeoutId);
-  //   }
-  // }, [modificacoes, autoSaveAtivo, executarSalvamento]);
-
-  const validarFormulario = () => {
-    return formData.titulo.trim() !== '' && formData.conteudo.trim() !== '';
-  };
-
-  const handleSalvar = async () => {
-    if (!validarFormulario()) {
-      alert('Por favor, preencha o título e o conteúdo da nota.');
-      return;
-    }
-
-    await executarSalvamento();
-  };
-
-  const handleExcluir = () => {
-    if (!item || !(item.id || item._id)) {
-      alert('Não é possível excluir uma nota que ainda não foi salva.');
-      return;
-    }
-
-    const confirmacao = window.confirm(
-      `Tem certeza que deseja excluir a nota "${item.titulo}"?\n\nEsta ação não pode ser desfeita.`
-    );
-
-    if (confirmacao) {
-      const notaId = item.id || item._id;
-      onExcluir(notaId);
-    }
-  };
-
-  const handleInputChange = (campo, valor) => {
-    setFormData(prev => ({ ...prev, [campo]: valor }));
-    ultimaModificacaoRef.current = new Date();
-  };
-
-  const obterTituloModal = () => {
-    return item ? 'Editar Nota' : 'Nova Nota';
-  };
-
-  const obterCategorias = () => {
-    // Usar as categorias reais do banco de dados
-    return categorias.map(categoria => ({ 
-      value: categoria.nome, 
-      label: categoria.nome,
-      cor: categoria.cor,
-      descricao: categoria.descricao
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
   };
 
-  const obterStatusText = () => {
-    switch (statusSalvamento) {
-      case 'salvando':
-        return 'Salvando...';
-      case 'salvo':
-        return ultimoSalvamento ? `Salvo às ${ultimoSalvamento.toLocaleTimeString()}` : 'Salvo';
-      case 'erro':
-        return 'Erro ao salvar';
-      default:
-        return '';
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSave) {
+      onSave(item?.id, formData);
     }
   };
 
-  const obterStatusIcon = () => {
-    switch (statusSalvamento) {
-      case 'salvando':
-        return faExclamationTriangle;
-      case 'salvo':
-        return faCheck;
-      case 'erro':
-        return faExclamationTriangle;
-      default:
-        return null;
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir este item?')) {
+      onDelete(item?.id);
     }
   };
 
-  if (!visivel) return null;
+  const getTitulo = () => {
+    switch (modo) {
+      case 'novo':
+        return 'Novo Item';
+      case 'editar':
+        return 'Editar Item';
+      case 'visualizar':
+        return 'Visualizar Item';
+      default:
+        return 'Item';
+    }
+  };
+
+  if (!isVisible) return null;
 
   return (
-    <ModalOverlay onClick={onFechar}>
-      <ModalContainer onClick={(e) => e.stopPropagation()}>
+    <ModalOverlay onClick={onClose}>
+      <ModalContent onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <ModalTitle>{obterTituloModal()}</ModalTitle>
-          
-          <StatusIndicator>
-            <StatusText status={statusSalvamento}>
-              {obterStatusIcon() && <FontAwesomeIcon icon={obterStatusIcon()} />}
-              {obterStatusText()}
-            </StatusText>
-          </StatusIndicator>
-
-          <BotaoFechar onClick={onFechar}>
+          <ModalTitle>{getTitulo()}</ModalTitle>
+          <BotaoFechar onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </BotaoFechar>
         </ModalHeader>
 
-        <ModalContent>
-          <FormGrid>
+        <form onSubmit={handleSubmit}>
+          <ModalBody>
             <FormGroup>
-              <Label>Título *</Label>
+              <Label htmlFor="titulo">Título</Label>
               <Input
+                id="titulo"
+                name="titulo"
                 type="text"
                 value={formData.titulo}
-                onChange={(e) => handleInputChange('titulo', e.target.value)}
-                placeholder="Digite o título da nota..."
+                onChange={handleInputChange}
+                placeholder="Digite o título..."
+                disabled={modo === 'visualizar'}
+                required
               />
             </FormGroup>
 
             <FormGroup>
-              <Label>Tópico</Label>
-              <Select
-                value={formData.topico}
-                onChange={(e) => handleInputChange('topico', e.target.value)}
-              >
-                <Option value="">Selecione um tópico...</Option>
-                {obterCategorias().map(cat => (
-                  <Option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </Option>
-                ))}
-              </Select>
-              
-
-              
-              {/* Lista de categorias disponíveis */}
-              {categorias && categorias.length > 0 && (
-                <div style={{ 
-                  marginTop: 'var(--espacamentoMedio)',
-                  fontSize: 'var(--tamanhoFontePequena)',
-                  color: 'var(--corTextoSecundaria)'
-                }}>
-                  <div style={{ marginBottom: 'var(--espacamentoPequeno)' }}>
-                    Categorias disponíveis ({categorias ? categorias.length : 0}):
-                  </div>
-                  <div style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: 'var(--espacamentoPequeno)',
-                    maxHeight: '100px',
-                    overflowY: 'auto'
-                  }}>
-                    {categorias.map(categoria => (
-                      <div 
-                        key={categoria.id}
-                        style={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          backgroundColor: formData.topico === categoria.nome ? 'var(--corPrimaria)' : 'var(--corFundoTerciaria)',
-                          color: formData.topico === categoria.nome ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)',
-                          borderRadius: 'var(--bordaRaioPequena)',
-                          border: `1px solid ${formData.topico === categoria.nome ? 'var(--corPrimaria)' : 'var(--corBordaPrimaria)'}`,
-                          fontSize: 'var(--tamanhoFontePequena)',
-                          cursor: 'pointer',
-                          transition: 'all var(--transicaoRapida)',
-                          transform: formData.topico === categoria.nome ? 'scale(1.05)' : 'scale(1)'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (formData.topico !== categoria.nome) {
-                            e.target.style.backgroundColor = 'var(--corFundoSecundaria)';
-                            e.target.style.transform = 'scale(1.02)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (formData.topico !== categoria.nome) {
-                            e.target.style.backgroundColor = 'var(--corFundoTerciaria)';
-                            e.target.style.transform = 'scale(1)';
-                          }
-                        }}
-                        onClick={() => handleInputChange('topico', categoria.nome)}
-                        title={categoria.descricao || categoria.nome}
-                      >
-                        <div 
-                          style={{ 
-                            width: '16px', 
-                            height: '16px', 
-                            borderRadius: 'var(--bordaRaioPequena)', 
-                            backgroundColor: categoria.cor || '#667eea',
-                            border: '2px solid var(--corBordaPrimaria)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontSize: '8px',
-                            fontWeight: 'bold',
-                            textShadow: '1px 1px 1px rgba(0,0,0,0.5)'
-                          }}
-                          title={`HEX: ${categoria.cor || '#667eea'} | RGB: ${hexToRgb(categoria.cor || '#667eea')}`}
-                        >
-                          {categoria.cor ? categoria.cor.substring(1, 3) : '66'}
-                        </div>
-                        {categoria.nome}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Label htmlFor="conteudo">Conteúdo</Label>
+              <Textarea
+                id="conteudo"
+                name="conteudo"
+                value={formData.conteudo}
+                onChange={handleInputChange}
+                placeholder="Digite o conteúdo..."
+                disabled={modo === 'visualizar'}
+              />
             </FormGroup>
-          </FormGrid>
 
-          <FormGroup>
-            <Label>Conteúdo *</Label>
-            <EditorTexto
-              valor={formData.conteudo}
-              onChange={(valor) => handleInputChange('conteudo', valor)}
-              placeholder="Digite o conteúdo da nota..."
-              alturaMinima="300px"
-              alturaMaxima="600px"
-            />
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="topico">Tópico</Label>
+              <Input
+                id="topico"
+                name="topico"
+                type="text"
+                value={formData.topico}
+                onChange={handleInputChange}
+                placeholder="Digite o tópico..."
+                disabled={modo === 'visualizar'}
+              />
+            </FormGroup>
 
-
-        </ModalContent>
-
-        <ModalFooter>
-          <div>
-            {item && (item.id || item._id) && (
-              <BotaoExcluir onClick={handleExcluir} disabled={carregando}>
-                <FontAwesomeIcon icon={faTrash} />
-                Excluir Nota
-              </BotaoExcluir>
+            {categorias.length > 0 && (
+              <FormGroup>
+                <Label htmlFor="categoria">Categoria</Label>
+                <Select
+                  id="categoria"
+                  name="categoria"
+                  value={formData.categoria}
+                  onChange={handleInputChange}
+                  disabled={modo === 'visualizar'}
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {categorias.map(categoria => (
+                    <option key={categoria.id} value={categoria.nome}>
+                      {categoria.nome}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
             )}
-          </div>
+          </ModalBody>
 
-          <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)' }}>
-            <BotaoCancelar onClick={onFechar} disabled={carregando}>
-              Cancelar
-            </BotaoCancelar>
-            <BotaoSalvar onClick={handleSalvar} disabled={carregando || !validarFormulario()}>
-              {carregando ? (
-                <Loading tamanho="14px" />
-              ) : (
-                <>
+          <ModalFooter>
+            <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)' }}>
+              {modo !== 'visualizar' && (
+                <BotaoPrimario type="submit" disabled={carregando}>
                   <FontAwesomeIcon icon={faSave} />
-                  Salvar
-                </>
+                  {item?.id ? 'Atualizar' : 'Salvar'}
+                </BotaoPrimario>
               )}
-            </BotaoSalvar>
-          </div>
-        </ModalFooter>
-      </ModalContainer>
+
+              {modo === 'visualizar' && item?.id && (
+                <BotaoFavorito
+                  favorito={item.favorito}
+                  onClick={() => {
+                    // Implementar toggle de favorito
+                    console.log('Toggle favorito:', item.id);
+                  }}
+                >
+                  <FontAwesomeIcon icon={item.favorito ? faHeart : faStar} />
+                  {item.favorito ? 'Favorito' : 'Favoritar'}
+                </BotaoFavorito>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)' }}>
+              {modo !== 'visualizar' && item?.id && (
+                <BotaoPerigo onClick={handleDelete} disabled={carregando}>
+                  <FontAwesomeIcon icon={faTrash} />
+                  Excluir
+                </BotaoPerigo>
+              )}
+
+              <BotaoSecundario onClick={onClose} disabled={carregando}>
+                Cancelar
+              </BotaoSecundario>
+            </div>
+          </ModalFooter>
+        </form>
+      </ModalContent>
     </ModalOverlay>
   );
 };

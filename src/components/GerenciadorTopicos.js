@@ -7,10 +7,7 @@ import {
   faTrash, 
   faCheck, 
   faTimes,
-  faFolder,
-  faGripVertical,
-  faChevronDown,
-  faChevronRight
+  faFolder
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 import EditorTexto from './EditorTexto';

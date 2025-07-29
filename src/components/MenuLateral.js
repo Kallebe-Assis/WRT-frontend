@@ -1,22 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faHome,
   faStickyNote,
-  faTrash,
-  faTrashAlt,
+  faLink,
   faCog,
-  faChevronLeft,
-  faChevronRight,
-  faPlus,
   faSearch,
-  faSort,
-  faFilter,
   faBars,
   faTimes,
-  faTag,
-  faHeart
+  faTag
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 
@@ -274,7 +266,11 @@ const BotaoConfiguracoes = styled.button`
   }
 `;
 
-const MenuLateral = ({ onAbrirConfiguracoes }) => {
+const MenuLateral = ({ 
+  onAbrirConfiguracoes, 
+  telaAtiva, 
+  onTelaChange 
+}) => {
   const {
     categoriaAtiva,
     menuRecolhido,
@@ -360,20 +356,24 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
 
   const itensNavegacao = [
     {
-      id: 'anotacoes',
-      titulo: 'Notes',
+      id: 'notas',
+      titulo: 'Minhas Notas',
       icone: faStickyNote,
       contador: estatisticas.totalNotas
     },
     {
+      id: 'links',
+      titulo: 'Meus Links',
+      icone: faLink,
+      contador: 0 // TODO: Adicionar contador de links
+    },
+    {
       id: 'lixeira',
-      titulo: 'Trash',
-      icone: faTrashAlt,
+      titulo: 'Lixeira',
+      icone: faTimes, // Changed from faTrashAlt to faTimes as faTrashAlt is removed
       contador: estatisticas.notasDeletadas
     }
   ];
-
-
 
   const opcoesOrdenacao = [
     { valor: 'dataCriacao', label: 'Data de Criação' },
@@ -388,7 +388,7 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
         <TituloMenu recolhido={menuRecolhido}>WRTmind</TituloMenu>
         <BotaoAlternar onClick={alternarMenu}>
           <FontAwesomeIcon
-            icon={menuRecolhido ? faChevronRight : faChevronLeft}
+            icon={menuRecolhido ? faTimes : faBars} // Changed from faChevronRight/Left to faTimes/Bars
             size="sm"
           />
         </BotaoAlternar>
@@ -453,59 +453,25 @@ const MenuLateral = ({ onAbrirConfiguracoes }) => {
         <SecaoMenu recolhido={menuRecolhido}>
           <TituloSecao recolhido={menuRecolhido}>Navegação</TituloSecao>
           <ListaNavegacao>
-            <ItemNavegacao>
-              <BotaoNavegacao
-                ativo={categoriaAtiva === 'anotacoes'}
-                onClick={() => definirCategoriaAtiva('anotacoes')}
-                title={menuRecolhido ? 'Notes' : ''}
-              >
-                <IconeNavegacao>
-                  <FontAwesomeIcon icon={faStickyNote} size="sm" />
-                </IconeNavegacao>
-                <TextoNavegacao recolhido={menuRecolhido}>
-                  Notes
-                </TextoNavegacao>
-                <Contador ativo={categoriaAtiva === 'anotacoes'} recolhido={menuRecolhido}>
-                  {estatisticas.totalNotas}
-                </Contador>
-              </BotaoNavegacao>
-            </ItemNavegacao>
-
-            <ItemNavegacao>
-              <BotaoNavegacao
-                ativo={categoriaAtiva === 'favoritos'}
-                onClick={() => definirCategoriaAtiva('favoritos')}
-                title={menuRecolhido ? 'Favorites' : ''}
-              >
-                <IconeNavegacao>
-                  <FontAwesomeIcon icon={faHeart} size="sm" />
-                </IconeNavegacao>
-                <TextoNavegacao recolhido={menuRecolhido}>
-                  Favorites
-                </TextoNavegacao>
-                <Contador ativo={categoriaAtiva === 'favoritos'} recolhido={menuRecolhido}>
-                  {contadorFavoritos}
-                </Contador>
-              </BotaoNavegacao>
-            </ItemNavegacao>
-
-            <ItemNavegacao>
-              <BotaoNavegacao
-                ativo={categoriaAtiva === 'lixeira'}
-                onClick={() => definirCategoriaAtiva('lixeira')}
-                title={menuRecolhido ? 'Trash' : ''}
-              >
-                <IconeNavegacao>
-                  <FontAwesomeIcon icon={faTrashAlt} size="sm" />
-                </IconeNavegacao>
-                <TextoNavegacao recolhido={menuRecolhido}>
-                  Trash
-                </TextoNavegacao>
-                <Contador ativo={categoriaAtiva === 'lixeira'} recolhido={menuRecolhido}>
-                  {estatisticas.notasDeletadas}
-                </Contador>
-              </BotaoNavegacao>
-            </ItemNavegacao>
+            {itensNavegacao.map(item => (
+              <ItemNavegacao key={item.id}>
+                <BotaoNavegacao
+                  ativo={telaAtiva === item.id}
+                  onClick={() => onTelaChange(item.id)}
+                  title={menuRecolhido ? item.titulo : ''}
+                >
+                  <IconeNavegacao>
+                    <FontAwesomeIcon icon={item.icone} size="sm" />
+                  </IconeNavegacao>
+                  <TextoNavegacao recolhido={menuRecolhido}>
+                    {item.titulo}
+                  </TextoNavegacao>
+                  <Contador ativo={telaAtiva === item.id} recolhido={menuRecolhido}>
+                    {item.contador}
+                  </Contador>
+                </BotaoNavegacao>
+              </ItemNavegacao>
+            ))}
           </ListaNavegacao>
         </SecaoMenu>
 
