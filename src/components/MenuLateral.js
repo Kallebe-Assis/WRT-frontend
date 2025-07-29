@@ -18,12 +18,13 @@ const MenuContainer = styled.div`
   top: 0;
   height: 100vh;
   width: ${props => props.recolhido ? 'var(--larguraMenuRecolhido)' : 'var(--larguraMenu)'};
-  background: var(--corFundoTerciaria);
-  border-right: 1px solid var(--corBordaPrimaria);
+  background: linear-gradient(180deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border-right: 2px solid var(--corBordaPrimaria);
   transition: width var(--transicaoMedia);
   z-index: var(--zIndexDropdown);
-  box-shadow: var(--sombraLeve);
+  box-shadow: var(--sombraMedia);
   overflow: hidden;
+  backdrop-filter: blur(10px);
 `;
 
 const MenuHeader = styled.div`
@@ -31,38 +32,45 @@ const MenuHeader = styled.div`
   align-items: center;
   justify-content: ${props => props.recolhido ? 'center' : 'space-between'};
   padding: var(--espacamentoMedio);
-  border-bottom: 1px solid var(--corBordaPrimaria);
+  border-bottom: 2px solid var(--corBordaPrimaria);
   height: var(--alturaHeader);
   min-height: 60px;
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoTerciaria) 100%);
 `;
 
 const TituloMenu = styled.h2`
-  color: var(--corTextoPrimaria);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-size: var(--tamanhoFonteTitulo);
   margin: 0;
   opacity: ${props => props.recolhido ? 0 : 1};
   transition: opacity var(--transicaoMedia);
   white-space: nowrap;
   overflow: hidden;
+  font-weight: 700;
 `;
 
 const BotaoAlternar = styled.button`
-  background: var(--corPrimaria);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
   color: var(--corTextoClara);
   border: none;
   border-radius: var(--bordaRaioMedia);
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--transicaoRapida);
   flex-shrink: 0;
+  box-shadow: var(--sombraLeve);
 
   &:hover {
-    background: var(--corSecundaria);
-    transform: scale(1.05);
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: scale(1.1);
+    box-shadow: var(--sombraMedia);
   }
 `;
 
@@ -90,6 +98,10 @@ const TituloSecao = styled.h3`
   margin-bottom: var(--espacamentoMedio);
   white-space: nowrap;
   overflow: hidden;
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  background: var(--corFundoSecundaria);
+  border-radius: var(--bordaRaioMedia);
+  border: 1px solid var(--corBordaPrimaria);
 `;
 
 const ListaNavegacao = styled.ul`
@@ -108,24 +120,27 @@ const BotaoNavegacao = styled.button`
   align-items: center;
   gap: var(--espacamentoMedio);
   padding: var(--espacamentoMedio);
-  background: ${props => props.ativo ? 'var(--corPrimaria)' : 'transparent'};
+  background: ${props => props.ativo ? 
+    'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)' : 
+    'transparent'};
   color: ${props => props.ativo ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)'};
-  border: none;
+  border: ${props => props.ativo ? 'none' : '1px solid var(--corBordaPrimaria)'};
   border-radius: var(--bordaRaioMedia);
   cursor: pointer;
   transition: all var(--transicaoRapida);
   text-align: left;
   font-size: var(--tamanhoFonteMedia);
   white-space: nowrap;
-  overflow: hidden;
+  font-weight: ${props => props.ativo ? '600' : '500'};
+  box-shadow: ${props => props.ativo ? 'var(--sombraLeve)' : 'none'};
 
   &:hover {
-    background: ${props => props.ativo ? 'var(--corSecundaria)' : 'var(--corFundoSecundaria)'};
-    transform: translateX(2px);
-  }
-
-  &:active {
-    transform: translateX(2px) scale(0.98);
+    background: ${props => props.ativo ? 
+      'linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%)' : 
+      'var(--corFundoHover)'};
+    transform: ${props => props.ativo ? 'translateY(-1px)' : 'none'};
+    box-shadow: ${props => props.ativo ? 'var(--sombraMedia)' : 'var(--sombraLeve)'};
+    border-color: ${props => props.ativo ? 'transparent' : 'var(--corPrimaria)'};
   }
 `;
 
@@ -366,12 +381,6 @@ const MenuLateral = ({
       titulo: 'Meus Links',
       icone: faLink,
       contador: 0 // TODO: Adicionar contador de links
-    },
-    {
-      id: 'lixeira',
-      titulo: 'Lixeira',
-      icone: faTimes, // Changed from faTrashAlt to faTimes as faTrashAlt is removed
-      contador: estatisticas.notasDeletadas
     }
   ];
 

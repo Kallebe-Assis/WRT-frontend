@@ -10,78 +10,187 @@ import {
   faTags,
   faPlus,
   faEdit,
-  faTimes
+  faTimes,
+  faUsers,
+  faChartBar,
+  faRecycle,
+  faCrown,
+  faExclamationTriangle,
+  faCheckCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { categoriasAPI } from '../config/api';
 
 const Container = styled.div`
   padding: var(--espacamentoGrande);
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
+  animation: fadeIn 0.5s ease-out;
+`;
+
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: var(--espacamentoExtraGrande);
 `;
 
 const Titulo = styled.h1`
-  color: var(--corTextoPrimaria);
-  margin-bottom: var(--espacamentoGrande);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: var(--espacamentoMedio);
+  animation: fadeIn 0.6s ease-out;
+`;
+
+const Subtitulo = styled.p`
+  color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFonteGrande);
-  font-weight: 600;
+  animation: fadeIn 0.7s ease-out;
+`;
+
+const TabContainer = styled.div`
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
+  border-radius: var(--bordaRaioGrande);
+  box-shadow: var(--sombraMedia);
+  border: 2px solid var(--corBordaPrimaria);
+  overflow: hidden;
+`;
+
+const TabNavigation = styled.div`
+  display: flex;
+  background: linear-gradient(90deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border-bottom: 2px solid var(--corBordaPrimaria);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const TabButton = styled.button`
+  background: ${props => props.active ? 
+    'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)' : 
+    'transparent'};
+  color: ${props => props.active ? 'white' : 'var(--corTextoPrimaria)'};
+  border: none;
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  font-weight: ${props => props.active ? '600' : '500'};
+  font-size: var(--tamanhoFonteMedia);
+  white-space: nowrap;
+  position: relative;
+  min-width: 140px;
+  justify-content: center;
+  
+  &:hover {
+    background: ${props => props.active ? 
+      'linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%)' : 
+      'var(--corFundoHover)'};
+    transform: ${props => props.active ? 'translateY(-1px)' : 'none'};
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: ${props => props.active ? 1 : 0};
+    transition: opacity var(--transicaoRapida);
+  }
+`;
+
+const TabContent = styled.div`
+  padding: var(--espacamentoGrande);
+  min-height: 500px;
+  animation: fadeIn 0.3s ease-out;
+`;
+
+const TabPanel = styled.div`
+  display: ${props => props.active ? 'block' : 'none'};
 `;
 
 const Secao = styled.div`
-  background: var(--corFundoSecundaria);
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoCard) 100%);
   border-radius: var(--bordaRaioMedia);
   padding: var(--espacamentoGrande);
   margin-bottom: var(--espacamentoGrande);
-  border: 1px solid var(--corBorda);
+  border: 1px solid var(--corBordaPrimaria);
+  box-shadow: var(--sombraLeve);
+  transition: all var(--transicaoRapida);
+  
+  &:hover {
+    box-shadow: var(--sombraMedia);
+    transform: translateY(-2px);
+  }
 `;
 
 const SecaoTitulo = styled.h2`
-  color: var(--corTextoPrimaria);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: var(--espacamentoMedio);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 600;
+  font-size: var(--tamanhoFonteExtraGrande);
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: var(--espacamentoMedio);
 `;
 
 const Botao = styled.button`
-  background: var(--corPrimaria);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
   color: white;
   border: none;
   padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  border-radius: var(--bordaRaioPequena);
+  border-radius: var(--bordaRaioMedia);
   cursor: pointer;
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 500;
-  transition: background 0.2s;
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
+  transition: all var(--transicaoRapida);
   display: flex;
   align-items: center;
   gap: var(--espacamentoMedio);
+  box-shadow: var(--sombraLeve);
 
   &:hover {
-    background: var(--corPrimariaHover);
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
   }
 
   &:disabled {
-    background: var(--corDesabilitada);
+    opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
 const BotaoSecundario = styled(Botao)`
-  background: var(--corSecundaria);
+  background: linear-gradient(135deg, var(--corTextoSecundaria) 0%, var(--corTextoTerciaria) 100%);
+  color: var(--corTextoPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
   
   &:hover {
-    background: var(--corSecundariaHover);
+    background: linear-gradient(135deg, var(--corTextoTerciaria) 0%, var(--corTextoSecundaria) 100%);
+    border-color: var(--corPrimaria);
   }
 `;
 
 const BotaoPerigo = styled(Botao)`
-  background: var(--corPerigo);
+  background: linear-gradient(135deg, var(--corErro) 0%, #d32f2f 100%);
   
   &:hover {
-    background: var(--corPerigoHover);
+    background: linear-gradient(135deg, #d32f2f 0%, var(--corErro) 100%);
   }
 `;
 
@@ -90,146 +199,333 @@ const StatusItem = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: var(--espacamentoMedio);
-  background: var(--corFundoPrimaria);
-  border-radius: var(--bordaRaioPequena);
+  background: linear-gradient(135deg, var(--corFundoPrimaria) 0%, var(--corFundoSecundaria) 100%);
+  border-radius: var(--bordaRaioMedia);
   margin-bottom: var(--espacamentoMedio);
+  border: 1px solid var(--corBordaPrimaria);
+  transition: all var(--transicaoRapida);
+  
+  &:hover {
+    border-color: var(--corPrimaria);
+    transform: translateX(4px);
+  }
 `;
 
 const StatusInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--espacamentoPequeno);
 `;
 
 const StatusLabel = styled.span`
   color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFontePequena);
+  font-weight: 500;
 `;
 
 const StatusValue = styled.span`
   color: var(--corTextoPrimaria);
-  font-weight: 500;
+  font-size: var(--tamanhoFonteGrande);
+  font-weight: 600;
 `;
 
 const StatusIndicator = styled.div`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: ${props => props.status === 'online' ? 'var(--corSucesso)' : 'var(--corPerigo)'};
+  background: ${props => 
+    props.status === 'online' ? 'var(--corSucesso)' :
+    props.status === 'syncing' ? 'var(--corAviso)' :
+    'var(--corErro)'
+  };
+  box-shadow: 0 0 8px ${props => 
+    props.status === 'online' ? 'rgba(76, 175, 80, 0.4)' :
+    props.status === 'syncing' ? 'rgba(255, 152, 0, 0.4)' :
+    'rgba(244, 67, 54, 0.4)'
+  };
+  animation: ${props => props.status === 'syncing' ? 'pulse 2s infinite' : 'none'};
 `;
 
-const CategoriasGrid = styled.div`
+const GridCards = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--espacamentoMedio);
-  margin-top: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoGrande);
 `;
 
-const CategoriaCard = styled.div`
-  background: var(--corFundoPrimaria);
-  border: 1px solid var(--corBorda);
-  border-radius: var(--bordaRaioMedia);
-  padding: var(--espacamentoMedio);
+const Card = styled.div`
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioGrande);
+  padding: var(--espacamentoGrande);
+  text-align: center;
+  transition: all var(--transicaoMedia);
+  cursor: pointer;
   position: relative;
+  overflow: hidden;
+  box-shadow: var(--sombraLeve);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+  
+  &:hover {
+    border-color: var(--corPrimaria);
+    transform: translateY(-4px);
+    box-shadow: var(--sombraForte);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
 `;
 
-const CategoriaCor = styled.div`
-  width: 100%;
-  height: 4px;
-  background: ${props => props.cor};
-  border-radius: var(--bordaRaioPequena);
+const CardIcon = styled.div`
+  font-size: 2.5rem;
+  color: var(--corPrimaria);
+  margin-bottom: var(--espacamentoMedio);
+  transition: all var(--transicaoMedia);
+  
+  ${Card}:hover & {
+    transform: scale(1.1);
+  }
+`;
+
+const CardTitulo = styled.h3`
+  color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteGrande);
+  font-weight: 600;
   margin-bottom: var(--espacamentoMedio);
 `;
 
-const CategoriaNome = styled.h3`
+const CardValor = styled.div`
+  font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
+  color: var(--corPrimaria);
+  margin-bottom: var(--espacamentoPequeno);
+`;
+
+const CardDescricao = styled.div`
+  color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFontePequena);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const ListaCategorias = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--espacamentoMedio);
+`;
+
+const CategoriaItem = styled.div`
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoCard) 100%);
+  border: 1px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio);
+  transition: all var(--transicaoRapida);
+  cursor: pointer;
+  
+  &:hover {
+    border-color: var(--corPrimaria);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
+`;
+
+const CategoriaNome = styled.div`
   color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFonteMedia);
   font-weight: 600;
   margin-bottom: var(--espacamentoPequeno);
 `;
 
-const CategoriaAcoes = styled.div`
+const CategoriaMeta = styled.div`
   display: flex;
-  gap: var(--espacamentoPequeno);
-  margin-top: var(--espacamentoMedio);
-`;
-
-const BotaoAcao = styled.button`
-  background: none;
-  border: none;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--tamanhoFontePequena);
   color: var(--corTextoSecundaria);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--bordaRaioPequena);
-  transition: color 0.2s;
-
-  &:hover {
-    color: var(--corTextoPrimaria);
-    background: var(--corFundoSecundaria);
-  }
 `;
 
-const Modal = styled.div`
+const EmptyState = styled.div`
+  text-align: center;
+  padding: var(--espacamentoExtraGrande);
+  color: var(--corTextoSecundaria);
+`;
+
+const EmptyIcon = styled.div`
+  font-size: 4rem;
+  color: var(--corTextoTerciaria);
+  margin-bottom: var(--espacamentoGrande);
+  opacity: 0.5;
+`;
+
+const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--corFundoModal);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--zIndexModal);
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
 `;
 
-const ModalContent = styled.div`
-  background: var(--corFundoPrimaria);
-  border-radius: var(--bordaRaioMedia);
+const ModalContainer = styled.div`
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
+  border-radius: var(--bordaRaioGrande);
   padding: var(--espacamentoGrande);
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  box-shadow: var(--sombraForte);
+  border: 2px solid var(--corBordaPrimaria);
+  animation: scaleIn 0.3s ease-out;
 `;
 
-const ModalTitulo = styled.h2`
-  color: var(--corTextoPrimaria);
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--espacamentoGrande);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 600;
+  padding-bottom: var(--espacamentoMedio);
+  border-bottom: 2px solid var(--corBordaPrimaria);
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: var(--espacamentoMedio);
+const ModalTitle = styled.h2`
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
+  margin: 0;
 `;
 
-const Label = styled.label`
-  display: block;
-  color: var(--corTextoSecundaria);
-  margin-bottom: var(--espacamentoPequeno);
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 500;
-`;
+const CloseButton = styled.button`
+  background: linear-gradient(135deg, var(--corErro) 0%, #d32f2f 100%);
+  color: white;
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  box-shadow: var(--sombraLeve);
 
-const Input = styled.input`
-  width: 100%;
-  padding: var(--espacamentoMedio);
-  border: 1px solid var(--corBorda);
-  border-radius: var(--bordaRaioPequena);
-  background: var(--corFundoPrimaria);
-  color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFontePequena);
-
-  &:focus {
-    outline: none;
-    border-color: var(--corPrimaria);
+  &:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, var(--corErro) 100%);
+    transform: scale(1.1);
+    box-shadow: var(--sombraMedia);
   }
 `;
 
-const ModalAcoes = styled.div`
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacamentoMedio);
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacamentoPequeno);
+`;
+
+const Label = styled.label`
+  color: var(--corTextoPrimaria);
+  font-weight: 600;
+  font-size: var(--tamanhoFonteMedia);
+`;
+
+const Input = styled.input`
+  padding: var(--espacamentoMedio);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  font-size: var(--tamanhoFonteMedia);
+  background: var(--corFundoSecundaria);
+  color: var(--corTextoPrimaria);
+  transition: all var(--transicaoRapida);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+`;
+
+const ButtonGroup = styled.div`
   display: flex;
   gap: var(--espacamentoMedio);
-  justify-content: flex-end;
   margin-top: var(--espacamentoGrande);
+  padding-top: var(--espacamentoMedio);
+  border-top: 1px solid var(--corBordaPrimaria);
+`;
+
+const SaveButton = styled.button`
+  background: linear-gradient(135deg, var(--corSucesso) 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  box-shadow: var(--sombraLeve);
+  flex: 1;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #45a049 0%, var(--corSucesso) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const CancelButton = styled.button`
+  background: linear-gradient(135deg, var(--corTextoSecundaria) 0%, var(--corTextoTerciaria) 100%);
+  color: var(--corTextoPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  box-shadow: var(--sombraLeve);
+
+  &:hover {
+    background: linear-gradient(135deg, var(--corTextoTerciaria) 0%, var(--corTextoSecundaria) 100%);
+    border-color: var(--corPrimaria);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
 `;
 
 const Configuracoes = ({ 
@@ -243,17 +539,20 @@ const Configuracoes = ({
   const [carregando, setCarregando] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState(null);
-  const [formData, setFormData] = useState({
-    nome: '',
-    cor: '#007bff'
-  });
+  const [formData, setFormData] = useState({ nome: '', cor: '#667eea' });
+  const [abaAtiva, setAbaAtiva] = useState('categorias');
 
-  // Carregar categorias
+  useEffect(() => {
+    carregarCategorias();
+  }, []);
+
   const carregarCategorias = async () => {
     setCarregando(true);
     try {
       const response = await categoriasAPI.buscarTodos();
-      setCategorias(response.categorias || []);
+      if (response.success) {
+        setCategorias(response.data || []);
+      }
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
     } finally {
@@ -261,32 +560,20 @@ const Configuracoes = ({
     }
   };
 
-  useEffect(() => {
-    carregarCategorias();
-  }, []);
-
-  // Abrir modal para criar/editar categoria
   const abrirModal = (categoria = null) => {
     if (categoria) {
       setCategoriaEditando(categoria);
-      setFormData({
-        nome: categoria.nome,
-        cor: categoria.cor || '#007bff'
-      });
+      setFormData({ nome: categoria.nome, cor: categoria.cor });
     } else {
       setCategoriaEditando(null);
-      setFormData({
-        nome: '',
-        cor: '#007bff'
-      });
+      setFormData({ nome: '', cor: '#667eea' });
     }
     setModalAberto(true);
   };
 
-  // Salvar categoria
   const salvarCategoria = async () => {
     if (!formData.nome.trim()) {
-      alert('Nome é obrigatório');
+      alert('Nome da categoria é obrigatório');
       return;
     }
 
@@ -305,7 +592,6 @@ const Configuracoes = ({
     }
   };
 
-  // Excluir categoria
   const excluirCategoria = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir esta categoria?')) {
       return;
@@ -320,132 +606,293 @@ const Configuracoes = ({
     }
   };
 
+  const abas = [
+    {
+      id: 'categorias',
+      titulo: 'Categorias',
+      icone: faTags,
+      descricao: 'Gerencie suas categorias de organização'
+    },
+    {
+      id: 'admin',
+      titulo: 'Painel Admin',
+      icone: faCrown,
+      descricao: 'Painel administrativo do sistema'
+    },
+    {
+      id: 'lixeira',
+      titulo: 'Lixeira',
+      icone: faRecycle,
+      descricao: 'Itens excluídos e restauração'
+    },
+    {
+      id: 'sincronizacao',
+      titulo: 'Sincronização',
+      icone: faSync,
+      descricao: 'Configurações de sincronização'
+    },
+    {
+      id: 'sistema',
+      titulo: 'Sistema',
+      icone: faCog,
+      descricao: 'Configurações do sistema'
+    }
+  ];
+
+  const renderizarConteudoAba = () => {
+    switch (abaAtiva) {
+      case 'categorias':
+        return (
+          <Secao>
+            <SecaoTitulo>
+              <FontAwesomeIcon icon={faTags} />
+              Gerenciar Categorias
+            </SecaoTitulo>
+            
+            <Botao onClick={() => abrirModal()}>
+              <FontAwesomeIcon icon={faPlus} />
+              Nova Categoria
+            </Botao>
+
+            {carregando ? (
+              <p>Carregando categorias...</p>
+            ) : categorias.length > 0 ? (
+              <ListaCategorias>
+                {categorias.map(categoria => (
+                  <CategoriaItem key={categoria.id} onClick={() => abrirModal(categoria)}>
+                    <CategoriaNome>{categoria.nome}</CategoriaNome>
+                    <CategoriaMeta>
+                      <span style={{ color: categoria.cor }}>●</span>
+                      <FontAwesomeIcon 
+                        icon={faEdit} 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          abrirModal(categoria); 
+                        }} 
+                      />
+                      <FontAwesomeIcon 
+                        icon={faTrash} 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          excluirCategoria(categoria.id); 
+                        }} 
+                      />
+                    </CategoriaMeta>
+                  </CategoriaItem>
+                ))}
+              </ListaCategorias>
+            ) : (
+              <EmptyState>
+                <EmptyIcon><FontAwesomeIcon icon={faTags} /></EmptyIcon>
+                <p>Nenhuma categoria encontrada</p>
+                <p>Crie sua primeira categoria para começar a organizar</p>
+              </EmptyState>
+            )}
+          </Secao>
+        );
+
+      case 'admin':
+        return (
+          <>
+            <Secao>
+              <SecaoTitulo>
+                <FontAwesomeIcon icon={faCrown} />
+                Painel Administrativo
+              </SecaoTitulo>
+              
+              <GridCards>
+                <Card>
+                  <CardIcon>
+                    <FontAwesomeIcon icon={faUsers} />
+                  </CardIcon>
+                  <CardTitulo>Usuários</CardTitulo>
+                  <CardValor>0</CardValor>
+                  <CardDescricao>Total de Usuários</CardDescricao>
+                </Card>
+                
+                <Card>
+                  <CardIcon>
+                    <FontAwesomeIcon icon={faDatabase} />
+                  </CardIcon>
+                  <CardTitulo>Dados</CardTitulo>
+                  <CardValor>0</CardValor>
+                  <CardDescricao>Total de Registros</CardDescricao>
+                </Card>
+                
+                <Card>
+                  <CardIcon>
+                    <FontAwesomeIcon icon={faChartBar} />
+                  </CardIcon>
+                  <CardTitulo>Estatísticas</CardTitulo>
+                  <CardValor>0%</CardValor>
+                  <CardDescricao>Taxa de Sucesso</CardDescricao>
+                </Card>
+              </GridCards>
+              
+              <Botao onClick={onAbrirAdmin}>
+                <FontAwesomeIcon icon={faShieldAlt} />
+                Acessar Painel Admin
+              </Botao>
+            </Secao>
+          </>
+        );
+
+      case 'lixeira':
+        return (
+          <Secao>
+            <SecaoTitulo>
+              <FontAwesomeIcon icon={faRecycle} />
+              Lixeira
+            </SecaoTitulo>
+            
+            <EmptyState>
+              <EmptyIcon><FontAwesomeIcon icon={faRecycle} /></EmptyIcon>
+              <p>Nenhum item na lixeira</p>
+              <p>Itens excluídos aparecerão aqui para restauração</p>
+            </EmptyState>
+          </Secao>
+        );
+
+      case 'sincronizacao':
+        return (
+          <Secao>
+            <SecaoTitulo>
+              <FontAwesomeIcon icon={faSync} />
+              Sincronização
+            </SecaoTitulo>
+            
+            <StatusItem>
+              <StatusInfo>
+                <StatusLabel>Status</StatusLabel>
+                <StatusValue>
+                  {syncStatus === 'online' ? 'Online' : 'Offline'}
+                </StatusValue>
+              </StatusInfo>
+              <StatusIndicator status={syncStatus} />
+            </StatusItem>
+
+            <StatusItem>
+              <StatusInfo>
+                <StatusLabel>Última Sincronização</StatusLabel>
+                <StatusValue>
+                  {lastSync ? new Date(lastSync).toLocaleString('pt-BR') : 'Nunca'}
+                </StatusValue>
+              </StatusInfo>
+            </StatusItem>
+
+            <Botao onClick={onSincronizar} disabled={syncStatus !== 'online'}>
+              <FontAwesomeIcon icon={faSync} />
+              Sincronizar Manualmente
+            </Botao>
+          </Secao>
+        );
+
+      case 'sistema':
+        return (
+          <>
+            <Secao>
+              <SecaoTitulo>
+                <FontAwesomeIcon icon={faCog} />
+                Sistema
+              </SecaoTitulo>
+              
+              <BotaoSecundario onClick={onAbrirLogs}>
+                <FontAwesomeIcon icon={faDatabase} />
+                Ver Logs do Sistema
+              </BotaoSecundario>
+            </Secao>
+
+            <Secao>
+              <SecaoTitulo>
+                <FontAwesomeIcon icon={faExclamationTriangle} />
+                Alertas
+              </SecaoTitulo>
+              
+              <EmptyState>
+                <EmptyIcon><FontAwesomeIcon icon={faCheckCircle} /></EmptyIcon>
+                <p>Nenhum alerta ativo</p>
+                <p>Sistema funcionando normalmente</p>
+              </EmptyState>
+            </Secao>
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <Container>
-      <Titulo>Configurações</Titulo>
+      <Header>
+        <Titulo>Configurações</Titulo>
+        <Subtitulo>Personalize e configure suas opções de sistema.</Subtitulo>
+      </Header>
 
-      {/* Seção de Categorias */}
-      <Secao>
-        <SecaoTitulo>
-          <FontAwesomeIcon icon={faTags} />
-          Gerenciar Categorias
-        </SecaoTitulo>
-        
-        <Botao onClick={() => abrirModal()}>
-          <FontAwesomeIcon icon={faPlus} />
-          Nova Categoria
-        </Botao>
+      <TabContainer>
+        <TabNavigation>
+          {abas.map(aba => (
+            <TabButton 
+              key={aba.id}
+              active={abaAtiva === aba.id}
+              onClick={() => setAbaAtiva(aba.id)}
+              title={aba.descricao}
+            >
+              <FontAwesomeIcon icon={aba.icone} />
+              {aba.titulo}
+            </TabButton>
+          ))}
+        </TabNavigation>
 
-        {carregando ? (
-          <p>Carregando categorias...</p>
-        ) : (
-          <CategoriasGrid>
-            {categorias.map(categoria => (
-              <CategoriaCard key={categoria.id}>
-                <CategoriaCor cor={categoria.cor} />
-                <CategoriaNome>{categoria.nome}</CategoriaNome>
-                <CategoriaAcoes>
-                  <BotaoAcao onClick={() => abrirModal(categoria)}>
-                    <FontAwesomeIcon icon={faEdit} />
-                  </BotaoAcao>
-                  <BotaoAcao onClick={() => excluirCategoria(categoria.id)}>
-                    <FontAwesomeIcon icon={faTrash} />
-                  </BotaoAcao>
-                </CategoriaAcoes>
-              </CategoriaCard>
-            ))}
-          </CategoriasGrid>
-        )}
-      </Secao>
-
-      {/* Seção de Sincronização */}
-      <Secao>
-        <SecaoTitulo>
-          <FontAwesomeIcon icon={faSync} />
-          Sincronização
-        </SecaoTitulo>
-        
-        <StatusItem>
-          <StatusInfo>
-            <StatusLabel>Status</StatusLabel>
-            <StatusValue>
-              {syncStatus === 'online' ? 'Online' : 'Offline'}
-            </StatusValue>
-          </StatusInfo>
-          <StatusIndicator status={syncStatus} />
-        </StatusItem>
-
-        <StatusItem>
-          <StatusInfo>
-            <StatusLabel>Última Sincronização</StatusLabel>
-            <StatusValue>
-              {lastSync ? new Date(lastSync).toLocaleString('pt-BR') : 'Nunca'}
-            </StatusValue>
-          </StatusInfo>
-        </StatusItem>
-
-        <Botao onClick={onSincronizar} disabled={syncStatus !== 'online'}>
-          <FontAwesomeIcon icon={faSync} />
-          Sincronizar Manualmente
-        </Botao>
-      </Secao>
-
-      {/* Seção de Sistema */}
-      <Secao>
-        <SecaoTitulo>
-          <FontAwesomeIcon icon={faCog} />
-          Sistema
-        </SecaoTitulo>
-        
-        <BotaoSecundario onClick={onAbrirLogs}>
-          <FontAwesomeIcon icon={faDatabase} />
-          Ver Logs do Sistema
-        </BotaoSecundario>
-
-        <BotaoSecundario onClick={onAbrirAdmin} style={{ marginLeft: 'var(--espacamentoMedio)' }}>
-          <FontAwesomeIcon icon={faShieldAlt} />
-          Painel Administrativo
-        </BotaoSecundario>
-      </Secao>
+        <TabContent>
+          {renderizarConteudoAba()}
+        </TabContent>
+      </TabContainer>
 
       {/* Modal de Categoria */}
       {modalAberto && (
-        <Modal onClick={() => setModalAberto(false)}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalTitulo>
-              {categoriaEditando ? 'Editar Categoria' : 'Nova Categoria'}
-            </ModalTitulo>
-            
-            <FormGroup>
-              <Label>Nome</Label>
-              <Input
-                type="text"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Digite o nome da categoria"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Cor</Label>
-              <Input
-                type="color"
-                value={formData.cor}
-                onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
-              />
-            </FormGroup>
-
-            <ModalAcoes>
-              <BotaoSecundario onClick={() => setModalAberto(false)}>
+        <ModalOverlay onClick={() => setModalAberto(false)}>
+          <ModalContainer onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>
+                {categoriaEditando ? 'Editar Categoria' : 'Nova Categoria'}
+              </ModalTitle>
+              <CloseButton onClick={() => setModalAberto(false)}>
                 <FontAwesomeIcon icon={faTimes} />
-                Cancelar
-              </BotaoSecundario>
-              <Botao onClick={salvarCategoria}>
-                Salvar
-              </Botao>
-            </ModalAcoes>
-          </ModalContent>
-        </Modal>
+              </CloseButton>
+            </ModalHeader>
+            
+            <Form onSubmit={(e) => { e.preventDefault(); salvarCategoria(); }}>
+              <FormGroup>
+                <Label>Nome</Label>
+                <Input
+                  type="text"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Digite o nome da categoria"
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label>Cor</Label>
+                <Input
+                  type="color"
+                  value={formData.cor}
+                  onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                />
+              </FormGroup>
+
+              <ButtonGroup>
+                <CancelButton type="button" onClick={() => setModalAberto(false)}>
+                  Cancelar
+                </CancelButton>
+                <SaveButton type="submit">
+                  Salvar
+                </SaveButton>
+              </ButtonGroup>
+            </Form>
+          </ModalContainer>
+        </ModalOverlay>
       )}
     </Container>
   );

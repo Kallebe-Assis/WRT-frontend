@@ -1,387 +1,253 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faPlus,
-  faTimes,
-  faHeart,
-  faStickyNote,
-  faLink
+import { 
+  faStickyNote, 
+  faLink, 
+  faHeart, 
+  faPlus 
 } from '@fortawesome/free-solid-svg-icons';
-import Loading from './Loading';
-import { formatarData } from '../utils/formatacao';
 
 const Container = styled.div`
-  padding: 1rem 2rem;
+  padding: var(--espacamentoGrande);
   max-width: 1200px;
   margin: 0 auto;
+  animation: fadeIn 0.5s ease-out;
+`;
+
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: var(--espacamentoExtraGrande);
 `;
 
 const Titulo = styled.h1`
-  color: var(--corTextoPrimaria);
-  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-size: 2.5rem;
   font-weight: 700;
+  margin-bottom: var(--espacamentoMedio);
+  animation: fadeIn 0.6s ease-out;
 `;
 
 const Subtitulo = styled.p`
   color: var(--corTextoSecundaria);
-  margin-bottom: 1.5rem;
-  font-size: 1.2rem;
-  line-height: 1.6;
+  font-size: var(--tamanhoFonteGrande);
+  margin-bottom: var(--espacamentoGrande);
+  animation: fadeIn 0.7s ease-out;
 `;
 
-const GradeContainer = styled.div`
+const GridCards = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--espacamentoGrande);
+  margin-bottom: var(--espacamentoExtraGrande);
 `;
 
-const IconeItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  background: var(--corFundoCard);
+const Card = styled.div`
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-height: 120px;
-  position: relative;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    border-color: var(--corPrimaria);
-  }
-
-  &.arrastando {
-    opacity: 0.5;
-    transform: rotate(5deg);
-  }
-
-  &.sobre {
-    border-color: var(--corSecundaria);
-    background: var(--corFundoHover);
-  }
-`;
-
-const IconeImagem = styled.img`
-  width: 48px;
-  height: 48px;
-  margin-bottom: 0.5rem;
-  border-radius: var(--bordaRaioPequena);
-`;
-
-const IconeTexto = styled.span`
-  color: var(--corTextoPrimaria);
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-align: center;
-  margin-top: 0.5rem;
-`;
-
-const BotaoAdicionar = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  background: var(--corFundoCard);
-  border: 2px dashed var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-height: 120px;
-
-  &:hover {
-    border-color: var(--corPrimaria);
-    background: var(--corFundoHover);
-    transform: translateY(-2px);
-  }
-
-  &.sobre {
-    border-color: var(--corPrimaria);
-    background: var(--corFundoHover);
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const IconeAdicionar = styled.div`
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--corPrimaria);
-  border-radius: 50%;
-  margin-bottom: 0.5rem;
-  color: white;
-  font-size: 1.2rem;
-`;
-
-const TextoAdicionar = styled.span`
-  color: var(--corTextoSecundaria);
-  font-size: 0.9rem;
-  font-weight: 500;
-`;
-
-// Modal styles
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: var(--corFundoCard);
   border-radius: var(--bordaRaioGrande);
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: var(--espacamentoGrande);
+  text-align: center;
+  transition: all var(--transicaoMedia);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sombraLeve);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+  
+  &:hover {
+    border-color: var(--corPrimaria);
+    transform: translateY(-6px);
+    box-shadow: var(--sombraForte);
+    
+    &::before {
+      opacity: 1;
+    }
+    
+    .card-icon {
+      transform: scale(1.1) translateY(-5px);
+      animation: iconFloat 2s ease-in-out infinite;
+    }
+  }
 `;
 
-const ModalHeader = styled.div`
+const CardIcon = styled.div`
+  font-size: 3rem;
+  color: var(--corPrimaria);
+  margin-bottom: var(--espacamentoMedio);
+  transition: all var(--transicaoMedia);
+  
+  &.card-icon {
+    animation: iconGlow 3s ease-in-out infinite;
+  }
+`;
+
+const CardTitulo = styled.h3`
+  color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteExtraGrande);
+  font-weight: 600;
+  margin-bottom: var(--espacamentoMedio);
+`;
+
+const CardDescricao = styled.p`
+  color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFonteMedia);
+  line-height: 1.6;
+  margin-bottom: var(--espacamentoGrande);
+`;
+
+const CardStats = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  padding-top: var(--espacamentoMedio);
+  border-top: 1px solid var(--corBordaPrimaria);
 `;
 
-const ModalTitle = styled.h2`
-  color: var(--corTextoPrimaria);
-  margin: 0;
-  font-size: 1.5rem;
+const Stat = styled.div`
+  text-align: center;
 `;
 
-const BotaoFechar = styled.button`
-  background: none;
-  border: none;
+const StatNumero = styled.div`
+  font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
+  color: var(--corPrimaria);
+`;
+
+const StatLabel = styled.div`
+  font-size: var(--tamanhoFontePequena);
   color: var(--corTextoSecundaria);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: var(--bordaRaioPequena);
-
-  &:hover {
-    background: var(--corFundoHover);
-    color: var(--corTextoPrimaria);
-  }
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
-const Contador = styled.span`
-  background: var(--corPrimaria);
+const BotaoAcao = styled.button`
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  font-size: var(--tamanhoFonteMedia);
   font-weight: 600;
-  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  box-shadow: var(--sombraLeve);
+  
+  &:hover {
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
 `;
 
-const TelaInicial = ({ 
-  notas, 
-  links, 
-  carregando, 
-  carregandoLinks,
-  onNovoItem,
-  onEditarItem,
-  onVisualizarItem,
-  onTelaCheia
-}) => {
-  const [itensRecentes, setItensRecentes] = useState([]);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [tipoNovoItem, setTipoNovoItem] = useState(null);
-
-  // Combinar notas e links recentes
-  useEffect(() => {
-    const todosItens = [
-      ...(notas || []).map(nota => ({ ...nota, tipo: 'nota' })),
-      ...(links || []).map(link => ({ ...link, tipo: 'link' }))
-    ];
-
-    // Ordenar por data de criação (mais recentes primeiro)
-    const itensOrdenados = todosItens
-      .sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao))
-      .slice(0, 6); // Mostrar apenas os 6 mais recentes
-
-    setItensRecentes(itensOrdenados);
-  }, [notas, links]);
-
-  const handleItemClick = (item) => {
-    if (item.tipo === 'nota') {
-      onVisualizarItem(item);
-    } else if (item.tipo === 'link') {
-      window.open(item.url, '_blank');
-    }
-  };
-
-  const handleNovoItem = (tipo) => {
-    setTipoNovoItem(tipo);
-    setModalAberto(true);
-  };
-
-  const handleConfirmarNovo = () => {
-    onNovoItem();
-    setModalAberto(false);
-    setTipoNovoItem(null);
-  };
-
-  const handleFecharModal = () => {
-    setModalAberto(false);
-    setTipoNovoItem(null);
-  };
-
-  if (carregando || carregandoLinks) {
-    return <Loading />;
-  }
-
+const TelaInicial = ({ notas, links, onNovoItem }) => {
   return (
     <Container>
-      <Titulo>Bem-vindo ao WRTmind</Titulo>
-      <Subtitulo>
-        Gerencie suas notas e links de forma organizada e eficiente.
-      </Subtitulo>
+      <Header>
+        <Titulo>Bem-vindo ao WRTmind</Titulo>
+        <Subtitulo>
+          Gerencie suas notas e links de forma organizada e eficiente.
+        </Subtitulo>
+      </Header>
 
-      <GradeContainer>
+      <GridCards>
         {/* Notas */}
-        <IconeItem onClick={() => handleNovoItem('nota')}>
-          <FontAwesomeIcon 
-            icon={faStickyNote} 
-            style={{ fontSize: '48px', color: 'var(--corPrimaria)' }}
-          />
-          <IconeTexto>
-            Notas
-            <Contador>{notas?.length || 0}</Contador>
-          </IconeTexto>
-        </IconeItem>
+        <Card onClick={() => onNovoItem('nota')}>
+          <CardIcon className="card-icon">
+            <FontAwesomeIcon icon={faStickyNote} />
+          </CardIcon>
+          <CardTitulo>Notas</CardTitulo>
+          <CardDescricao>
+            Crie, edite e organize suas anotações.
+          </CardDescricao>
+          <CardStats>
+            <Stat>
+              <StatNumero>{notas?.length || 0}</StatNumero>
+              <StatLabel>Total de Notas</StatLabel>
+            </Stat>
+            <Stat>
+              <StatNumero>
+                {(notas?.filter(n => n.favorito) || []).length}
+              </StatNumero>
+              <StatLabel>Favoritos</StatLabel>
+            </Stat>
+          </CardStats>
+          <BotaoAcao onClick={(e) => { e.stopPropagation(); onNovoItem('nota'); }}>
+            <FontAwesomeIcon icon={faPlus} /> Adicionar Nota
+          </BotaoAcao>
+        </Card>
 
         {/* Links */}
-        <IconeItem onClick={() => handleNovoItem('link')}>
-          <FontAwesomeIcon 
-            icon={faLink} 
-            style={{ fontSize: '48px', color: 'var(--corSecundaria)' }}
-          />
-          <IconeTexto>
-            Links
-            <Contador>{links?.length || 0}</Contador>
-          </IconeTexto>
-        </IconeItem>
+        <Card onClick={() => onNovoItem('link')}>
+          <CardIcon className="card-icon">
+            <FontAwesomeIcon icon={faLink} />
+          </CardIcon>
+          <CardTitulo>Links</CardTitulo>
+          <CardDescricao>
+            Adicione links úteis para facilitar o acesso.
+          </CardDescricao>
+          <CardStats>
+            <Stat>
+              <StatNumero>{links?.length || 0}</StatNumero>
+              <StatLabel>Total de Links</StatLabel>
+            </Stat>
+            <Stat>
+              <StatNumero>
+                {(links?.filter(l => l.favorito) || []).length}
+              </StatNumero>
+              <StatLabel>Favoritos</StatLabel>
+            </Stat>
+          </CardStats>
+          <BotaoAcao onClick={(e) => { e.stopPropagation(); onNovoItem('link'); }}>
+            <FontAwesomeIcon icon={faPlus} /> Adicionar Link
+          </BotaoAcao>
+        </Card>
 
         {/* Favoritos */}
-        <IconeItem onClick={() => window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'favoritos' }))}>
-          <FontAwesomeIcon 
-            icon={faHeart} 
-            style={{ fontSize: '48px', color: '#FF6B6B' }}
-          />
-          <IconeTexto>
-            Favoritos
-            <Contador>
-              {(notas?.filter(n => n.favorito) || []).length}
-            </Contador>
-          </IconeTexto>
-        </IconeItem>
-
-        {/* Adicionar novo */}
-        <BotaoAdicionar onClick={() => handleNovoItem('nota')}>
-          <IconeAdicionar>
-            <FontAwesomeIcon icon={faPlus} />
-          </IconeAdicionar>
-          <TextoAdicionar>Adicionar</TextoAdicionar>
-        </BotaoAdicionar>
-      </GradeContainer>
-
-      {/* Itens Recentes */}
-      {itensRecentes.length > 0 && (
-        <>
-          <Titulo style={{ marginTop: '3rem', fontSize: '1.8rem' }}>
-            Itens Recentes
-          </Titulo>
-          <GradeContainer>
-            {itensRecentes.map((item) => (
-              <IconeItem 
-                key={`${item.tipo}-${item.id}`}
-                onClick={() => handleItemClick(item)}
-              >
-                <FontAwesomeIcon 
-                  icon={item.tipo === 'nota' ? faStickyNote : faLink}
-                  style={{ 
-                    fontSize: '32px', 
-                    color: item.tipo === 'nota' ? 'var(--corPrimaria)' : 'var(--corSecundaria)' 
-                  }}
-                />
-                <IconeTexto>
-                  {item.titulo || item.nome}
-                  <br />
-                  <small style={{ color: 'var(--corTextoSecundaria)' }}>
-                    {formatarData(item.dataCriacao)}
-                  </small>
-                </IconeTexto>
-              </IconeItem>
-            ))}
-          </GradeContainer>
-        </>
-      )}
-
-      {/* Modal de confirmação */}
-      {modalAberto && (
-        <ModalOverlay onClick={handleFecharModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>
-                Novo {tipoNovoItem === 'nota' ? 'Nota' : 'Link'}
-              </ModalTitle>
-              <BotaoFechar onClick={handleFecharModal}>
-                <FontAwesomeIcon icon={faTimes} />
-              </BotaoFechar>
-            </ModalHeader>
-            
-            <p style={{ marginBottom: '1.5rem', color: 'var(--corTextoSecundaria)' }}>
-              Deseja criar um novo {tipoNovoItem === 'nota' ? 'nota' : 'link'}?
-            </p>
-            
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={handleFecharModal}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid var(--corBordaPrimaria)',
-                  background: 'transparent',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleConfirmarNovo}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  background: 'var(--corPrimaria)',
-                  color: 'white',
-                  borderRadius: 'var(--bordaRaioMedia)',
-                  cursor: 'pointer'
-                }}
-              >
-                Criar
-              </button>
-            </div>
-          </ModalContent>
-        </ModalOverlay>
-      )}
+        <Card onClick={() => window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'favoritos' }))}>
+          <CardIcon className="card-icon">
+            <FontAwesomeIcon icon={faHeart} />
+          </CardIcon>
+          <CardTitulo>Favoritos</CardTitulo>
+          <CardDescricao>
+            Veja seus itens favoritos em um só lugar.
+          </CardDescricao>
+          <CardStats>
+            <Stat>
+              <StatNumero>
+                {(notas?.filter(n => n.favorito) || []).length}
+              </StatNumero>
+              <StatLabel>Notas Favoritas</StatLabel>
+            </Stat>
+            <Stat>
+              <StatNumero>
+                {(links?.filter(l => l.favorito) || []).length}
+              </StatNumero>
+              <StatLabel>Links Favoritos</StatLabel>
+            </Stat>
+          </CardStats>
+          <BotaoAcao onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('navegarPara', { detail: 'favoritos' })); }}>
+            <FontAwesomeIcon icon={faHeart} /> Ver Favoritos
+          </BotaoAcao>
+        </Card>
+      </GridCards>
     </Container>
   );
 };

@@ -19,7 +19,6 @@ import ModalItem from './components/ModalItem';
 import ModalLink from './components/ModalLink';
 import Configuracoes from './components/Configuracoes';
 import LogModal from './components/LogModal';
-import AdminPanel from './components/AdminPanel';
 import TelaLixeira from './components/TelaLixeira';
 import NotaTelaCheia from './components/NotaTelaCheia';
 import MenuLateral from './components/MenuLateral';
@@ -50,15 +49,16 @@ const ContentArea = styled.div`
 `;
 
 const Header = styled.header`
-  background: var(--corFundoSecundaria);
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoTerciaria) 100%);
   border-bottom: 2px solid var(--corBordaPrimaria);
   padding: var(--espacamentoMedio) var(--espacamentoGrande);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--sombraLeve);
+  box-shadow: var(--sombraMedia);
   height: 80px;
   box-sizing: border-box;
+  backdrop-filter: blur(10px);
 `;
 
 const UserInfo = styled.div`
@@ -67,10 +67,94 @@ const UserInfo = styled.div`
   gap: var(--espacamentoMedio);
   color: var(--corTextoPrimaria);
   font-weight: 600;
+  background: var(--corFundoSecundaria);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  border-radius: var(--bordaRaioGrande);
+  border: 1px solid var(--corBordaPrimaria);
 `;
 
 const LogoutButton = styled.button`
-  background: var(--corErro);
+  background: linear-gradient(135deg, var(--corErro) 0%, #d32f2f 100%);
+  color: white;
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  padding: 10px 18px;
+  font-size: var(--tamanhoFontePequena);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--sombraLeve);
+
+  &:hover {
+    background: linear-gradient(135deg, var(--corErroHover) 0%, #b71c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
+`;
+
+const Logo = styled.div`
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  border-radius: var(--bordaRaioMedia);
+  transition: all var(--transicaoRapida);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const StatusBar = styled.div`
+  background: linear-gradient(90deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border-bottom: 1px solid var(--corBordaPrimaria);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--tamanhoFontePequena);
+  color: var(--corTextoSecundaria);
+  backdrop-filter: blur(5px);
+`;
+
+const StatusItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  background: var(--corFundoSecundaria);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  border-radius: var(--bordaRaioMedia);
+  border: 1px solid var(--corBordaPrimaria);
+`;
+
+const StatusIndicator = styled.div`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${props => 
+    props.status === 'online' ? 'var(--corSucesso)' :
+    props.status === 'syncing' ? 'var(--corAviso)' :
+    'var(--corErro)'
+  };
+  box-shadow: 0 0 8px ${props => 
+    props.status === 'online' ? 'rgba(76, 175, 80, 0.4)' :
+    props.status === 'syncing' ? 'rgba(255, 152, 0, 0.4)' :
+    'rgba(244, 67, 54, 0.4)'
+  };
+  animation: ${props => props.status === 'syncing' ? 'pulse 2s infinite' : 'none'};
+`;
+
+const SyncButton = styled.button`
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
   color: white;
   border: none;
   border-radius: var(--bordaRaioMedia);
@@ -81,71 +165,19 @@ const LogoutButton = styled.button`
   transition: all var(--transicaoRapida);
   display: flex;
   align-items: center;
-  gap: 6px;
-
-  &:hover {
-    background: var(--corErroHover);
-    transform: translateY(-1px);
-  }
-`;
-
-const Logo = styled.div`
-  color: var(--corPrimaria);
-  font-size: var(--tamanhoFonteTitulo);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoMedio);
-`;
-
-const StatusBar = styled.div`
-  background: var(--corFundoTerciaria);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-  padding: var(--espacamentoPequeno) var(--espacamentoGrande);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-`;
-
-const StatusItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-`;
-
-const StatusIndicator = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${props => 
-    props.status === 'online' ? 'var(--corSucesso)' :
-    props.status === 'syncing' ? 'var(--corAviso)' :
-    'var(--corErro)'
-  };
-`;
-
-const SyncButton = styled.button`
-  background: var(--corPrimaria);
-  color: white;
-  border: none;
-  border-radius: var(--bordaRaioMedia);
-  padding: 6px 12px;
-  font-size: var(--tamanhoFontePequena);
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 8px;
+  box-shadow: var(--sombraLeve);
 
   &:hover:not(:disabled) {
-    background: var(--corSecundaria);
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -235,12 +267,9 @@ const AppContent = () => {
   const [telaCheiaAberta, setTelaCheiaAberta] = useState(false);
   const [itemTelaCheia, setItemTelaCheia] = useState(null);
   const [logModalAberto, setLogModalAberto] = useState(false);
-  const [adminPanelAberto, setAdminPanelAberto] = useState(false);
-  
-  // Estados para modal de links
   const [modalLinkAberto, setModalLinkAberto] = useState(false);
   const [linkAtual, setLinkAtual] = useState(null);
-  const [modoModalLink, setModoModalLink] = useState('editar');
+  const [modoModalLink, setModoModalLink] = useState('criar');
   const [links, setLinks] = useState([]);
   const [carregandoLinks, setCarregandoLinks] = useState(false);
 
@@ -333,7 +362,6 @@ const AppContent = () => {
     setModalAberto(false);
     setTelaCheiaAberta(false);
     setLogModalAberto(false);
-    setAdminPanelAberto(false);
   };
 
   // Adicionar listeners para eventos customizados
@@ -550,17 +578,6 @@ const AppContent = () => {
     setTelaAtiva('configuracoes');
   };
 
-  // Verificar se o usuário é admin
-  const isAdmin = user && user.id === 'Nrt4xSRGjruu5yBTUxrA';
-
-  const handleAbrirAdmin = () => {
-    if (isAdmin) {
-      setAdminPanelAberto(true);
-    } else {
-      alert('Acesso negado. Apenas administradores podem acessar este painel.');
-    }
-  };
-
   const renderizarConteudo = () => {
     console.log('🔍 Renderizando conteúdo - telaAtiva:', telaAtiva);
     console.log('📝 Notas ativas:', notasAtivas);
@@ -642,7 +659,7 @@ const AppContent = () => {
         return (
           <Configuracoes
             onAbrirLogs={abrirLogModal}
-            onAbrirAdmin={handleAbrirAdmin}
+            onAbrirAdmin={() => alert('Acesso negado. Apenas administradores podem acessar este painel.')}
             syncStatus={syncStatus}
             lastSync={lastSync}
             onSincronizar={sincronizarManual}
@@ -751,11 +768,6 @@ const AppContent = () => {
         onCarregarLogs={carregarLogsSistema}
         onLimparLogs={limparLogsSistema}
         onExportarLogs={exportarLogs}
-      />
-
-      <AdminPanel
-        isVisible={adminPanelAberto}
-        onClose={() => setAdminPanelAberto(false)}
       />
     </AppContainer>
   );

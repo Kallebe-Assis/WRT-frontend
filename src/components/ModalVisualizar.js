@@ -38,14 +38,15 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContainer = styled.div`
-  background: var(--corFundoTerciaria);
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border-radius: var(--bordaRaioGrande);
   box-shadow: var(--sombraForte);
   width: 100%;
-  max-width: 900px;
+  max-width: ${props => props.tipo === 'link' ? '600px' : '900px'};
   max-height: 90vh;
   overflow: hidden;
   animation: fadeIn 0.3s ease-out;
+  border: 2px solid var(--corBordaPrimaria);
 `;
 
 const ModalHeader = styled.div`
@@ -53,13 +54,17 @@ const ModalHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: var(--espacamentoGrande);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-  background: var(--corFundoSecundaria);
+  border-bottom: 2px solid var(--corBordaPrimaria);
+  background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoTerciaria) 100%);
 `;
 
 const ModalTitle = styled.h2`
-  color: var(--corTextoPrimaria);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
   margin: 0;
   flex: 1;
   margin-right: var(--espacamentoMedio);
@@ -75,48 +80,55 @@ const ActionButton = styled.button`
   align-items: center;
   gap: var(--espacamentoPequeno);
   padding: var(--espacamentoMedio);
-  background: var(--corFundoTerciaria);
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
   color: var(--corTextoSecundaria);
   border: 1px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   font-size: var(--tamanhoFonteMedia);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--transicaoRapida);
+  box-shadow: var(--sombraLeve);
 
   &:hover {
-    background: var(--corPrimaria);
+    background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
     color: var(--corTextoClara);
     border-color: var(--corPrimaria);
     transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
   }
 
   &.danger:hover {
-    background: var(--corErro);
+    background: linear-gradient(135deg, var(--corErro) 0%, #d32f2f 100%);
     border-color: var(--corErro);
   }
 `;
 
 const BotaoFechar = styled.button`
-  background: none;
+  background: linear-gradient(135deg, var(--corErro) 0%, #d32f2f 100%);
+  color: white;
   border: none;
-  color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFonteExtraGrande);
+  border-radius: var(--bordaRaioMedia);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: var(--espacamentoPequeno);
-  border-radius: var(--bordaRaioPequena);
   transition: all var(--transicaoRapida);
+  box-shadow: var(--sombraLeve);
 
   &:hover {
-    background: var(--corFundoSecundaria);
-    color: var(--corTextoPrimaria);
+    background: linear-gradient(135deg, #d32f2f 0%, var(--corErro) 100%);
+    transform: scale(1.1);
+    box-shadow: var(--sombraMedia);
   }
 `;
 
 const ModalContent = styled.div`
   padding: var(--espacamentoGrande);
+  max-height: calc(90vh - 80px);
   overflow-y: auto;
-  max-height: calc(90vh - 140px);
 `;
 
 const ItemMeta = styled.div`
@@ -329,6 +341,131 @@ const ModalVisualizar = ({
     return badges;
   };
 
+  const renderizarConteudo = () => {
+    if (!item) return null;
+
+    if (tipo === 'link') {
+      return (
+        <>
+          {item.imagemUrl && (
+            <LinkImageContainer>
+              <img src={item.imagemUrl} alt={item.nome} />
+            </LinkImageContainer>
+          )}
+          
+          <LinkInfo>
+            <InfoSection>
+              <InfoLabel>Nome</InfoLabel>
+              <InfoValue>{item.nome}</InfoValue>
+            </InfoSection>
+            
+            <InfoSection>
+              <InfoLabel>URL</InfoLabel>
+              <LinkUrl onClick={() => window.open(item.url, '_blank')}>
+                {item.url}
+              </LinkUrl>
+            </InfoSection>
+            
+            {item.descricao && (
+              <InfoSection>
+                <InfoLabel>Descrição</InfoLabel>
+                <InfoValue>{item.descricao}</InfoValue>
+              </InfoSection>
+            )}
+            
+            <InfoSection>
+              <InfoLabel>Data de Criação</InfoLabel>
+              <InfoValue>{formatarData(item.createdAt)}</InfoValue>
+            </InfoSection>
+            
+            {item.categoria && (
+              <InfoSection>
+                <InfoLabel>Categoria</InfoLabel>
+                <InfoValue>{item.categoria}</InfoValue>
+              </InfoSection>
+            )}
+          </LinkInfo>
+        </>
+      );
+    }
+
+    // Conteúdo para notas (mantido como estava)
+    return (
+      <div>
+        {renderizarBadges()}
+        
+        <div style={{ marginBottom: 'var(--espacamentoGrande)' }}>
+          <h3 style={{ 
+            color: 'var(--corTextoPrimaria)', 
+            marginBottom: 'var(--espacamentoMedio)',
+            fontSize: 'var(--tamanhoFonteExtraGrande)',
+            fontWeight: '600'
+          }}>
+            {item.titulo}
+          </h3>
+          
+          <div style={{ 
+            color: 'var(--corTextoSecundaria)', 
+            lineHeight: '1.8',
+            fontSize: 'var(--tamanhoFonteMedia)',
+            whiteSpace: 'pre-wrap'
+          }}>
+            {item.conteudo}
+          </div>
+        </div>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: 'var(--espacamentoMedio)',
+          marginTop: 'var(--espacamentoGrande)'
+        }}>
+          <div style={{ 
+            background: 'var(--corFundoSecundaria)', 
+            padding: 'var(--espacamentoMedio)', 
+            borderRadius: 'var(--bordaRaioMedia)',
+            border: '1px solid var(--corBordaPrimaria)'
+          }}>
+            <div style={{ 
+              color: 'var(--corTextoSecundaria)', 
+              fontSize: 'var(--tamanhoFontePequena)', 
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: 'var(--espacamentoPequeno)'
+            }}>
+              Criado em
+            </div>
+            <div style={{ color: 'var(--corTextoPrimaria)' }}>
+              {formatarData(item.dataCriacao)}
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: 'var(--corFundoSecundaria)', 
+            padding: 'var(--espacamentoMedio)', 
+            borderRadius: 'var(--bordaRaioMedia)',
+            border: '1px solid var(--corBordaPrimaria)'
+          }}>
+            <div style={{ 
+              color: 'var(--corTextoSecundaria)', 
+              fontSize: 'var(--tamanhoFontePequena)', 
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: 'var(--espacamentoPequeno)'
+            }}>
+              Modificado em
+            </div>
+            <div style={{ color: 'var(--corTextoPrimaria)' }}>
+              {formatarData(item.dataModificacao)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!visivel || !item) return null;
 
   const categoria = categorias.find(cat => cat.id === item.categoriaId);
@@ -375,23 +512,21 @@ const ModalVisualizar = ({
 
   return (
     <ModalOverlay onClick={onFechar}>
-      <ModalContainer onClick={(e) => e.stopPropagation()}>
+      <ModalContainer tipo={tipo} onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <ModalTitle>{item.titulo}</ModalTitle>
+          <ModalTitle>
+            {tipo === 'link' ? item.nome : item.titulo}
+          </ModalTitle>
           <HeaderActions>
-            <ActionButton onClick={handleCopiar} title="Copiar conteúdo">
+            <ActionButton onClick={onCopiar}>
               <FontAwesomeIcon icon={faCopy} />
               Copiar
             </ActionButton>
-            <ActionButton onClick={() => onEditar(item)} title="Editar">
+            <ActionButton onClick={onEditar}>
               <FontAwesomeIcon icon={faEdit} />
               Editar
             </ActionButton>
-            <ActionButton 
-              onClick={() => onExcluir(item.id)} 
-              className="danger"
-              title="Excluir"
-            >
+            <ActionButton className="danger" onClick={onExcluir}>
               <FontAwesomeIcon icon={faTrash} />
               Excluir
             </ActionButton>
@@ -400,41 +535,9 @@ const ModalVisualizar = ({
             </BotaoFechar>
           </HeaderActions>
         </ModalHeader>
-
+        
         <ModalContent>
-          <ItemMeta>
-            {renderizarBadges()}
-          </ItemMeta>
-
-          <ContentSection>
-            <SectionTitle>Conteúdo</SectionTitle>
-            <ContentDisplay 
-              dangerouslySetInnerHTML={{ __html: item.conteudo || '<em>Sem conteúdo</em>' }}
-            />
-          </ContentSection>
-
-          <DatesSection>
-            <DateItem>
-              <FontAwesomeIcon icon={faCalendarAlt} color="var(--corPrimaria)" />
-              <DateLabel>Criado:</DateLabel>
-              <DateValue>{formatarData(item.dataCriacao, 'completo')}</DateValue>
-            </DateItem>
-            
-            {item.dataCriacao !== item.dataAtualizacao && (
-              <DateItem>
-                <FontAwesomeIcon icon={faClock} color="var(--corSecundaria)" />
-                <DateLabel>Editado:</DateLabel>
-                <DateValue>{formatarData(item.dataAtualizacao, 'completo')}</DateValue>
-              </DateItem>
-            )}
-          </DatesSection>
-
-          {/* Gerenciador de Tópicos apenas para Projetos */}
-          {tipo === 'projeto' && (
-            <GerenciadorTopicos 
-              projeto={item} 
-            />
-          )}
+          {renderizarConteudo()}
         </ModalContent>
       </ModalContainer>
     </ModalOverlay>

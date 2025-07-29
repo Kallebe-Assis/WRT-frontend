@@ -14,18 +14,36 @@ import {
 import { formatarData } from '../utils/formatacao';
 
 const Card = styled.div`
-  background: var(--corFundoCard);
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
+  border-radius: var(--bordaRaioGrande);
   padding: var(--espacamentoMedio);
   transition: all var(--transicaoMedia);
   cursor: pointer;
   position: relative;
+  box-shadow: var(--sombraLeve);
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
   
   &:hover {
     border-color: var(--corPrimaria);
-    transform: translateY(-2px);
-    box-shadow: var(--sombraMedia);
+    transform: translateY(-4px);
+    box-shadow: var(--sombraForte);
+    
+    &::before {
+      opacity: 1;
+    }
   }
 `;
 
@@ -60,24 +78,32 @@ const CardActions = styled.div`
 `;
 
 const CardActionButton = styled.button`
-  background: none;
-  border: none;
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border: 1px solid var(--corBordaPrimaria);
   color: var(--corTextoSecundaria);
   cursor: pointer;
-  padding: 4px;
-  border-radius: var(--bordaRaioPequena);
+  padding: 6px;
+  border-radius: var(--bordaRaioMedia);
   transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   
   &:hover {
-    background: var(--corFundoTerciaria);
-    color: var(--corTextoPrimaria);
+    background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    color: var(--corTextoClara);
+    border-color: var(--corPrimaria);
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
   }
 `;
 
 const CardContent = styled.div`
   color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFontePequena);
-  line-height: 1.5;
+  font-size: var(--tamanhoFonteMedia);
+  line-height: 1.6;
   margin-bottom: var(--espacamentoMedio);
   overflow: hidden;
   display: -webkit-box;
@@ -91,12 +117,49 @@ const CardFooter = styled.div`
   justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
+  padding-top: var(--espacamentoMedio);
+  border-top: 1px solid var(--corBordaPrimaria);
 `;
 
 const CardMeta = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--espacamentoMedio);
+  gap: var(--espacamentoPequeno);
+`;
+
+const CardDate = styled.span`
+  background: var(--corFundoTerciaria);
+  padding: 4px 8px;
+  border-radius: var(--bordaRaioPequena);
+  font-size: var(--tamanhoFontePequena);
+  color: var(--corTextoSecundaria);
+`;
+
+const FavoriteButton = styled.button`
+  background: ${props => props.favorito ? 
+    'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)' : 
+    'linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%)'};
+  color: ${props => props.favorito ? 'white' : 'var(--corTextoSecundaria)'};
+  border: 1px solid ${props => props.favorito ? '#ff6b6b' : 'var(--corBordaPrimaria)'};
+  border-radius: var(--bordaRaioMedia);
+  padding: 6px;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  
+  &:hover {
+    background: ${props => props.favorito ? 
+      'linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%)' : 
+      'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
+    color: white;
+    border-color: ${props => props.favorito ? '#ee5a52' : 'var(--corPrimaria)'};
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
+  }
 `;
 
 const CardTag = styled.span`
@@ -191,15 +254,14 @@ const CardItem = ({
         </CardTitle>
         <CardActions>
           {tipo === 'nota' && onFavoritar && (
-            <CardActionButton
+            <FavoriteButton
               onClick={handleFavoritar}
-              title={item.favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              favorito={item.favorito}
             >
               <FontAwesomeIcon 
                 icon={faStar} 
-                style={{ color: item.favorito ? '#FF6B6B' : 'inherit' }}
               />
-            </CardActionButton>
+            </FavoriteButton>
           )}
           
           <CardActionButton
@@ -278,7 +340,7 @@ const CardItem = ({
           {tipo === 'link' && item.categoria && (
             <CardTag>{item.categoria}</CardTag>
           )}
-          <span>{formatarData(getDate())}</span>
+          <CardDate>{formatarData(getDate())}</CardDate>
         </CardMeta>
         
         <div>

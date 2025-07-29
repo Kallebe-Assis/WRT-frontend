@@ -94,112 +94,182 @@ const SelectFiltro = styled.select`
 
 const GridLinks = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: var(--espacamentoGrande);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--espacamentoMedio);
 `;
 
 const CardLink = styled.div`
-  background: var(--corFundoCard);
+  background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  padding: var(--espacamentoGrande);
-  transition: all var(--transicaoRapida);
+  border-radius: var(--bordaRaioGrande);
+  padding: var(--espacamentoMedio);
+  transition: all var(--transicaoMedia);
   cursor: pointer;
-
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sombraLeve);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+  
   &:hover {
     border-color: var(--corPrimaria);
-    transform: translateY(-2px);
-    box-shadow: var(--sombraMedia);
+    transform: translateY(-4px);
+    box-shadow: var(--sombraForte);
+    
+    &::before {
+      opacity: 1;
+    }
   }
 `;
 
 const CardHeader = styled.div`
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: var(--espacamentoMedio);
 `;
 
-const CardTitulo = styled.h3`
-  color: var(--corTextoPrimaria);
-  font-size: 1.2rem;
+const CardTitle = styled.h3`
+  font-size: var(--tamanhoFonteGrande);
   font-weight: 600;
+  color: var(--corTextoPrimaria);
   margin: 0;
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
-const CardAcoes = styled.div`
+const CardActions = styled.div`
   display: flex;
+  align-items: center;
   gap: var(--espacamentoPequeno);
-`;
-
-const BotaoAcao = styled.button`
-  background: transparent;
-  border: none;
-  color: var(--corTextoSecundaria);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: var(--bordaRaioPequena);
-  transition: all var(--transicaoRapida);
-
-  &:hover {
-    color: var(--corPrimaria);
-    background: var(--corFundoSecundaria);
+  opacity: 0;
+  transition: opacity var(--transicaoRapida);
+  
+  ${CardLink}:hover & {
+    opacity: 1;
   }
 `;
 
-const CardImagem = styled.div`
+const CardActionButton = styled.button`
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  border: 1px solid var(--corBordaPrimaria);
+  color: var(--corTextoSecundaria);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--bordaRaioMedia);
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  
+  &:hover {
+    background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+    color: var(--corTextoClara);
+    border-color: var(--corPrimaria);
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
+  }
+`;
+
+const CardImage = styled.div`
   width: 100%;
-  height: 150px;
-  background: var(--corFundoSecundaria);
+  height: 120px;
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
   border-radius: var(--bordaRaioMedia);
   margin-bottom: var(--espacamentoMedio);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
   
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: var(--bordaRaioMedia);
+  }
+  
+  .placeholder {
+    color: var(--corTextoTerciaria);
+    font-size: 2rem;
   }
 `;
 
-const CardConteudo = styled.div`
+const CardContent = styled.div`
   color: var(--corTextoSecundaria);
-  line-height: 1.6;
-  margin-bottom: var(--espacamentoMedio);
-`;
-
-const CardUrl = styled.div`
-  color: var(--corPrimaria);
   font-size: var(--tamanhoFontePequena);
-  word-break: break-all;
+  line-height: 1.4;
   margin-bottom: var(--espacamentoMedio);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 `;
 
 const CardFooter = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
+  padding-top: var(--espacamentoMedio);
+  border-top: 1px solid var(--corBordaPrimaria);
 `;
 
 const CardMeta = styled.div`
   display: flex;
-  gap: var(--espacamentoMedio);
   align-items: center;
+  gap: var(--espacamentoPequeno);
 `;
 
-const Tag = styled.span`
-  background: var(--corPrimaria);
-  color: white;
-  padding: 4px 8px;
+const CardDate = styled.span`
+  background: var(--corFundoTerciaria);
+  padding: 2px 6px;
   border-radius: var(--bordaRaioPequena);
   font-size: var(--tamanhoFontePequena);
-  font-weight: 500;
+  color: var(--corTextoSecundaria);
+`;
+
+const FavoriteButton = styled.button`
+  background: ${props => props.favorito ? 
+    'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)' : 
+    'linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%)'};
+  color: ${props => props.favorito ? 'white' : 'var(--corTextoSecundaria)'};
+  border: 1px solid ${props => props.favorito ? '#ff6b6b' : 'var(--corBordaPrimaria)'};
+  border-radius: var(--bordaRaioMedia);
+  padding: 6px;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  
+  &:hover {
+    background: ${props => props.favorito ? 
+      'linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%)' : 
+      'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
+    color: white;
+    border-color: ${props => props.favorito ? '#ee5a52' : 'var(--corPrimaria)'};
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
+  }
 `;
 
 const EstadoVazio = styled.div`
@@ -339,44 +409,44 @@ const TelaLinks = ({
           {linksFiltrados.map(link => (
             <CardLink key={link.id}>
               <CardHeader>
-                <CardTitulo>{link.nome}</CardTitulo>
-                <CardAcoes>
-                  {link.favorito && (
-                    <BotaoAcao onClick={() => onFavoritarItem(link.id)}>
-                      <FontAwesomeIcon icon={faHeart} style={{ color: '#e74c3c' }} />
-                    </BotaoAcao>
-                  )}
-                  <BotaoAcao onClick={() => onEditarItem(link)}>
+                <CardTitle>{link.nome}</CardTitle>
+                <CardActions>
+                  <FavoriteButton favorito={link.favorito} onClick={() => onFavoritarItem(link.id)}>
+                    <FontAwesomeIcon icon={faHeart} />
+                  </FavoriteButton>
+                  <CardActionButton onClick={() => onEditarItem(link)}>
                     <FontAwesomeIcon icon={faEdit} />
-                  </BotaoAcao>
-                  <BotaoAcao onClick={() => onExcluirItem(link.id)}>
+                  </CardActionButton>
+                  <CardActionButton onClick={() => onExcluirItem(link.id)}>
                     <FontAwesomeIcon icon={faTrash} />
-                  </BotaoAcao>
-                </CardAcoes>
+                  </CardActionButton>
+                </CardActions>
               </CardHeader>
               
-              {link.imagemUrl && (
-                <CardImagem>
+              {link.imagemUrl ? (
+                <CardImage>
                   <img src={link.imagemUrl} alt={link.nome} />
-                </CardImagem>
+                </CardImage>
+              ) : (
+                <CardImage>
+                  <div className="placeholder">
+                    <FontAwesomeIcon icon={faLink} />
+                  </div>
+                </CardImage>
               )}
               
-              <CardConteudo>
+              <CardContent>
                 {link.descricao}
-              </CardConteudo>
-              
-              <CardUrl>
-                {link.url}
-              </CardUrl>
+              </CardContent>
               
               <CardFooter>
                 <CardMeta>
-                  {link.categoria && <Tag>{link.categoria}</Tag>}
-                  <span>{formatarData(link.createdAt)}</span>
+                  {link.categoria && <span>{link.categoria}</span>}
+                  <CardDate>{formatarData(link.createdAt)}</CardDate>
                 </CardMeta>
-                <BotaoAcao onClick={() => handleAbrirLink(link.url)}>
+                <CardActionButton onClick={() => handleAbrirLink(link.url)}>
                   <FontAwesomeIcon icon={faExternalLinkAlt} />
-                </BotaoAcao>
+                </CardActionButton>
               </CardFooter>
             </CardLink>
           ))}
