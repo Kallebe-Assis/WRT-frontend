@@ -10,6 +10,7 @@ import {
   faHeart,
   faStar
 } from '@fortawesome/free-solid-svg-icons';
+import FullscreenButton from './FullscreenButton';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -160,7 +161,9 @@ const NotaTelaCheia = ({
   onCopiar,
   onExportar,
   onImprimir,
-  onFavoritar
+  onFavoritar,
+  onToggleFullscreen,
+  isFullscreen = false
 }) => {
   if (!isVisible || !nota) return null;
 
@@ -193,9 +196,17 @@ const NotaTelaCheia = ({
             <FontAwesomeIcon icon={faStar} />
             Visualizar Nota
           </ModalTitle>
-          <BotaoFechar onClick={onClose}>
-            <FontAwesomeIcon icon={faTimes} />
-          </BotaoFechar>
+          <div style={{ display: 'flex', gap: 'var(--espacamentoMedio)', alignItems: 'center' }}>
+            {onToggleFullscreen && (
+              <FullscreenButton
+                onClick={onToggleFullscreen}
+                isFullscreen={isFullscreen}
+              />
+            )}
+            <BotaoFechar onClick={onClose}>
+              <FontAwesomeIcon icon={faTimes} />
+            </BotaoFechar>
+          </div>
         </ModalHeader>
 
         <ModalBody>

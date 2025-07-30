@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -9,9 +9,13 @@ import {
   faExpand,
   faFileExport,
   faPrint,
-  faStar
+  faStar,
+  faFilePdf,
+  faFileWord
 } from '@fortawesome/free-solid-svg-icons';
 import { formatarData } from '../utils/formatacao';
+import { exportarParaPDF, exportarParaDOCX } from '../utils/exportacao';
+import FullscreenButton from './FullscreenButton';
 
 const Card = styled.div`
   background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
@@ -63,6 +67,18 @@ const CardTitle = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: all var(--transicaoRapida);
+  max-width: 100%;
+  line-height: 1.2;
+  max-height: 2.4em;
+  
+  ${Card}:hover & {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-wrap: break-word;
+    max-height: none;
+  }
 `;
 
 const CardActions = styled.div`
@@ -119,12 +135,15 @@ const CardFooter = styled.div`
   color: var(--corTextoTerciaria);
   padding-top: var(--espacamentoMedio);
   border-top: 1px solid var(--corBordaPrimaria);
+  gap: var(--espacamentoMedio);
 `;
 
 const CardMeta = styled.div`
   display: flex;
   align-items: center;
   gap: var(--espacamentoPequeno);
+  flex: 1;
+  min-width: 0;
 `;
 
 const CardDate = styled.span`
@@ -165,10 +184,67 @@ const FavoriteButton = styled.button`
 const CardTag = styled.span`
   background: var(--corPrimaria);
   color: white;
-  padding: 2px 8px;
+  padding: 4px 12px;
   border-radius: var(--bordaRaioPequena);
   font-size: var(--tamanhoFontePequena);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  display: inline-block;
+`;
+
+const ExportDropdown = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const ExportButton = styled(CardActionButton)`
+  position: relative;
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--corFundoPrimaria);
+  border: 1px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  box-shadow: var(--sombraForte);
+  z-index: 1000;
+  min-width: 150px;
+  opacity: ${props => props.isOpen ? '1' : '0'};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all var(--transicaoRapida);
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  color: var(--corTextoSecundaria);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  transition: all var(--transicaoRapida);
+  
+  &:hover {
+    background: var(--corFundoSecundaria);
+    color: var(--corTextoPrimaria);
+  }
+  
+  &:first-child {
+    border-radius: var(--bordaRaioMedia) var(--bordaRaioMedia) 0 0;
+  }
+  
+  &:last-child {
+    border-radius: 0 0 var(--bordaRaioMedia) var(--bordaRaioMedia);
+  }
 `;
 
 const CardItem = ({
@@ -185,12 +261,26 @@ const CardItem = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
 
+  // Fechar menu quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMenu && !event.target.closest('.export-dropdown')) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
+
   const handleClick = (e) => {
     e.stopPropagation();
     if (tipo === 'link') {
       window.open(item.url, '_blank');
     } else {
-      onVisualizar(item);
+      onEditar(item);
     }
   };
 
@@ -221,11 +311,6 @@ const CardItem = ({
     onTelaCheia(item);
   };
 
-  const handleExportar = (e) => {
-    e.stopPropagation();
-    onExportar(item);
-  };
-
   const handleImprimir = (e) => {
     e.stopPropagation();
     onImprimir(item);
@@ -233,13 +318,56 @@ const CardItem = ({
 
   const getContent = () => {
     if (tipo === 'nota') {
-      return item.conteudo?.length > 150 
-        ? `${item.conteudo.substring(0, 150)}...`
-        : item.conteudo;
+      // Função para limpar HTML e extrair texto puro
+      const limparHTML = (html) => {
+        if (!html) return '';
+        
+        // Criar elemento temporário para extrair texto
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Extrair texto puro
+        let texto = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Limpar espaços extras e quebras de linha
+        texto = texto.replace(/\s+/g, ' ').trim();
+        
+        return texto;
+      };
+
+      const conteudoLimpo = limparHTML(item.conteudo);
+      return conteudoLimpo.length > 150 
+        ? `${conteudoLimpo.substring(0, 150)}...`
+        : conteudoLimpo;
     } else if (tipo === 'link') {
       return item.url;
     }
     return '';
+  };
+
+  const getTitulo = () => {
+    if (tipo === 'nota') {
+      // Função para limpar HTML e extrair texto puro
+      const limparHTML = (html) => {
+        if (!html) return '';
+        
+        // Criar elemento temporário para extrair texto
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Extrair texto puro
+        let texto = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Limpar espaços extras e quebras de linha
+        texto = texto.replace(/\s+/g, ' ').trim();
+        
+        return texto;
+      };
+
+      return limparHTML(item.titulo);
+    } else {
+      return item.nome;
+    }
   };
 
   const getDate = () => {
@@ -250,20 +378,37 @@ const CardItem = ({
     <Card onClick={handleClick}>
       <CardHeader>
         <CardTitle>
-          {tipo === 'nota' ? item.titulo : item.nome}
+          {getTitulo()}
         </CardTitle>
-        <CardActions>
-          {tipo === 'nota' && onFavoritar && (
-            <FavoriteButton
-              onClick={handleFavoritar}
-              favorito={item.favorito}
-            >
-              <FontAwesomeIcon 
-                icon={faStar} 
-              />
-            </FavoriteButton>
+        {tipo === 'nota' && onFavoritar && (
+          <FavoriteButton
+            onClick={handleFavoritar}
+            favorito={item.favorito}
+          >
+            <FontAwesomeIcon 
+              icon={faStar} 
+            />
+          </FavoriteButton>
+        )}
+      </CardHeader>
+      
+      <CardContent>
+        {getContent()}
+      </CardContent>
+      
+      <CardFooter>
+        <CardMeta>
+          {tipo === 'nota' && item.topico && (
+            <CardTag>{item.topico}</CardTag>
           )}
-          
+          {tipo === 'link' && item.categoria && (
+            <CardTag>
+              {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
+            </CardTag>
+          )}
+        </CardMeta>
+        
+        <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)', flexShrink: 0 }}>
           <CardActionButton
             onClick={handleEditar}
             title="Editar"
@@ -299,20 +444,36 @@ const CardItem = ({
                 <FontAwesomeIcon icon={faCopy} />
               </CardActionButton>
               
-              <CardActionButton
-                onClick={handleTelaCheia}
-                title="Tela cheia"
-              >
-                <FontAwesomeIcon icon={faExpand} />
-              </CardActionButton>
+              {tipo === 'nota' && typeof onTelaCheia === 'function' && (
+                <FullscreenButton
+                  onClick={handleTelaCheia}
+                  isFullscreen={false}
+                />
+              )}
               
               {onExportar && (
-                <CardActionButton
-                  onClick={handleExportar}
-                  title="Exportar"
-                >
-                  <FontAwesomeIcon icon={faFileExport} />
-                </CardActionButton>
+                <ExportDropdown className="export-dropdown">
+                  <ExportButton onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(!showMenu);
+                  }} title="Exportar">
+                    <FontAwesomeIcon icon={faFileExport} />
+                  </ExportButton>
+                  <DropdownMenu isOpen={showMenu}>
+                    <DropdownItem onClick={() => {
+                      setShowMenu(false);
+                      exportarParaPDF(item);
+                    }}>
+                      <FontAwesomeIcon icon={faFilePdf} /> PDF
+                    </DropdownItem>
+                    <DropdownItem onClick={() => {
+                      setShowMenu(false);
+                      exportarParaDOCX(item);
+                    }}>
+                      <FontAwesomeIcon icon={faFileWord} /> DOCX
+                    </DropdownItem>
+                  </DropdownMenu>
+                </ExportDropdown>
               )}
               
               {onImprimir && (
@@ -324,30 +485,6 @@ const CardItem = ({
                 </CardActionButton>
               )}
             </>
-          )}
-        </CardActions>
-      </CardHeader>
-      
-      <CardContent>
-        {getContent()}
-      </CardContent>
-      
-      <CardFooter>
-        <CardMeta>
-          {tipo === 'nota' && item.topico && (
-            <CardTag>{item.topico}</CardTag>
-          )}
-          {tipo === 'link' && item.categoria && (
-            <CardTag>
-              {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
-            </CardTag>
-          )}
-          <CardDate>{formatarData(getDate())}</CardDate>
-        </CardMeta>
-        
-        <div>
-          {tipo === 'nota' && item.favorito && (
-            <FontAwesomeIcon icon={faStar} style={{ color: '#FFD700' }} />
           )}
         </div>
       </CardFooter>

@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faStickyNote,
   faSignOutAlt,
   faSync,
   faClock,
   faHeart
 } from '@fortawesome/free-solid-svg-icons';
-
 import { NotasAPIProvider, useNotasAPIContext } from './context/NotasAPIContext';
 import AuthScreen from './components/AuthScreen';
 import TelaInicial from './components/TelaInicial';
 import TelaNotas from './components/TelaNotas';
 import TelaLinks from './components/TelaLinks';
+import TelaLixeira from './components/TelaLixeira';
+import Configuracoes from './components/Configuracoes';
+import MenuLateral from './components/MenuLateral';
 import ListaItens from './components/ListaItens';
 import ModalItem from './components/ModalItem';
 import ModalLink from './components/ModalLink';
-import Configuracoes from './components/Configuracoes';
-import LogModal from './components/LogModal';
-import TelaLixeira from './components/TelaLixeira';
 import NotaTelaCheia from './components/NotaTelaCheia';
-import MenuLateral from './components/MenuLateral';
-
+import FullscreenViewer from './components/FullscreenViewer';
+import LogModal from './components/LogModal';
 import GlobalStyles from './styles/GlobalStyles';
 import { linksAPI } from './config/api';
+import { exportarParaPDF } from './utils/exportacao';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -95,7 +95,7 @@ const LogoutButton = styled.button`
   }
 `;
 
-const Logo = styled.div`
+const Logo = styled.button`
   background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -108,9 +108,18 @@ const Logo = styled.div`
   padding: var(--espacamentoPequeno) var(--espacamentoMedio);
   border-radius: var(--bordaRaioMedia);
   transition: all var(--transicaoRapida);
+  border: none;
+  cursor: pointer;
+  background: transparent;
 
   &:hover {
     transform: scale(1.05);
+    background: var(--corFundoHover);
+    border-radius: var(--bordaRaioMedia);
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 `;
 
@@ -140,12 +149,12 @@ const StatusIndicator = styled.div`
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: ${props => 
+  background: ${props =>
     props.status === 'online' ? 'var(--corSucesso)' :
     props.status === 'syncing' ? 'var(--corAviso)' :
     'var(--corErro)'
   };
-  box-shadow: 0 0 8px ${props => 
+  box-shadow: 0 0 8px ${props =>
     props.status === 'online' ? 'rgba(76, 175, 80, 0.4)' :
     props.status === 'syncing' ? 'rgba(255, 152, 0, 0.4)' :
     'rgba(244, 67, 54, 0.4)'
@@ -193,7 +202,6 @@ function useSyncStatus() {
 
   const fetchStatus = async () => {
     try {
-      // Usar a URL correta da API
       const response = await fetch('https://wrt-back.vercel.app/api/sync/status');
       if (response.ok) {
         const data = await response.json();
@@ -203,14 +211,13 @@ function useSyncStatus() {
         setSyncStatus('offline');
       }
     } catch (error) {
-      console.error('Erro ao verificar status de sincronização:', error);
       setSyncStatus('offline');
     }
   };
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); // Verificar a cada 30 segundos
+    const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -224,9 +231,9 @@ function useSyncStatus() {
 
 // Componente principal da aplicação
 const AppContent = () => {
-  const { 
-    categorias, 
-    carregando, 
+  const {
+    categorias,
+    carregando,
     carregarNotas,
     adicionarNota,
     editarNota,
@@ -240,28 +247,15 @@ const AppContent = () => {
 
   const [user, setUser] = useState(null);
   const [telaAtiva, setTelaAtiva] = useState('inicial');
-
-  // Log para rastrear mudanças na telaAtiva
-  // useEffect(() => {
-  //   try {
-  //     console.log('🔄 TelaAtiva mudou para:', telaAtiva);
-  //     console.log('🔄 Stack trace da mudança:', new Error().stack);
-  //   } catch (error) {
-  //     console.error('❌ Erro no useEffect telaAtiva:', error);
-  //   }
-  // }, [telaAtiva]);
-
-  // Função wrapper para setTelaAtiva com logs
-  const setTelaAtivaComLog = (novaTela) => {
-    console.log('🔄 Mudando tela de', telaAtiva, 'para', novaTela);
-    setTelaAtiva(novaTela);
-  };
   const [modalAberto, setModalAberto] = useState(false);
   const [itemAtual, setItemAtual] = useState(null);
-  const [modoModal, setModoModal] = useState('editar'); // 'editar', 'visualizar', 'novo'
+  const [modoModal, setModoModal] = useState('editar');
   const [carregandoModal, setCarregandoModal] = useState(false);
   const [telaCheiaAberta, setTelaCheiaAberta] = useState(false);
   const [itemTelaCheia, setItemTelaCheia] = useState(null);
+  const [fullscreenViewerAberto, setFullscreenViewerAberto] = useState(false);
+  const [itemFullscreen, setItemFullscreen] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [logModalAberto, setLogModalAberto] = useState(false);
   const [modalLinkAberto, setModalLinkAberto] = useState(false);
   const [linkAtual, setLinkAtual] = useState(null);
@@ -274,88 +268,49 @@ const AppContent = () => {
 
   // Verificar usuário logado e carregar dados imediatamente
   useEffect(() => {
-    try {
-      console.log('🔄 useEffect inicial executado');
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          console.log('🔄 Usuário encontrado:', user);
-          setUser(user);
-          
-          // Sempre iniciar na tela inicial após login
-          console.log('🔄 Definindo tela inicial');
-          setTelaAtiva('inicial');
-          
-          // Carregar dados imediatamente
-          console.log('🔄 Carregando dados iniciais...');
-          carregarDadosIniciais(user);
-        } catch (error) {
-          console.error('Erro ao carregar dados do usuário:', error);
-          localStorage.removeItem('user');
-          console.log('🔄 Definindo tela login por erro');
-          setTelaAtiva('login');
-        }
-      } else {
-        // Se não há usuário, sempre mostrar login
-        console.log('🔄 Nenhum usuário encontrado, definindo tela login');
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUser(user);
+        setTelaAtiva('inicial');
+        carregarDadosIniciais(user);
+      } catch (error) {
+        localStorage.removeItem('user');
         setTelaAtiva('login');
       }
-    } catch (error) {
-      console.error('❌ Erro no useEffect inicial:', error);
+    } else {
+      setTelaAtiva('login');
     }
   }, []);
 
   // Função para carregar todos os dados iniciais
   const carregarDadosIniciais = async (userData) => {
-    console.log('🔄 carregarDadosIniciais executado');
     if (!userData) return;
-    
+
     try {
-      console.log('📝 Carregando notas...');
       await carregarNotas();
-      console.log('✅ Notas carregadas');
-      
-      console.log('🔗 Carregando links...');
       await carregarLinks();
-      console.log('✅ Links carregados');
-      
-      console.log('🎉 Todos os dados carregados com sucesso!');
     } catch (error) {
-      console.error('❌ Erro ao carregar dados iniciais:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
+      console.error('Erro ao carregar dados iniciais:', error);
     }
   };
 
   // Carregar links quando usuário logar
   useEffect(() => {
-    try {
-      if (user && user.id && !carregandoLinks) {
-        console.log('🔄 Carregando links...');
-        carregarLinks();
-      }
-    } catch (error) {
-      console.error('❌ Erro no useEffect carregarLinks:', error);
+    if (user && user.id && !carregandoLinks) {
+      carregarLinks();
     }
   }, [user?.id]);
 
   const carregarLinks = async () => {
     try {
-      console.log('🔄 carregarLinks executado');
       if (!user) return;
-      
+
       setCarregandoLinks(true);
       try {
-        console.log('🔄 Carregando links...');
         const response = await linksAPI.buscarTodos();
-        console.log('🔗 Resposta da API de links:', response);
-        
-        // Verificar se a resposta tem 'links' ou 'data'
         const links = response.links || response.data || [];
-        console.log('🔗 Links carregados:', links);
-        console.log('🔗 Quantidade de links:', links.length);
         setLinks(links);
       } catch (error) {
         console.error('Erro ao carregar links:', error);
@@ -363,7 +318,7 @@ const AppContent = () => {
         setCarregandoLinks(false);
       }
     } catch (error) {
-      console.error('❌ Erro no carregarLinks:', error);
+      console.error('Erro no carregarLinks:', error);
     }
   };
 
@@ -400,18 +355,33 @@ const AppContent = () => {
     };
   }, []);
 
+  // Listener para mudanças no estado de fullscreen
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
   // Handlers principais
   const handleLogin = (userData) => {
     setUser(userData);
     setTelaAtiva('inicial');
-    
-    // Carregar dados imediatamente após login
-    console.log('🔄 Login realizado, carregando dados...');
     carregarDadosIniciais(userData);
   };
 
   const handleLogout = () => {
-    console.log('🚪 Logout iniciado');
     localStorage.removeItem('user');
     setUser(null);
     setTelaAtiva('login');
@@ -447,24 +417,39 @@ const AppContent = () => {
     setModalAberto(true);
   };
 
-  const handleExportarItem = (item) => {
-    // Implementar exportação
-    console.log('Exportar:', item);
+  const handleExportarItem = async (item) => {
+    try {
+      const resultado = await exportarParaPDF(item);
+      
+      if (resultado.success) {
+        console.log('Exportação realizada com sucesso');
+      } else {
+        console.error('Erro na exportação:', resultado.message);
+        alert('Erro ao exportar: ' + resultado.message);
+      }
+    } catch (error) {
+      console.error('Erro na exportação:', error);
+      alert('Erro ao exportar: ' + error.message);
+    }
   };
 
   const handleImprimirItem = (item) => {
-    // Implementar impressão
     console.log('Imprimir:', item);
   };
 
   const handleTelaCheia = (item) => {
-    setItemTelaCheia(item);
-    setTelaCheiaAberta(true);
+    setItemFullscreen(item);
+    setFullscreenViewerAberto(true);
   };
 
   const handleFecharTelaCheia = () => {
     setTelaCheiaAberta(false);
     setItemTelaCheia(null);
+  };
+
+  const handleFecharFullscreenViewer = () => {
+    setFullscreenViewerAberto(false);
+    setItemFullscreen(null);
   };
 
   const handleEditarTelaCheia = () => {
@@ -483,91 +468,90 @@ const AppContent = () => {
     }
   };
 
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      // Entrar em tela cheia
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => {
+        console.error('Erro ao entrar em tela cheia:', err);
+      });
+    } else {
+      // Sair da tela cheia
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch(err => {
+        console.error('Erro ao sair da tela cheia:', err);
+      });
+    }
+  };
+
   const handleSalvarItem = async (id, formData) => {
     try {
       setCarregandoModal(true);
-      console.log('🔄 === INÍCIO DO SALVAMENTO DE ITEM ===');
-      console.log('🔄 ID:', id);
-      console.log('🔄 FormData:', formData);
-      
-      // Determinar se é nota ou link baseado no tipo de dados
+
       const isLink = formData.url !== undefined;
-      
+
       if (isLink) {
-        // É um link
         if (id) {
           await editarNota(id, formData);
         } else {
           await adicionarNota(formData);
         }
       } else {
-        // É uma nota
-        console.log('🔄 Salvando nota com tópico:', formData.topico);
         if (id) {
-          console.log('🔄 Atualizando nota existente');
           await editarNota(id, formData);
         } else {
-          console.log('🔄 Criando nova nota');
           await adicionarNota(formData);
         }
       }
-      
-      console.log('✅ Item salvo com sucesso');
+
       setModalAberto(false);
       setItemAtual(null);
     } catch (error) {
-      console.error('❌ Erro ao salvar item:', error);
+      console.error('Erro ao salvar item:', error);
+      // Mostrar erro para o usuário
+      let errorMessage = 'Erro ao salvar nota';
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        } else if (error.message.includes('HTTP')) {
+          errorMessage = `Erro do servidor: ${error.message}`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      alert(errorMessage);
     } finally {
       setCarregandoModal(false);
     }
   };
 
   const handleSalvarLink = async (formData) => {
-    console.log('🔄 === INÍCIO DA EDIÇÃO DE LINK ===');
-    console.log('🔄 TelaAtiva antes da edição:', telaAtiva);
     try {
       if (linkAtual) {
-        // Editar link existente
-        console.log('🔄 Editando link:', linkAtual.id);
         const response = await linksAPI.atualizar(linkAtual.id, formData);
-        console.log('✅ Link atualizado:', response);
-        
-        // Atualizar lista local com os dados retornados ou com formData
         const dadosAtualizados = response.data || { ...linkAtual, ...formData };
-        console.log('🔄 Atualizando lista local de links...');
         setLinks(prev => {
-          console.log('🔄 Links anteriores:', prev.length);
-          const novosLinks = prev.map(link => 
+          const novosLinks = prev.map(link =>
             link.id === linkAtual.id ? dadosAtualizados : link
           );
-          console.log('🔄 Links atualizados:', novosLinks.length);
           return novosLinks;
         });
       } else {
-        // Criar novo link
-        console.log('🔄 Criando novo link');
         const response = await linksAPI.criar(formData);
-        console.log('✅ Link criado:', response);
-        
-        // Adicionar à lista local
         const novoLink = response.data || response.link;
         if (novoLink) {
           setLinks(prev => [...prev, novoLink]);
         }
       }
-      
-      console.log('🔄 Fechando modal...');
+
       setModalLinkAberto(false);
       setLinkAtual(null);
-      console.log('🔄 TelaAtiva após fechar modal:', telaAtiva);
-      console.log('✅ === FIM DA EDIÇÃO DE LINK ===');
     } catch (error) {
-      console.error('❌ Erro ao salvar link:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
-      
-      // Não mostrar alert se for um erro de rede
+      console.error('Erro ao salvar link:', error);
       if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
         alert(`Erro ao salvar link: ${error.message}`);
       }
@@ -578,11 +562,7 @@ const AppContent = () => {
     try {
       if (window.confirm('Tem certeza que deseja excluir este link?')) {
         await linksAPI.deletar(linkId);
-        console.log('✅ Link deletado:', linkId);
-        
-        // Remover da lista local
         setLinks(prev => prev.filter(link => link.id !== linkId));
-        
         setModalLinkAberto(false);
         setLinkAtual(null);
       }
@@ -594,19 +574,30 @@ const AppContent = () => {
 
   const handleExcluirItem = async (id) => {
     try {
-      // Confirmação de exclusão
       if (!window.confirm('Tem certeza que deseja excluir esta nota? Esta ação não pode ser desfeita.')) {
         return;
       }
-      
-      // TODO: Implementar exclusão de links
-      // Por enquanto, apenas excluir notas
+
       await excluirNota(id);
       setModalAberto(false);
       setItemAtual(null);
     } catch (error) {
       console.error('Erro ao excluir item:', error);
-      alert('Erro ao excluir nota');
+      
+      // Mostrar erro para o usuário
+      let errorMessage = 'Erro ao excluir nota';
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        } else if (error.message.includes('HTTP')) {
+          errorMessage = `Erro do servidor: ${error.message}`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -616,17 +607,14 @@ const AppContent = () => {
   };
 
   const carregarLogsSistema = async () => {
-    // Implementar carregamento de logs
     console.log('Carregando logs do sistema...');
   };
 
   const limparLogsSistema = async () => {
-    // Implementar limpeza de logs
     console.log('Limpando logs do sistema...');
   };
 
   const exportarLogs = async () => {
-    // Implementar exportação de logs
     console.log('Exportando logs...');
   };
 
@@ -638,84 +626,53 @@ const AppContent = () => {
     setTelaAtiva('configuracoes');
   };
 
+  const handleLogoClick = () => {
+    setTelaAtiva('inicial');
+  };
+
   const sincronizarManual = async () => {
     setSyncStatus('syncing');
     try {
-      console.log('🔄 Iniciando sincronização manual...');
-      
-      // Obter user-id do localStorage
       const userData = localStorage.getItem('user');
       if (!userData) {
         throw new Error('Usuário não autenticado');
       }
-      
+
       const user = JSON.parse(userData);
       const userId = user.id;
-      
-      // Testar conectividade com o backend
+
       const testResponse = await fetch('https://wrt-back.vercel.app/api/links', {
         headers: {
           'user-id': userId
         }
       });
-      
+
       if (!testResponse.ok) {
         throw new Error('Backend não está acessível');
       }
-      
-      // Forçar limpeza dos estados antes de recarregar
-      console.log('🧹 Limpando estados atuais...');
+
       setLinks([]);
-      
-      // Recarregar dados do banco com delay para garantir limpeza
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Recarregar apenas notas (sem categorias e tópicos)
-      console.log('📝 Recarregando apenas notas...');
       await carregarNotas();
-      
-      console.log('🔗 Recarregando links...');
       await carregarLinks();
-      
-      // Forçar re-renderização dos componentes
-      console.log('🔄 Forçando re-renderização...');
       setForcarAtualizacao(prev => prev + 1);
-      
-      // Atualizar status
+
       setSyncStatus('online');
       setLastSync(new Date());
-      console.log('✅ Sincronização manual concluída com sucesso');
-      
-      // Mostrar feedback visual
-      console.log('📊 Dados atualizados:');
-      console.log('- Notas:', notasAtivas?.length || 0);
-      console.log('- Links:', links?.length || 0);
-      
-      // Notificação visual para o usuário
-      const mensagem = `Sincronização concluída!\n\n📝 Notas: ${notasAtivas?.length || 0}\n🔗 Links: ${links?.length || 0}`;
-      console.log('🎉 ' + mensagem);
-      
+
     } catch (error) {
-      console.error('❌ Erro na sincronização manual:', error);
+      console.error('Erro na sincronização manual:', error);
       setSyncStatus('offline');
       alert('Erro na sincronização: ' + error.message);
     }
   };
 
   const renderizarConteudo = () => {
-    console.log('🔍 Renderizando conteúdo - telaAtiva:', telaAtiva);
-    console.log('📝 Notas ativas:', notasAtivas);
-    console.log('📝 Total de notas:', notasAtivas?.length || 0);
-    console.log('📝 Links:', links);
-    console.log('📝 Total de links:', links?.length || 0);
-    
     switch (telaAtiva) {
       case 'login':
-        console.log('🔄 Renderizando tela de login');
         return <AuthScreen onLogin={handleLogin} />;
 
       case 'inicial':
-        console.log('🔄 Renderizando tela inicial');
         return (
           <TelaInicial
             notas={notasAtivas}
@@ -731,7 +688,6 @@ const AppContent = () => {
         );
 
       case 'notas':
-        console.log('🔄 Renderizando tela de notas');
         return (
           <TelaNotas
             notas={notasAtivas}
@@ -740,13 +696,15 @@ const AppContent = () => {
             onEditarItem={handleEditarItem}
             onVisualizarItem={handleVisualizarItem}
             onExcluirItem={handleExcluirItem}
+            onExportarItem={handleExportarItem}
+            onImprimirItem={handleImprimirItem}
             onFavoritarItem={alternarFavorito}
+            onTelaCheia={handleTelaCheia}
             forcarAtualizacao={forcarAtualizacao}
           />
         );
 
       case 'links':
-        console.log('🔄 Renderizando tela de links');
         return (
           <TelaLinks
             links={links}
@@ -761,7 +719,6 @@ const AppContent = () => {
         );
 
       case 'favoritos':
-        console.log('🔄 Renderizando tela de favoritos');
         return (
           <ListaItens
             itens={(notasAtivas || []).filter(nota => nota.favorito)}
@@ -781,7 +738,6 @@ const AppContent = () => {
         );
 
       case 'lixeira':
-        console.log('🔄 Renderizando tela de lixeira');
         return (
           <TelaLixeira
             notas={(notasAtivas || []).filter(nota => !nota.ativo)}
@@ -791,7 +747,6 @@ const AppContent = () => {
         );
 
       case 'configuracoes':
-        console.log('🔄 Renderizando tela de configurações');
         return (
           <Configuracoes
             onAbrirLogs={abrirLogModal}
@@ -803,7 +758,6 @@ const AppContent = () => {
         );
 
       default:
-        console.log('🔄 Renderizando tela padrão (inicial)');
         return <TelaInicial />;
     }
   };
@@ -821,17 +775,17 @@ const AppContent = () => {
   return (
     <AppContainer>
       <GlobalStyles />
-      
+
       <MainContent>
-        <MenuLateral 
+        <MenuLateral
           onAbrirConfiguracoes={handleAbrirConfiguracoes}
           telaAtiva={telaAtiva}
-          onTelaChange={setTelaAtivaComLog}
+          onTelaChange={setTelaAtiva}
           totalLinks={links.length}
         />
         <ContentArea menuRecolhido={menuRecolhido}>
           <Header>
-            <Logo>
+            <Logo onClick={handleLogoClick}>
               <FontAwesomeIcon icon={faStickyNote} />
               WRTmind
             </Logo>
@@ -849,7 +803,7 @@ const AppContent = () => {
               <StatusItem>
                 <StatusIndicator status={syncStatus} />
                 <span>
-                  {syncStatus === 'online' ? 'Online' : 
+                  {syncStatus === 'online' ? 'Online' :
                    syncStatus === 'syncing' ? 'Sincronizando...' : 'Offline'}
                 </span>
               </StatusItem>
@@ -899,6 +853,14 @@ const AppContent = () => {
         onClose={handleFecharTelaCheia}
         onEdit={handleEditarTelaCheia}
         onDelete={handleExcluirTelaCheia}
+        onToggleFullscreen={handleToggleFullscreen}
+        isFullscreen={isFullscreen}
+      />
+
+      <FullscreenViewer
+        item={itemFullscreen}
+        isVisible={fullscreenViewerAberto}
+        onClose={handleFecharFullscreenViewer}
       />
 
       <LogModal

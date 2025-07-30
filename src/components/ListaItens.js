@@ -187,6 +187,14 @@ const ListaItens = ({
   onFavoritar,
   modoOrdenacao = 'automatico'
 }) => {
+  // Verificar se onTelaCheia é uma função válida
+  const handleTelaCheia = (item) => {
+    if (typeof onTelaCheia === 'function') {
+      onTelaCheia(item);
+    } else {
+      console.warn('onTelaCheia não é uma função válida:', onTelaCheia);
+    }
+  };
   const [termoBusca, setTermoBusca] = useState('');
   const [filtroAtivo, setFiltroAtivo] = useState('todos');
 
@@ -294,7 +302,7 @@ const ListaItens = ({
                 onExcluir={() => onExcluir(link.id)}
                 onVisualizar={() => handleClickLink(link)}
                 onCopiar={() => handleCopiar(link)}
-                onTelaCheia={() => onTelaCheia(link)}
+                // Não passar onTelaCheia para links
               />
             ))}
           </GradeItens>
@@ -370,7 +378,7 @@ const ListaItens = ({
               onCopiar={() => handleCopiar(nota)}
               onExportar={() => onExportar(nota)}
               onImprimir={() => onImprimir(nota)}
-              onTelaCheia={() => onTelaCheia(nota)}
+              onTelaCheia={() => handleTelaCheia(nota)}
               onFavoritar={() => handleFavoritar(nota.id)}
             />
           ))}

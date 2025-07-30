@@ -321,7 +321,8 @@ const ModalItem = ({
   onSave,
   onDelete,
   onClose,
-  carregando = false
+  carregando = false,
+  onFavoritarItem
 }) => {
   const [formData, setFormData] = useState({
     titulo: '',
@@ -367,6 +368,12 @@ const ModalItem = ({
     }
   };
 
+  const handleToggleFavorito = () => {
+    if (onFavoritarItem && item) {
+      onFavoritarItem(item.id);
+    }
+  };
+
   const getTitulo = () => {
     switch (modo) {
       case 'novo':
@@ -408,10 +415,7 @@ const ModalItem = ({
               {modo === 'visualizar' && item?.id && (
                 <BotaoFavorito
                   favorito={item.favorito}
-                  onClick={() => {
-                    // Implementar toggle de favorito
-                    console.log('Toggle favorito:', item.id);
-                  }}
+                  onClick={handleToggleFavorito}
                 >
                   <FontAwesomeIcon icon={item.favorito ? faHeart : faStar} />
                   {item.favorito ? 'Favorito' : 'Favoritar'}
@@ -456,23 +460,28 @@ const ModalItem = ({
                   disabled={modo === 'visualizar'}
                 >
                   <option value="">Selecione um tópico</option>
-                  {Array.isArray(categorias) && categorias.map((categoria) => {
-                    if (typeof categoria === 'object' && categoria.nome) {
-                      return (
-                        <option key={categoria.id || categoria.nome} value={categoria.nome}>
-                          {categoria.nome}
-                        </option>
-                      );
-                    }
-                    if (typeof categoria === 'string') {
-                      return (
-                        <option key={categoria} value={categoria}>
-                          {categoria}
-                        </option>
-                      );
+                  {(() => {
+                    if (Array.isArray(categorias)) {
+                      return categorias.map((categoria, index) => {
+                        if (typeof categoria === 'object' && categoria.nome) {
+                          return (
+                            <option key={categoria.id || categoria.nome} value={categoria.nome}>
+                              {categoria.nome}
+                            </option>
+                          );
+                        }
+                        if (typeof categoria === 'string') {
+                          return (
+                            <option key={categoria} value={categoria}>
+                              {categoria}
+                            </option>
+                          );
+                        }
+                        return null;
+                      });
                     }
                     return null;
-                  })}
+                  })()}
                 </Select>
               </FormGroupTopico>
             </FormRow>

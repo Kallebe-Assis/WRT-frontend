@@ -3,12 +3,6 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
                      window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
 
-console.log('🌐 Configuração de ambiente:', {
-  NODE_ENV: process.env.NODE_ENV,
-  hostname: window.location.hostname,
-  isDevelopment: isDevelopment
-});
-
 export const config = {
   // API Configuration - Usando backend da Vercel
   API_BASE_URL: 'https://wrt-back.vercel.app/api',
@@ -55,34 +49,18 @@ export const apiRequest = async (endpoint, options = {}) => {
   
   // Adicionar user-id se disponível
   const user = localStorage.getItem('user');
-  console.log('🔍 apiRequest - User do localStorage:', user);
   
   if (user) {
     try {
       const userData = JSON.parse(user);
-      console.log('🔍 apiRequest - UserData:', userData);
       
       if (userData.id) {
         defaultOptions.headers['user-id'] = userData.id;
-        console.log('🔍 apiRequest - Header user-id adicionado:', userData.id);
-      } else {
-        console.log('❌ apiRequest - UserData.id não encontrado');
       }
     } catch (error) {
-      console.error('❌ apiRequest - Erro ao obter ID do usuário:', error);
+      console.error('Erro ao obter ID do usuário:', error);
     }
-  } else {
-    console.log('❌ apiRequest - User não encontrado no localStorage');
   }
   
-  console.log('🔍 apiRequest - Headers finais:', defaultOptions.headers);
-  
   return fetch(url, defaultOptions);
-};
-
-// Log da configuração atual
-console.log('🌐 Configuração do Frontend:', {
-  environment: config.NODE_ENV,
-  apiUrl: config.API_BASE_URL,
-  isDevelopment: config.IS_DEVELOPMENT
-}); 
+}; 

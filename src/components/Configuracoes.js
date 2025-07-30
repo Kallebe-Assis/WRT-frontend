@@ -682,35 +682,17 @@ const Configuracoes = ({
   const [formData, setFormData] = useState({ nome: '', cor: '#667eea' });
   const [abaAtiva, setAbaAtiva] = useState('categorias');
 
-  // Debug: Log do estado de categorias
-  console.log('🔍 Configuracoes - Estado de categorias:', categorias);
-  console.log('🔍 Configuracoes - Tipo de categorias:', typeof categorias);
-  console.log('🔍 Configuracoes - É array?', Array.isArray(categorias));
-
   useEffect(() => {
     carregarCategorias();
   }, []);
 
+  // Carregar categorias
   const carregarCategorias = async () => {
-    setCarregando(true);
     try {
-      const response = await categoriasAPI.buscarTodos();
-      console.log('🔍 Resposta da API de categorias:', response);
-      
-      if (response.success) {
-        const categoriasData = response.categorias || [];
-        console.log('🔍 Categorias carregadas:', categoriasData);
-        console.log('🔍 Estrutura da primeira categoria:', categoriasData[0]);
-        setCategorias(categoriasData);
-      } else {
-        console.error('Erro na resposta da API:', response);
-        setCategorias([]);
-      }
+      const response = await categoriasAPI.listar();
+      setCategorias(response.categorias || []);
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
-      setCategorias([]);
-    } finally {
-      setCarregando(false);
     }
   };
 

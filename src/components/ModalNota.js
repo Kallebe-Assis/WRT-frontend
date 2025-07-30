@@ -35,6 +35,7 @@ const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: all var(--transicaoRapida);
 `;
 
 const ModalHeader = styled.div`
@@ -44,6 +45,9 @@ const ModalHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   background: var(--corFundoTerciaria);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 `;
 
 const ModalTitle = styled.h2`
@@ -87,6 +91,20 @@ const ModalContent = styled.div`
   padding: var(--espacamentoGrande);
   flex: 1;
   overflow-y: auto;
+  min-height: 500px;
+  max-height: calc(90vh - 120px);
+`;
+
+const ModalFooter = styled.div`
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  border-top: 2px solid var(--corBordaPrimaria);
+  background: var(--corFundoTerciaria);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--espacamentoPequeno);
 `;
 
 const FormGroup = styled.div`
@@ -330,24 +348,24 @@ const ModalNota = ({
               value={formData.conteudo}
               onChange={(content) => handleInputChange('conteudo', content)}
               placeholder="Digite o conteúdo da nota..."
-              height={400}
+              height="auto"
               showHeader={false}
               disabled={modo === 'visualizar'}
             />
           </FormGroup>
-
-          {modo === 'editar' && (
-            <ModalActions style={{ justifyContent: 'flex-end', marginTop: 'var(--espacamentoMedio)' }}>
-              <ModalButton
-                onClick={handleSave}
-                disabled={carregando}
-              >
-                <FontAwesomeIcon icon={faSave} />
-                {carregando ? 'Salvando...' : 'Salvar'}
-              </ModalButton>
-            </ModalActions>
-          )}
         </ModalContent>
+
+        {modo === 'editar' && (
+          <ModalFooter>
+            <ModalButton
+              onClick={handleSave}
+              disabled={carregando}
+            >
+              <FontAwesomeIcon icon={faSave} />
+              {carregando ? 'Salvando...' : 'Salvar'}
+            </ModalButton>
+          </ModalFooter>
+        )}
       </ModalContainer>
     </ModalOverlay>
   );

@@ -36,9 +36,47 @@ const EditorContainer = styled.div`
   }
 `;
 
-const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo..." }) => {
+const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo...", height = "auto" }) => {
   const handleEditorChange = (content, editor) => {
     onChange(content);
+    ajustarAltura(editor);
+  };
+
+  const ajustarAltura = (editor) => {
+    if (height === "auto" && editor) {
+      try {
+        // Verificar se o editor está inicializado e tem o método getBody
+        if (editor && typeof editor.getBody === 'function') {
+          const body = editor.getBody();
+          if (body) {
+            const contentHeight = body.scrollHeight;
+            const minHeight = 300;
+            const maxHeight = 800;
+            const newHeight = Math.max(minHeight, Math.min(contentHeight + 50, maxHeight));
+            
+            // Usar a API correta do TinyMCE para redimensionar
+            if (editor.theme && typeof editor.theme.resizeTo === 'function') {
+              editor.theme.resizeTo(null, newHeight);
+            } else if (editor.getContainer) {
+              // Fallback: ajustar via CSS
+              const editorElement = editor.getContainer();
+              if (editorElement) {
+                editorElement.style.height = `${newHeight}px`;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Erro ao ajustar altura do editor:', error);
+      }
+    }
+  };
+
+  const handleEditorInit = (editor) => {
+    // Ajustar altura inicial quando o editor for inicializado
+    setTimeout(() => {
+      ajustarAltura(editor);
+    }, 100);
   };
 
   return (
@@ -47,10 +85,13 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
         apiKey='dovo08r35w45rtk3mu0yhvdctb2nb7oee5t944bj78bk79cz'
         value={value}
         onEditorChange={handleEditorChange}
+        onInit={handleEditorInit}
         disabled={disabled}
         init={{
-          height: 450,
+          height: height === "auto" ? 300 : height,
           menubar: false,
+          autoresize_bottom_margin: 20,
+          autoresize_overflow_padding: 20,
           plugins: [
             // Core editing features
             'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
@@ -67,6 +108,7 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
               background: var(--corFundoPrimaria);
               padding: 16px;
               margin: 0;
+              min-height: ${height === "auto" ? "300px" : "auto"};
             }
             h1, h2, h3, h4, h5, h6 {
               color: var(--corTextoPrimaria);

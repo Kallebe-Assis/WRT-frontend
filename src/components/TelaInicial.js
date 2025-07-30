@@ -161,11 +161,7 @@ const TelaInicial = ({ notas, links, onNovoItem, forcarAtualizacao }) => {
   // Reagir à atualização forçada
   useEffect(() => {
     if (forcarAtualizacao > 0) {
-      console.log('🔄 TelaInicial: Atualização forçada detectada');
       // Forçar re-renderização dos cards
-      console.log('📊 Dados atualizados na tela inicial:');
-      console.log('- Notas:', notas?.length || 0);
-      console.log('- Links:', links?.length || 0);
     }
   }, [forcarAtualizacao, notas, links]);
 

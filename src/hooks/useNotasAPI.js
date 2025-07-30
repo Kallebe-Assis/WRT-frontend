@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notasAPI, categoriasAPI } from '../config/api';
-import { debugAuth } from '../utils/debug';
 
 export const useNotasAPI = () => {
   const [notas, setNotas] = useState([]);
@@ -15,13 +14,11 @@ export const useNotasAPI = () => {
     setErro(null);
     
     try {
-      const response = await notasAPI.buscarTodos(filtros);
+      const response = await notasAPI.listar(filtros);
       
       if (response && response.success) {
         setNotas(response.notas || []);
-        console.log('✅ Notas carregadas:', response.notas?.length || 0);
       } else {
-        console.error('❌ Resposta inválida da API:', response);
         setErro('Resposta inválida da API');
       }
     } catch (error) {
@@ -35,10 +32,11 @@ export const useNotasAPI = () => {
   // Carregar categorias
   const carregarCategorias = useCallback(async () => {
     try {
-      const response = await categoriasAPI.buscarTodos();
-      setCategorias(response.categorias || []);
+      const response = await categoriasAPI.listar();
+      const categoriasCarregadas = response.categorias || [];
+      setCategorias(categoriasCarregadas);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
+      console.error('❌ Erro ao carregar categorias:', error);
       setErro(error.message);
     }
   }, []);
@@ -46,7 +44,7 @@ export const useNotasAPI = () => {
   // Carregar tópicos (categorias)
   const carregarTopicos = useCallback(async () => {
     try {
-      const response = await categoriasAPI.buscarTodos();
+      const response = await categoriasAPI.listar();
       setTopicos(response.categorias || []);
     } catch (error) {
       console.error('Erro ao carregar tópicos:', error);
@@ -412,11 +410,13 @@ export const useNotasAPI = () => {
         console.log('✅ Usuário logado, carregando dados...');
         
         // Usar as funções diretamente sem dependências circulares
-        const responseNotas = await notasAPI.buscarTodos(); // Carregar todas as notas (ativas e deletadas)
+        const responseNotas = await notasAPI.listar(); // Carregar todas as notas (ativas e deletadas)
         setNotas(responseNotas.notas || []);
         
-        const responseCategorias = await categoriasAPI.buscarTodos();
+        // Carregar categorias usando o mesmo método que funciona no Configuracoes
+        const responseCategorias = await categoriasAPI.listar();
         const categoriasIniciais = responseCategorias.categorias || [];
+        console.log('✅ Categorias carregadas:', categoriasIniciais);
         setCategorias(categoriasIniciais);
       } catch (error) {
         console.error('Erro ao carregar dados iniciais:', error);
@@ -440,11 +440,13 @@ export const useNotasAPI = () => {
           console.log('✅ Usuário logado, carregando dados...');
           const carregarDadosIniciais = async () => {
             try {
-              const responseNotas = await notasAPI.buscarTodos();
+              const responseNotas = await notasAPI.listar();
               setNotas(responseNotas.notas || []);
               
-              const responseCategorias = await categoriasAPI.buscarTodos();
+              // Carregar categorias usando o mesmo método que funciona no Configuracoes
+              const responseCategorias = await categoriasAPI.listar();
               const categoriasIniciais = responseCategorias.categorias || [];
+              console.log('✅ Categorias carregadas após login:', categoriasIniciais);
               setCategorias(categoriasIniciais);
             } catch (error) {
               console.error('Erro ao carregar dados após login:', error);
@@ -468,11 +470,13 @@ export const useNotasAPI = () => {
       console.log('✅ Usuário logado, carregando dados...');
       const carregarDadosIniciais = async () => {
         try {
-          const responseNotas = await notasAPI.buscarTodos();
+          const responseNotas = await notasAPI.listar();
           setNotas(responseNotas.notas || []);
           
-          const responseCategorias = await categoriasAPI.buscarTodos();
+          // Carregar categorias usando o mesmo método que funciona no Configuracoes
+          const responseCategorias = await categoriasAPI.listar();
           const categoriasIniciais = responseCategorias.categorias || [];
+          console.log('✅ Categorias carregadas após evento de login:', categoriasIniciais);
           setCategorias(categoriasIniciais);
         } catch (error) {
           console.error('Erro ao carregar dados após login:', error);

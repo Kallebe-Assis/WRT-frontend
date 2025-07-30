@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -265,43 +265,39 @@ const MenuLateral = ({
     // buscarFavoritas // DESABILITADO
   } = useNotasAPIContext();
 
-  // const [contadorFavoritos, setContadorFavoritos] = useState(0); // DESABILITADO
+  const [favoritos, setFavoritos] = useState([]); // Estado para armazenar os favoritos
 
-  // useEffect(() => {
-  //   const carregarContadorFavoritos = async () => {
-  //     try {
-  //       // Verificar se o usuário está logado
-  //       const user = localStorage.getItem('user');
-  //       if (!user) {
-  //         console.log('⚠️ Usuário não logado, pulando carregamento de favoritos');
-  //         setContadorFavoritos(0);
-  //         return;
-  //       }
+  // Carregar favoritos quando componente montar
+  useEffect(() => {
+    const carregarFavoritos = async () => {
+      try {
+        const userData = localStorage.getItem('user');
+        if (!userData) {
+          return;
+        }
 
-  //       // Verificar se os dados do usuário são válidos
-  //       let userData;
-  //       try {
-  //         userData = JSON.parse(user);
-  //         if (!userData.id) {
-  //         console.log('⚠️ Dados do usuário inválidos, pulando carregamento de favoritos');
-  //         setContadorFavoritos(0);
-  //         return;
-  //       } catch (error) {
-  //         console.log('⚠️ Erro ao parsear dados do usuário, pulando carregamento de favoritos');
-  //         setContadorFavoritos(0);
-  //         return;
-  //       }
+        const user = JSON.parse(userData);
+        if (!user || !user.id) {
+          return;
+        }
 
-  //       const favoritas = await buscarFavoritas();
-  //       setContadorFavoritos(favoritas.length);
-  //     } catch (error) {
-  //       console.error('Erro ao carregar contador de favoritos:', error);
-  //       setContadorFavoritos(0);
-  //     }
-  //   };
+        // Carregar favoritos do localStorage ou API
+        const favoritosSalvos = localStorage.getItem(`favoritos_${user.id}`);
+        if (favoritosSalvos) {
+          try {
+            const favoritos = JSON.parse(favoritosSalvos);
+            setFavoritos(favoritos);
+          } catch (error) {
+            console.error('Erro ao carregar favoritos:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar favoritos:', error);
+      }
+    };
 
-  //   carregarContadorFavoritos();
-  // }, []); // Remover buscarFavoritas da dependência para evitar loop
+    carregarFavoritos();
+  }, []);
 
   // Listener para favoritos alterados (DESABILITADO)
   // useEffect(() => {

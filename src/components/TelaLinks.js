@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -262,48 +262,68 @@ const TelaLinks = ({
   onNovoItem, 
   onEditarItem, 
   onVisualizarItem, 
-  onExcluirItem,
-  forcarAtualizacao
+  onExcluirItem, 
+  onFavoritarItem,
+  forcarAtualizacao 
 }) => {
-  const [termoBusca, setTermoBusca] = useState('');
-  const [filtroCategoria, setFiltroCategoria] = useState('todos');
-  const [ordenacao, setOrdenacao] = useState('dataCriacao');
+  const [filtro, setFiltro] = useState('');
+  const [ordenacao, setOrdenacao] = useState('dataModificacao');
+  const [direcao, setDirecao] = useState('desc');
 
-  // Reagir à atualização forçada
+  // Resetar filtros quando forcarAtualizacao mudar
   useEffect(() => {
     if (forcarAtualizacao > 0) {
-      console.log('🔄 TelaLinks: Atualização forçada detectada');
-      // Limpar filtros para mostrar todos os dados atualizados
-      setTermoBusca('');
-      setFiltroCategoria('todos');
-      setOrdenacao('dataCriacao');
+      setFiltro('');
+      setOrdenacao('dataModificacao');
+      setDirecao('desc');
     }
   }, [forcarAtualizacao]);
 
   // Filtrar e ordenar links
-  const linksFiltrados = (links || [])
-    .filter(link => {
-      const matchBusca = termoBusca === '' || 
-        (link.nome && link.nome.toLowerCase().includes(termoBusca.toLowerCase())) ||
-        (link.descricao && link.descricao.toLowerCase().includes(termoBusca.toLowerCase())) ||
-        (link.url && link.url.toLowerCase().includes(termoBusca.toLowerCase()));
-      
-      const matchCategoria = filtroCategoria === 'todos' || link.categoria === filtroCategoria;
-      
-      return matchBusca && matchCategoria;
-    })
-    .sort((a, b) => {
+  const linksFiltrados = useMemo(() => {
+    if (!links) return [];
+
+    let linksProcessados = [...links];
+
+    // Aplicar filtro
+    if (filtro) {
+      const filtroLower = filtro.toLowerCase();
+      linksProcessados = linksProcessados.filter(link =>
+        link.nome?.toLowerCase().includes(filtroLower) ||
+        link.url?.toLowerCase().includes(filtroLower) ||
+        link.descricao?.toLowerCase().includes(filtroLower)
+      );
+    }
+
+    // Aplicar ordenação
+    linksProcessados.sort((a, b) => {
+      let valorA, valorB;
+
       switch (ordenacao) {
         case 'nome':
-          return (a.nome || '').localeCompare(b.nome || '');
+          valorA = a.nome?.toLowerCase() || '';
+          valorB = b.nome?.toLowerCase() || '';
+          break;
         case 'dataCriacao':
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+          valorA = new Date(a.dataCriacao || 0);
+          valorB = new Date(b.dataCriacao || 0);
+          break;
         case 'dataModificacao':
-          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         default:
-          return 0;
+          valorA = new Date(a.dataModificacao || a.dataCriacao || 0);
+          valorB = new Date(b.dataModificacao || b.dataCriacao || 0);
+          break;
+      }
+
+      if (direcao === 'asc') {
+        return valorA > valorB ? 1 : -1;
+      } else {
+        return valorA < valorB ? 1 : -1;
       }
     });
+
+    return linksProcessados;
+  }, [links, filtro, ordenacao, direcao]);
 
   // Obter categorias únicas
   const categorias = [...new Set((links || []).map(link => link.categoria).filter(Boolean))];
@@ -342,32 +362,9 @@ const TelaLinks = ({
         <InputBusca
           type="text"
           placeholder="Buscar por nome, descrição ou URL..."
-          value={termoBusca}
-          onChange={(e) => setTermoBusca(e.target.value)}
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
         />
-        <SelectFiltro
-          value={filtroCategoria}
-          onChange={(e) => setFiltroCategoria(e.target.value)}
-        >
-          <option value="todos">Todas as categorias</option>
-          {Array.isArray(categorias) && categorias.map((categoria) => {
-            let categoriaValue = '';
-            let categoriaKey = '';
-            if (typeof categoria === 'object' && categoria.nome) {
-              categoriaValue = categoria.nome;
-              categoriaKey = categoria.id || categoria.nome;
-            } else if (typeof categoria === 'string') {
-              categoriaValue = categoria;
-              categoriaKey = categoria;
-            }
-            if (!categoriaValue) return null;
-            return (
-              <option key={categoriaKey} value={categoriaValue}>
-                {categoriaValue}
-              </option>
-            );
-          })}
-        </SelectFiltro>
         <SelectFiltro
           value={ordenacao}
           onChange={(e) => setOrdenacao(e.target.value)}
@@ -376,6 +373,13 @@ const TelaLinks = ({
           <option value="dataModificacao">Data de Modificação</option>
           <option value="nome">Nome</option>
         </SelectFiltro>
+        <SelectFiltro
+          value={direcao}
+          onChange={(e) => setDirecao(e.target.value)}
+        >
+          <option value="desc">Descendente</option>
+          <option value="asc">Ascendente</option>
+        </SelectFiltro>
       </ContainerBusca>
 
       {linksFiltrados.length === 0 ? (
@@ -383,8 +387,8 @@ const TelaLinks = ({
           <IconeVazio>
             <FontAwesomeIcon icon={faLink} />
           </IconeVazio>
-          <p>{termoBusca || filtroCategoria !== 'todos' ? 'Nenhum link encontrado' : 'Você ainda não tem links'}</p>
-          {!termoBusca && filtroCategoria === 'todos' && (
+          <p>{filtro || ordenacao !== 'dataModificacao' ? 'Nenhum link encontrado' : 'Você ainda não tem links'}</p>
+          {!filtro && ordenacao === 'dataModificacao' && (
             <BotaoPrimario onClick={onNovoItem}>
               <FontAwesomeIcon icon={faPlus} />
               Criar Primeiro Link

@@ -1,5 +1,9 @@
 // Utilitário para exportação de notas em diferentes formatos
 
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+
 // Função para exportar como texto simples
 export const exportarComoTexto = (item) => {
   const conteudo = `${item.titulo}\n\n${item.conteudo.replace(/<[^>]*>/g, '')}`;
@@ -192,6 +196,207 @@ export const imprimirNota = (item) => {
     </html>
   `);
   printWindow.document.close();
+};
+
+// Função para exportar nota para PDF
+export const exportarParaPDF = async (nota) => {
+  try {
+    // Função para limpar HTML e extrair texto puro
+    const limparHTML = (html) => {
+      if (!html) return '';
+      
+      // Criar elemento temporário para extrair texto
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Extrair texto puro
+      let texto = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Limpar espaços extras e quebras de linha
+      texto = texto.replace(/\s+/g, ' ').trim();
+      
+      return texto;
+    };
+
+    // Limpar o conteúdo HTML
+    const conteudoLimpo = limparHTML(nota.conteudo);
+    const tituloLimpo = limparHTML(nota.titulo);
+
+    // Criar um elemento temporário para renderizar o conteúdo
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
+    tempDiv.style.width = '800px';
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.fontSize = '12px';
+    tempDiv.style.lineHeight = '1.6';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.color = 'black';
+    
+    // Adicionar conteúdo da nota (texto limpo)
+    tempDiv.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <h1 style="color: #333; margin-bottom: 10px; font-size: 24px;">${tituloLimpo || 'Nota sem título'}</h1>
+        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+          <strong>Categoria:</strong> ${nota.categoria || nota.topico || 'Sem categoria'} | 
+          <strong>Data:</strong> ${new Date(nota.dataCriacao).toLocaleDateString('pt-BR')}
+        </p>
+      </div>
+      <div style="margin-bottom: 20px; white-space: pre-wrap;">
+        ${conteudoLimpo || 'Sem conteúdo'}
+      </div>
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 10px; color: #999;">
+        <p>Exportado do WRTmind em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    // Converter para canvas
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff'
+    });
+    
+    // Remover elemento temporário
+    document.body.removeChild(tempDiv);
+    
+    // Criar PDF
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgWidth = 210;
+    const pageHeight = 295;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    
+    let position = 0;
+    
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    
+    // Salvar PDF
+    const fileName = `${tituloLimpo || 'nota'}_${new Date().getTime()}.pdf`;
+    pdf.save(fileName);
+    
+    return { success: true, message: 'PDF exportado com sucesso!' };
+  } catch (error) {
+    console.error('Erro ao exportar para PDF:', error);
+    return { success: false, message: 'Erro ao exportar para PDF: ' + error.message };
+  }
+};
+
+// Função para exportar nota para DOCX
+export const exportarParaDOCX = async (nota) => {
+  try {
+    // Função para limpar HTML e extrair texto puro
+    const limparHTML = (html) => {
+      if (!html) return '';
+      
+      // Criar elemento temporário para extrair texto
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Extrair texto puro
+      let texto = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Limpar espaços extras e quebras de linha
+      texto = texto.replace(/\s+/g, ' ').trim();
+      
+      return texto;
+    };
+
+    // Limpar o conteúdo HTML
+    const conteudoLimpo = limparHTML(nota.conteudo);
+    const tituloLimpo = limparHTML(nota.titulo);
+
+    // Criar documento DOCX
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: tituloLimpo || 'Nota sem título',
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: {
+              after: 200,
+              before: 200
+            }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Categoria: ${nota.categoria || nota.topico || 'Sem categoria'}`,
+                bold: true
+              })
+            ],
+            spacing: {
+              after: 100
+            }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Data: ${new Date(nota.dataCriacao).toLocaleDateString('pt-BR')}`,
+                bold: true
+              })
+            ],
+            spacing: {
+              after: 200
+            }
+          }),
+          new Paragraph({
+            text: conteudoLimpo || 'Sem conteúdo',
+            spacing: {
+              after: 300
+            }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Exportado do WRTmind em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+                size: 20,
+                color: '666666'
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: {
+              before: 400
+            }
+          })
+        ]
+      }]
+    });
+    
+    // Gerar arquivo usando blob
+    const blob = await Packer.toBlob(doc);
+    
+    // Criar URL e download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${tituloLimpo || 'nota'}_${new Date().getTime()}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return { success: true, message: 'DOCX exportado com sucesso!' };
+  } catch (error) {
+    console.error('Erro ao exportar para DOCX:', error);
+    return { success: false, message: 'Erro ao exportar para DOCX: ' + error.message };
+  }
 };
 
 // Função principal de exportação com múltiplas opções
