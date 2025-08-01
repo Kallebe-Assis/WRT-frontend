@@ -1,554 +1,341 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notasAPI, categoriasAPI } from '../config/api';
 
-export const useNotasAPI = () => {
+// Cache em localStorage
+const CACHE_KEY = 'wrtmind_notas_cache';
+const CACHE_TIMESTAMP_KEY = 'wrtmind_notas_timestamp';
+const CATEGORIAS_CACHE_KEY = 'wrtmind_categorias_cache';
+const CATEGORIAS_CACHE_TIMESTAMP_KEY = 'wrtmind_categorias_timestamp';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+const useNotasAPI = () => {
   const [notas, setNotas] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [topicos, setTopicos] = useState([]);
-  const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
+  const [isOnline, setIsOnline] = useState(false); // Novo estado para status de conectividade
 
-  // Carregar notas
-  const carregarNotas = useCallback(async (filtros = {}) => {
-    setCarregando(true);
-    setErro(null);
-    
+  // Função para obter cache do localStorage
+  const getCachedNotas = () => {
     try {
-      const response = await notasAPI.listar(filtros);
+      const cached = localStorage.getItem(CACHE_KEY);
+      const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
       
-      if (response && response.success) {
-        setNotas(response.notas || []);
-      } else {
-        setErro('Resposta inválida da API');
+      if (cached && timestamp) {
+        const age = Date.now() - parseInt(timestamp);
+        if (age < CACHE_DURATION) {
+          const parsedData = JSON.parse(cached);
+          console.log('✅ Usando cache de notas (idade:', Math.round(age/1000), 's)');
+          return Array.isArray(parsedData) ? parsedData : [];
+        }
       }
     } catch (error) {
-      console.error('Erro ao carregar notas:', error);
-      setErro(error.message);
+      console.warn('Erro ao ler cache:', error);
+    }
+    return null;
+  };
+
+  // Função para obter cache de categorias
+  const getCachedCategorias = () => {
+    try {
+      const cached = localStorage.getItem(CATEGORIAS_CACHE_KEY);
+      const timestamp = localStorage.getItem(CATEGORIAS_CACHE_TIMESTAMP_KEY);
+      
+      if (cached && timestamp) {
+        const age = Date.now() - parseInt(timestamp);
+        if (age < CACHE_DURATION) {
+          console.log('Usando cache de categorias (idade:', Math.round(age/1000), 's)');
+          return JSON.parse(cached);
+        }
+      }
+    } catch (error) {
+      console.warn('Erro ao ler cache de categorias:', error);
+    }
+    return null;
+  };
+
+  // Função para salvar cache no localStorage
+  const setCachedNotas = (data) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      console.log('Cache de notas atualizado');
+    } catch (error) {
+      console.warn('Erro ao salvar cache:', error);
+    }
+  };
+
+  // Função para salvar cache de categorias
+  const setCachedCategorias = (data) => {
+    try {
+      localStorage.setItem(CATEGORIAS_CACHE_KEY, JSON.stringify(data));
+      localStorage.setItem(CATEGORIAS_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      console.log('Cache de categorias atualizado');
+    } catch (error) {
+      console.warn('Erro ao salvar cache de categorias:', error);
+    }
+  };
+
+
+
+  // Carregar notas com cache inteligente
+  const carregarNotas = useCallback(async (forceRefresh = false) => {
+    console.log('🔍 Iniciando carregamento de notas...');
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Se não for refresh forçado, tentar usar cache primeiro
+      if (!forceRefresh) {
+        const cachedData = getCachedNotas();
+        if (cachedData) {
+          console.log('✅ Usando cache de notas:', cachedData.length, 'notas');
+          setNotas(cachedData);
+          setLastSync(new Date());
+          setLoading(false);
+          
+          // Carregar dados atualizados em background
+          setTimeout(async () => {
+            try {
+              console.log('🔄 Atualizando dados em background...');
+              const freshData = await notasAPI.listar();
+              console.log('📦 Resposta da API:', freshData);
+              let data = [];
+              if (freshData && freshData.success) {
+                data = freshData.notas || [];
+              } else if (Array.isArray(freshData)) {
+                data = freshData;
+              } else {
+                console.warn('⚠️ Formato de resposta inesperado:', freshData);
+                data = [];
+              }
+              console.log('✅ Dados atualizados em background:', data.length, 'notas');
+              setNotas(data);
+              setCachedNotas(data);
+              setLastSync(new Date());
+              setIsOnline(true); // Definir como online após sincronização em background bem-sucedida
+              console.log('🟢 Status: Online - Background sync bem-sucedido');
+            } catch (error) {
+              console.warn('⚠️ Erro ao atualizar em background:', error);
+              setIsOnline(false); // Manter offline se falhar
+              console.log('🔴 Status: Offline - Erro no background sync');
+            }
+          }, 1000);
+          
+          return;
+        }
+      }
+
+      // Carregar dados do servidor
+      console.log('🌐 Carregando notas do servidor...');
+      const response = await notasAPI.listar();
+      console.log('📦 Resposta da API:', response);
+      
+      // Extrair dados da resposta
+      let data = [];
+      if (response && response.success) {
+        data = response.notas || [];
+      } else if (Array.isArray(response)) {
+        data = response;
+      } else {
+        console.warn('⚠️ Formato de resposta inesperado:', response);
+        data = [];
+      }
+      
+      console.log('✅ Dados extraídos:', data.length, 'notas');
+      setNotas(data);
+      setCachedNotas(data);
+      setLastSync(new Date());
+      setIsOnline(true); // Definir como online após sincronização bem-sucedida
+      console.log('🟢 Status: Online - Sincronização bem-sucedida');
+    } catch (error) {
+      console.error('❌ Erro ao carregar notas:', error);
+      setError(error.message);
+      setIsOnline(false); // Definir como offline em caso de erro
+      console.log('🔴 Status: Offline - Erro na sincronização');
+      
+      // Se falhar, tentar usar cache mesmo que antigo
+      const cachedData = getCachedNotas();
+      if (cachedData) {
+        console.log('🔄 Usando cache antigo devido a erro no servidor');
+        setNotas(cachedData);
+      }
     } finally {
-      setCarregando(false);
+      setLoading(false);
     }
   }, []);
 
-  // Carregar categorias
-  const carregarCategorias = useCallback(async () => {
+  // Carregar categorias com cache
+  const carregarCategorias = useCallback(async (forceRefresh = false) => {
     try {
-      const response = await categoriasAPI.listar();
-      const categoriasCarregadas = response.categorias || [];
-      setCategorias(categoriasCarregadas);
+      // Se não for refresh forçado, tentar usar cache primeiro
+      if (!forceRefresh) {
+        const cachedData = getCachedCategorias();
+        if (cachedData) {
+          setCategorias(cachedData);
+          
+          // Carregar dados atualizados em background
+          setTimeout(async () => {
+            try {
+              const freshData = await categoriasAPI.listar();
+              setCategorias(freshData.categorias || []);
+              setCachedCategorias(freshData.categorias || []);
+              console.log('Categorias atualizadas em background');
+            } catch (error) {
+              console.warn('Erro ao atualizar categorias em background:', error);
+            }
+          }, 1000);
+          
+          return;
+        }
+      }
+
+      // Carregar dados do servidor
+      console.log('Carregando categorias do servidor...');
+      const data = await categoriasAPI.listar();
+      const categoriasData = data.categorias || [];
+      setCategorias(categoriasData);
+      setCachedCategorias(categoriasData);
     } catch (error) {
-      console.error('❌ Erro ao carregar categorias:', error);
-      setErro(error.message);
+      console.error('Erro ao carregar categorias:', error);
+      
+      // Se falhar, tentar usar cache mesmo que antigo
+      const cachedData = getCachedCategorias();
+      if (cachedData) {
+        console.log('Usando cache antigo de categorias devido a erro no servidor');
+        setCategorias(cachedData);
+      }
     }
   }, []);
 
-  // Carregar tópicos (categorias)
-  const carregarTopicos = useCallback(async () => {
+  // Carregar notas na inicialização
+  useEffect(() => {
+    console.log('🚀 Hook useNotasAPI inicializado');
+    carregarNotas();
+    carregarCategorias(); // Carregar categorias na inicialização
+  }, [carregarNotas, carregarCategorias]);
+
+  // Atualizar nota
+  const atualizarNota = useCallback(async (id, dados) => {
     try {
-      const response = await categoriasAPI.listar();
-      setTopicos(response.categorias || []);
+      console.log('🔄 Atualizando nota:', id);
+      const response = await notasAPI.atualizar(id, dados);
+      
+      // Atualizar estado local imediatamente
+      setNotas(prevNotas => {
+        const updatedNotas = prevNotas.map(nota => 
+          nota.id === id ? { ...nota, ...dados, dataModificacao: new Date().toISOString() } : nota
+        );
+        console.log('✅ Estado local atualizado:', updatedNotas.length, 'notas');
+        return updatedNotas;
+      });
+      
+      // Atualizar cache
+      setCachedNotas(prevNotas => {
+        const updatedNotas = prevNotas.map(nota => 
+          nota.id === id ? { ...nota, ...dados, dataModificacao: new Date().toISOString() } : nota
+        );
+        return updatedNotas;
+      });
+      
+      // Forçar nova renderização
+      setLastSync(new Date());
+      
+      return response;
     } catch (error) {
-      console.error('Erro ao carregar tópicos:', error);
-      setErro(error.message);
+      console.error('❌ Erro ao atualizar nota:', error);
+      throw error;
     }
   }, []);
 
   // Criar nota
-  const criarNota = useCallback(async (nota) => {
-    setCarregando(true);
-    setErro(null);
-    
+  const criarNota = useCallback(async (dados) => {
     try {
-      const response = await notasAPI.criar(nota);
+      console.log('➕ Criando nova nota');
+      const response = await notasAPI.criar(dados);
       
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
+      // Adicionar ao estado local imediatamente
+      setNotas(prevNotas => {
+        const newNotas = [response.nota || response, ...prevNotas];
+        console.log('✅ Nova nota adicionada ao estado:', newNotas.length, 'notas');
+        return newNotas;
+      });
+      
+      // Atualizar cache
+      setCachedNotas(prevNotas => {
+        const newNotas = [response.nota || response, ...prevNotas];
+        return newNotas;
+      });
+      
+      // Forçar nova renderização
+      setLastSync(new Date());
+      
       return response;
     } catch (error) {
-      console.error('Erro ao criar nota:', error);
-      setErro(error.message);
+      console.error('❌ Erro ao criar nota:', error);
       throw error;
-    } finally {
-      setCarregando(false);
     }
-  }, [carregarNotas]);
-
-  // Atualizar nota
-  const atualizarNota = useCallback(async (id, nota) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.atualizar(id, nota);
-      
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
-      return response;
-    } catch (error) {
-      console.error('Erro ao atualizar nota:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, [carregarNotas]);
+  }, []);
 
   // Deletar nota
   const deletarNota = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
     try {
+      console.log('🗑️ Deletando nota:', id);
       await notasAPI.deletar(id);
       
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
+      // Remover do estado local imediatamente
+      setNotas(prevNotas => {
+        const filteredNotas = prevNotas.filter(nota => nota.id !== id);
+        console.log('✅ Nota removida do estado:', filteredNotas.length, 'notas');
+        return filteredNotas;
+      });
+      
+      // Atualizar cache
+      setCachedNotas(prevNotas => {
+        const filteredNotas = prevNotas.filter(nota => nota.id !== id);
+        return filteredNotas;
+      });
+      
+      // Forçar nova renderização
+      setLastSync(new Date());
     } catch (error) {
-      console.error('Erro ao deletar nota:', error);
-      setErro(error.message);
+      console.error('❌ Erro ao deletar nota:', error);
       throw error;
-    } finally {
-      setCarregando(false);
     }
+  }, []);
+
+  // Função para forçar refresh
+  const refreshNotas = useCallback(async () => {
+    console.log('🔄 Forçando refresh completo das notas...');
+    await carregarNotas(true); // forceRefresh = true
   }, [carregarNotas]);
 
-  // Restaurar nota
-  const restaurarNota = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.restaurar(id);
-      const notaRestaurada = response.nota;
-      
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
-      return notaRestaurada;
-    } catch (error) {
-      console.error('Erro ao restaurar nota:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, [carregarNotas]);
-
-  // Excluir nota definitivamente
-  const excluirNotaDefinitivamente = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      await notasAPI.excluirDefinitivamente(id);
-      
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
-      return true;
-    } catch (error) {
-      console.error('Erro ao excluir nota definitivamente:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, [carregarNotas]);
-
-  // Alternar favorito
-  const alternarFavorito = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.alternarFavorito(id);
-      
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
-      return response;
-    } catch (error) {
-      console.error('Erro ao alternar favorito:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, [carregarNotas]);
-
-  // Buscar favoritas
-  const buscarFavoritas = useCallback(async () => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.buscarFavoritas();
-      return response.notas || [];
-    } catch (error) {
-      console.error('Erro ao buscar favoritas:', error);
-      setErro(error.message);
-      return [];
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
-
-  // Alternar fixado
-  const alternarFixado = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.alternarFixado(id);
-      const notaAtualizada = response.nota;
-      
-      // Atualizar a nota no estado local
-      setNotas(prev => prev.map(nota => 
-        nota.id === id ? { ...nota, fixado: notaAtualizada.fixado } : nota
-      ));
-      
-      return notaAtualizada;
-    } catch (error) {
-      console.error('Erro ao alternar fixado:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
-
-  // Atualizar ordenação
-  const atualizarOrdenacao = useCallback(async (id, ordenacao) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.atualizarOrdenacao(id, ordenacao);
-      const notaAtualizada = response.nota;
-      
-      // Atualizar a nota no estado local
-      setNotas(prev => prev.map(nota => 
-        nota.id === id ? { ...nota, ordenacao: notaAtualizada.ordenacao } : nota
-      ));
-      
-      return notaAtualizada;
-    } catch (error) {
-      console.error('Erro ao atualizar ordenação:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
-
-  // Atualizar múltiplas ordenações
-  const atualizarMultiplasOrdenacoes = useCallback(async (ordenacoes) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      await notasAPI.atualizarMultiplasOrdenacoes(ordenacoes);
-      
-      // Recarregar notas do servidor para garantir sincronização
-      await carregarNotas({ ativo: true });
-      return true;
-    } catch (error) {
-      console.error('Erro ao atualizar múltiplas ordenações:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, [carregarNotas]);
-
-  // Buscar notas favoritas (DESABILITADO)
-  // const buscarFavoritas = useCallback(async () => {
-  //   // Verificar se o usuário está logado
-  //   const user = localStorage.getItem('user');
-  //   if (!user) {
-  //     console.log('❌ Usuário não logado, pulando busca de favoritos');
-  //     return [];
-  //   }
-  //   
-  //   setCarregando(true);
-  //   setErro(null);
-  //   
-  //   try {
-  //     const response = await notasAPI.buscarFavoritas();
-  //     return response.notas || [];
-  //   } catch (error) {
-  //     console.error('Erro ao buscar notas favoritas:', error);
-  //     setErro(error.message);
-  //     return [];
-  //   } finally {
-  //     setCarregando(false);
-  //   }
-  // }, []);
-
-  // Buscar notas fixadas
-  const buscarFixadas = useCallback(async () => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.buscarFixadas();
-      return response.notas || [];
-    } catch (error) {
-      console.error('Erro ao buscar notas fixadas:', error);
-      setErro(error.message);
-      return [];
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
-
-  // Buscar nota por ID
-  const buscarNotaPorId = useCallback(async (id) => {
-    setCarregando(true);
-    setErro(null);
-    
-    try {
-      const response = await notasAPI.buscarPorId(id);
-      return response.nota;
-    } catch (error) {
-      console.error('Erro ao buscar nota:', error);
-      setErro(error.message);
-      throw error;
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
-
-  // Filtrar notas por tópico
-  const filtrarPorCategoria = useCallback(async (categoria) => {
-    return await carregarNotas({ categoria, ativo: true });
-  }, [carregarNotas]);
-
-  // Buscar notas por termo
-  const buscarPorTermo = useCallback(async (termo) => {
-    // Implementar busca no backend quando disponível
-    // Por enquanto, filtrar localmente
-    const notasFiltradas = (notas || []).filter(nota =>
-      (nota.titulo && nota.titulo.toLowerCase().includes(termo.toLowerCase())) ||
-      (nota.conteudo && nota.conteudo.toLowerCase().includes(termo.toLowerCase()))
-    );
-    return notasFiltradas;
-  }, [notas]);
-
-  // Limpar erro
-  const limparErro = useCallback(() => {
-    setErro(null);
-  }, []);
-
-  // Funções de gerenciamento de tópicos
-  const adicionarCategoria = useCallback(async (dadosCategoria) => {
-    try {
-      const response = await categoriasAPI.criar(dadosCategoria);
-      const novaCategoria = response.categoria;
-      setCategorias(prev => [...prev, novaCategoria]);
-      return novaCategoria;
-    } catch (error) {
-      console.error('Erro ao adicionar categoria:', error);
-      setErro(error.message);
-      throw error;
-    }
-  }, []);
-
-  const editarCategoria = useCallback(async (id, dadosCategoria) => {
-    try {
-      const response = await categoriasAPI.atualizar(id, dadosCategoria);
-      const categoriaAtualizada = response.categoria;
-      setCategorias(prev => prev.map(c => c.id === id ? categoriaAtualizada : c));
-      return categoriaAtualizada;
-    } catch (error) {
-      console.error('Erro ao editar categoria:', error);
-      setErro(error.message);
-      throw error;
-    }
-  }, []);
-
-  const removerCategoria = useCallback(async (id) => {
-    try {
-      await categoriasAPI.deletar(id);
-      setCategorias(prev => prev.filter(c => c.id !== id));
-      return true;
-    } catch (error) {
-      console.error('Erro ao remover categoria:', error);
-      setErro(error.message);
-      throw error;
-    }
-  }, []);
-
-  // Carregar dados iniciais apenas quando o usuário estiver logado
-  useEffect(() => {
-    console.log('🚀 Verificando se usuário está logado...');
-    
-    const carregarDadosIniciais = async () => {
-      try {
-        // Verificar se o usuário está logado
-        const user = localStorage.getItem('user');
-        if (!user) {
-          console.log('⚠️ Usuário não está logado, aguardando login...');
-          setNotas([]);
-          setCategorias([]);
-          return;
-        }
-
-        // Verificar se os dados do usuário são válidos
-        let userData;
-        try {
-          userData = JSON.parse(user);
-          if (!userData.id) {
-            console.log('⚠️ Dados do usuário inválidos, aguardando login válido...');
-            setNotas([]);
-            setCategorias([]);
-            return;
-          }
-        } catch (error) {
-          console.log('⚠️ Erro ao parsear dados do usuário, aguardando login válido...');
-          setNotas([]);
-          setCategorias([]);
-          return;
-        }
-
-        console.log('✅ Usuário logado, carregando dados...');
-        
-        // Usar as funções diretamente sem dependências circulares
-        const responseNotas = await notasAPI.listar(); // Carregar todas as notas (ativas e deletadas)
-        setNotas(responseNotas.notas || []);
-        
-        // Carregar categorias usando o mesmo método que funciona no Configuracoes
-        const responseCategorias = await categoriasAPI.listar();
-        const categoriasIniciais = responseCategorias.categorias || [];
-        console.log('✅ Categorias carregadas:', categoriasIniciais);
-        setCategorias(categoriasIniciais);
-      } catch (error) {
-        console.error('Erro ao carregar dados iniciais:', error);
-        setErro(error.message);
-        // Em caso de erro, limpar dados para evitar estado inconsistente
-        setNotas([]);
-        setCategorias([]);
-      }
-    };
-    
-    carregarDadosIniciais();
-  }, []); // Array vazio - executa apenas uma vez
-
-  // Adicionar um useEffect para escutar mudanças no localStorage e eventos de login
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'user') {
-        console.log('👤 Mudança detectada no localStorage (user)');
-        if (e.newValue) {
-          // Usuário fez login, carregar dados
-          console.log('✅ Usuário logado, carregando dados...');
-          const carregarDadosIniciais = async () => {
-            try {
-              const responseNotas = await notasAPI.listar();
-              setNotas(responseNotas.notas || []);
-              
-              // Carregar categorias usando o mesmo método que funciona no Configuracoes
-              const responseCategorias = await categoriasAPI.listar();
-              const categoriasIniciais = responseCategorias.categorias || [];
-              console.log('✅ Categorias carregadas após login:', categoriasIniciais);
-              setCategorias(categoriasIniciais);
-            } catch (error) {
-              console.error('Erro ao carregar dados após login:', error);
-              setErro(error.message);
-            }
-          };
-          carregarDadosIniciais();
-        } else {
-          // Usuário fez logout, limpar dados
-          console.log('🚪 Usuário deslogado, limpando dados...');
-          setNotas([]);
-          setCategorias([]);
-          setErro(null);
-        }
-      }
-    };
-
-    const handleUserLogin = (e) => {
-      console.log('👤 Evento de login detectado:', e.detail);
-      // Usuário fez login, carregar dados
-      console.log('✅ Usuário logado, carregando dados...');
-      const carregarDadosIniciais = async () => {
-        try {
-          const responseNotas = await notasAPI.listar();
-          setNotas(responseNotas.notas || []);
-          
-          // Carregar categorias usando o mesmo método que funciona no Configuracoes
-          const responseCategorias = await categoriasAPI.listar();
-          const categoriasIniciais = responseCategorias.categorias || [];
-          console.log('✅ Categorias carregadas após evento de login:', categoriasIniciais);
-          setCategorias(categoriasIniciais);
-        } catch (error) {
-          console.error('Erro ao carregar dados após login:', error);
-          setErro(error.message);
-        }
-      };
-      carregarDadosIniciais();
-    };
-
-    const handleUserLogout = () => {
-      console.log('🚪 Evento de logout detectado');
-      // Usuário fez logout, limpar dados
-      console.log('🚪 Usuário deslogado, limpando dados...');
-      setNotas([]);
-      setCategorias([]);
-      setErro(null);
-    };
-
-    // Adicionar listeners
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('userLogin', handleUserLogin);
-    window.addEventListener('userLogout', handleUserLogout);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userLogin', handleUserLogin);
-      window.removeEventListener('userLogout', handleUserLogout);
-    };
+  // Função para limpar cache
+  const clearCache = useCallback(() => {
+    console.log('🧹 Limpando cache...');
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    localStorage.removeItem(CATEGORIAS_CACHE_KEY);
+    localStorage.removeItem(CATEGORIAS_CACHE_TIMESTAMP_KEY);
+    setLastSync(null);
   }, []);
 
   return {
-    // Estado
     notas,
     categorias,
-    topicos,
-    carregando,
-    erro,
-    
-    // Ações
+    loading,
+    error,
+    lastSync,
+    isOnline, // Novo estado de conectividade
     carregarNotas,
     carregarCategorias,
-    carregarTopicos,
-    criarNota,
     atualizarNota,
+    criarNota,
     deletarNota,
-    restaurarNota,
-    excluirNotaDefinitivamente,
-    buscarNotaPorId,
-    filtrarPorCategoria,
-    buscarPorTermo,
-    limparErro,
-    
-    // Novos métodos para fixados e ordenação
-    // alternarFavorito, // DESABILITADO
-    alternarFixado,
-    atualizarOrdenacao,
-    atualizarMultiplasOrdenacoes,
-    // buscarFavoritas, // DESABILITADO
-    buscarFixadas,
-    alternarFavorito,
-    buscarFavoritas,
-    
-    // Gerenciamento de categorias
-    adicionarCategoria,
-    editarCategoria,
-    removerCategoria,
-    
-    // Utilitários
-    notasAtivas: notas ? notas.filter(nota => nota.ativo !== false) : [],
-    notasDeletadas: notas ? notas.filter(nota => nota.ativo === false) : [],
-    // notasFavoritas: notas.filter(nota => nota.favorito && nota.ativo), // DESABILITADO
-    notasFixadas: notas ? notas.filter(nota => nota.fixado && nota.ativo !== false) : []
+    refreshNotas,
+    clearCache
   };
-}; 
+};
+
+export default useNotasAPI; 

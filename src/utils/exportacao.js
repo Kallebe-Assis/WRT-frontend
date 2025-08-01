@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Table, TableRow, TableCell, BorderStyle, WidthType } from 'docx';
 
 // Função para exportar como texto simples
 export const exportarComoTexto = (item) => {
@@ -198,68 +198,235 @@ export const imprimirNota = (item) => {
   printWindow.document.close();
 };
 
-// Função para exportar nota para PDF
+// Função para converter HTML para elementos do DOCX
+const converterHTMLParaDOCX = (html) => {
+  // Usar DOMParser se disponível, senão criar um elemento temporário
+  let parser;
+  let doc;
+  
+  try {
+    parser = new DOMParser();
+    doc = parser.parseFromString(html, 'text/html');
+  } catch (error) {
+    // Fallback: criar elemento temporário
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    doc = { body: tempDiv };
+  }
+
+  const elementos = [];
+
+  const processarElemento = (elemento) => {
+    const tagName = elemento.tagName ? elemento.tagName.toLowerCase() : '';
+    const texto = elemento.textContent || '';
+    const children = Array.from(elemento.children || []);
+
+    switch (tagName) {
+      case 'h1':
+        return new Paragraph({
+          text: texto,
+          heading: HeadingLevel.HEADING_1,
+          spacing: { after: 200, before: 200 }
+        });
+      case 'h2':
+        return new Paragraph({
+          text: texto,
+          heading: HeadingLevel.HEADING_2,
+          spacing: { after: 200, before: 200 }
+        });
+      case 'h3':
+        return new Paragraph({
+          text: texto,
+          heading: HeadingLevel.HEADING_3,
+          spacing: { after: 200, before: 200 }
+        });
+      case 'p':
+        if (children.length === 0) {
+          return new Paragraph({
+            text: texto,
+            spacing: { after: 200 }
+          });
+        } else {
+          const runs = [];
+          processarFilhos(elemento, runs);
+          return new Paragraph({
+            children: runs,
+            spacing: { after: 200 }
+          });
+        }
+      case 'ul':
+      case 'ol':
+        const listItems = [];
+        children.forEach((li, index) => {
+          const listItem = new Paragraph({
+            text: li.textContent,
+            bullet: tagName === 'ul' ? { level: 0 } : { level: 0, type: 'number' },
+            spacing: { after: 100 }
+          });
+          listItems.push(listItem);
+        });
+        return listItems;
+      case 'blockquote':
+        return new Paragraph({
+          text: texto,
+          spacing: { after: 200, before: 200 },
+          indent: { left: 720 } // 0.5 inch
+        });
+      case 'table':
+        return processarTabela(elemento);
+      default:
+        if (children.length > 0) {
+          const runs = [];
+          processarFilhos(elemento, runs);
+          return new Paragraph({
+            children: runs,
+            spacing: { after: 200 }
+          });
+        } else {
+          return new Paragraph({
+            text: texto,
+            spacing: { after: 200 }
+          });
+        }
+    }
+  };
+
+  const processarFilhos = (elemento, runs) => {
+    Array.from(elemento.childNodes || []).forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent.trim()) {
+          runs.push(new TextRun({ text: node.textContent }));
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+        const texto = node.textContent || '';
+        
+        switch (tagName) {
+          case 'strong':
+          case 'b':
+            runs.push(new TextRun({ text: texto, bold: true }));
+            break;
+          case 'em':
+          case 'i':
+            runs.push(new TextRun({ text: texto, italics: true }));
+            break;
+          case 'u':
+            runs.push(new TextRun({ text: texto, underline: {} }));
+            break;
+          case 's':
+          case 'strike':
+            runs.push(new TextRun({ text: texto, strike: {} }));
+            break;
+          case 'code':
+            runs.push(new TextRun({ 
+              text: texto, 
+              font: 'Courier New',
+              size: 20
+            }));
+            break;
+          default:
+            runs.push(new TextRun({ text: texto }));
+        }
+      }
+    });
+  };
+
+  const processarTabela = (tableElement) => {
+    const rows = Array.from(tableElement.querySelectorAll ? tableElement.querySelectorAll('tr') : []);
+    const tableRows = rows.map(row => {
+      const cells = Array.from(row.querySelectorAll ? row.querySelectorAll('td, th') : []);
+      const tableCells = cells.map(cell => {
+        const isHeader = cell.tagName ? cell.tagName.toLowerCase() === 'th' : false;
+        return new TableCell({
+          children: [new Paragraph({
+            text: cell.textContent,
+            ...(isHeader && { bold: true })
+          })],
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1 },
+            bottom: { style: BorderStyle.SINGLE, size: 1 },
+            left: { style: BorderStyle.SINGLE, size: 1 },
+            right: { style: BorderStyle.SINGLE, size: 1 }
+          }
+        });
+      });
+      return new TableRow({ children: tableCells });
+    });
+
+    return new Table({
+      rows: tableRows,
+      width: { size: 100, type: WidthType.PERCENTAGE }
+    });
+  };
+
+  // Processar todos os elementos do body
+  const body = doc.body;
+  const elementosProcessados = [];
+
+  Array.from(body.childNodes || []).forEach(node => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const elemento = processarElemento(node);
+      if (Array.isArray(elemento)) {
+        elementosProcessados.push(...elemento);
+      } else {
+        elementosProcessados.push(elemento);
+      }
+    }
+  });
+
+  return elementosProcessados;
+};
+
+// Função para exportar nota para PDF com formatação preservada
 export const exportarParaPDF = async (nota) => {
   try {
-    // Função para limpar HTML e extrair texto puro
-    const limparHTML = (html) => {
-      if (!html) return '';
-      
-      // Criar elemento temporário para extrair texto
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      
-      // Extrair texto puro
-      let texto = tempDiv.textContent || tempDiv.innerText || '';
-      
-      // Limpar espaços extras e quebras de linha
-      texto = texto.replace(/\s+/g, ' ').trim();
-      
-      return texto;
-    };
-
-    // Limpar o conteúdo HTML
-    const conteudoLimpo = limparHTML(nota.conteudo);
-    const tituloLimpo = limparHTML(nota.titulo);
-
-    // Criar um elemento temporário para renderizar o conteúdo
+    // Criar um elemento temporário para renderizar o conteúdo formatado
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '0';
     tempDiv.style.width = '800px';
-    tempDiv.style.padding = '20px';
+    tempDiv.style.padding = '40px';
     tempDiv.style.fontFamily = 'Arial, sans-serif';
-    tempDiv.style.fontSize = '12px';
+    tempDiv.style.fontSize = '14px';
     tempDiv.style.lineHeight = '1.6';
     tempDiv.style.backgroundColor = 'white';
     tempDiv.style.color = 'black';
+    tempDiv.style.border = '1px solid #ccc';
+    tempDiv.style.borderRadius = '8px';
     
-    // Adicionar conteúdo da nota (texto limpo)
+    // Adicionar conteúdo da nota com formatação preservada
     tempDiv.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <h1 style="color: #333; margin-bottom: 10px; font-size: 24px;">${tituloLimpo || 'Nota sem título'}</h1>
-        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+      <div style="margin-bottom: 30px;">
+        <h1 style="color: #333; margin-bottom: 15px; font-size: 28px; font-weight: bold; border-bottom: 3px solid #007bff; padding-bottom: 10px;">
+          ${nota.titulo || 'Nota sem título'}
+        </h1>
+        <div style="color: #666; margin-bottom: 20px; font-size: 14px;">
           <strong>Categoria:</strong> ${nota.categoria || nota.topico || 'Sem categoria'} | 
           <strong>Data:</strong> ${new Date(nota.dataCriacao).toLocaleDateString('pt-BR')}
+        </div>
+      </div>
+      <div style="margin-bottom: 30px; line-height: 1.8;">
+        ${nota.conteudo || 'Sem conteúdo'}
+      </div>
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; font-size: 12px; color: #999;">
+        <p style="text-align: center; margin: 0;">
+          Exportado do WRTmind em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
         </p>
-      </div>
-      <div style="margin-bottom: 20px; white-space: pre-wrap;">
-        ${conteudoLimpo || 'Sem conteúdo'}
-      </div>
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 10px; color: #999;">
-        <p>Exportado do WRTmind em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
       </div>
     `;
     
     document.body.appendChild(tempDiv);
     
-    // Converter para canvas
+    // Converter para canvas com melhor qualidade
     const canvas = await html2canvas(tempDiv, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: 800,
+      height: tempDiv.scrollHeight
     });
     
     // Remover elemento temporário
@@ -286,7 +453,7 @@ export const exportarParaPDF = async (nota) => {
     }
     
     // Salvar PDF
-    const fileName = `${tituloLimpo || 'nota'}_${new Date().getTime()}.pdf`;
+    const fileName = `${nota.titulo?.replace(/[^a-z0-9]/gi, '_') || 'nota'}_${new Date().getTime()}.pdf`;
     pdf.save(fileName);
     
     return { success: true, message: 'PDF exportado com sucesso!' };
@@ -296,29 +463,11 @@ export const exportarParaPDF = async (nota) => {
   }
 };
 
-// Função para exportar nota para DOCX
+// Função para exportar nota para DOCX com formatação preservada
 export const exportarParaDOCX = async (nota) => {
   try {
-    // Função para limpar HTML e extrair texto puro
-    const limparHTML = (html) => {
-      if (!html) return '';
-      
-      // Criar elemento temporário para extrair texto
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      
-      // Extrair texto puro
-      let texto = tempDiv.textContent || tempDiv.innerText || '';
-      
-      // Limpar espaços extras e quebras de linha
-      texto = texto.replace(/\s+/g, ' ').trim();
-      
-      return texto;
-    };
-
-    // Limpar o conteúdo HTML
-    const conteudoLimpo = limparHTML(nota.conteudo);
-    const tituloLimpo = limparHTML(nota.titulo);
+    // Converter HTML para elementos do DOCX
+    const elementosConteudo = converterHTMLParaDOCX(nota.conteudo || '');
 
     // Criar documento DOCX
     const doc = new Document({
@@ -326,11 +475,11 @@ export const exportarParaDOCX = async (nota) => {
         properties: {},
         children: [
           new Paragraph({
-            text: tituloLimpo || 'Nota sem título',
+            text: nota.titulo || 'Nota sem título',
             heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
             spacing: {
-              after: 200,
+              after: 400,
               before: 200
             }
           }),
@@ -338,18 +487,8 @@ export const exportarParaDOCX = async (nota) => {
             children: [
               new TextRun({
                 text: `Categoria: ${nota.categoria || nota.topico || 'Sem categoria'}`,
-                bold: true
-              })
-            ],
-            spacing: {
-              after: 100
-            }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Data: ${new Date(nota.dataCriacao).toLocaleDateString('pt-BR')}`,
-                bold: true
+                bold: true,
+                size: 24
               })
             ],
             spacing: {
@@ -357,11 +496,18 @@ export const exportarParaDOCX = async (nota) => {
             }
           }),
           new Paragraph({
-            text: conteudoLimpo || 'Sem conteúdo',
+            children: [
+              new TextRun({
+                text: `Data: ${new Date(nota.dataCriacao).toLocaleDateString('pt-BR')}`,
+                bold: true,
+                size: 24
+              })
+            ],
             spacing: {
-              after: 300
+              after: 400
             }
           }),
+          ...elementosConteudo,
           new Paragraph({
             children: [
               new TextRun({
@@ -372,7 +518,7 @@ export const exportarParaDOCX = async (nota) => {
             ],
             alignment: AlignmentType.CENTER,
             spacing: {
-              before: 400
+              before: 600
             }
           })
         ]
@@ -386,7 +532,7 @@ export const exportarParaDOCX = async (nota) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${tituloLimpo || 'nota'}_${new Date().getTime()}.docx`;
+    link.download = `${nota.titulo?.replace(/[^a-z0-9]/gi, '_') || 'nota'}_${new Date().getTime()}.docx`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

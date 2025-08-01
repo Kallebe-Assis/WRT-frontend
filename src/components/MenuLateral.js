@@ -8,7 +8,8 @@ import {
   faSearch,
   faBars,
   faTimes,
-  faTag
+  faTag,
+  faHome
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 
@@ -25,6 +26,14 @@ const MenuContainer = styled.div`
   box-shadow: var(--sombraMedia);
   overflow: hidden;
   backdrop-filter: blur(10px);
+
+  @media (max-width: 768px) {
+    width: ${props => props.recolhido ? '60px' : '250px'};
+  }
+
+  @media (max-width: 480px) {
+    width: ${props => props.recolhido ? '50px' : '200px'};
+  }
 `;
 
 const MenuHeader = styled.div`
@@ -71,6 +80,12 @@ const BotaoAlternar = styled.button`
     background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
     transform: scale(1.1);
     box-shadow: var(--sombraMedia);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -333,6 +348,11 @@ const MenuLateral = ({
 
   const itensNavegacao = [
     {
+      id: 'inicial',
+      titulo: 'Início',
+      icone: faHome
+    },
+    {
       id: 'notas',
       titulo: 'Minhas Notas',
       icone: faStickyNote,
@@ -359,7 +379,7 @@ const MenuLateral = ({
         <TituloMenu recolhido={menuRecolhido}>WRTmind</TituloMenu>
         <BotaoAlternar onClick={alternarMenu}>
           <FontAwesomeIcon
-            icon={menuRecolhido ? faTimes : faBars} // Changed from faChevronRight/Left to faTimes/Bars
+            icon={menuRecolhido ? faTimes : faBars}
             size="sm"
           />
         </BotaoAlternar>
@@ -412,9 +432,11 @@ const MenuLateral = ({
                   <TextoNavegacao recolhido={menuRecolhido}>
                     {item.titulo}
                   </TextoNavegacao>
-                  <Contador ativo={telaAtiva === item.id} recolhido={menuRecolhido}>
-                    {item.contador}
-                  </Contador>
+                  {item.contador !== undefined && (
+                    <Contador ativo={telaAtiva === item.id} recolhido={menuRecolhido}>
+                      {item.contador}
+                    </Contador>
+                  )}
                 </BotaoNavegacao>
               </ItemNavegacao>
             ))}

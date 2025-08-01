@@ -5,7 +5,9 @@ import {
   faStickyNote, 
   faLink, 
   faHeart, 
-  faPlus 
+  faPlus,
+  faWifi,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 const Container = styled.div`
@@ -13,6 +15,14 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   animation: fadeIn 0.5s ease-out;
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoMedio);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+  }
 `;
 
 const Header = styled.div`
@@ -29,6 +39,14 @@ const Titulo = styled.h1`
   font-weight: 700;
   margin-bottom: var(--espacamentoMedio);
   animation: fadeIn 0.6s ease-out;
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const Subtitulo = styled.p`
@@ -36,6 +54,59 @@ const Subtitulo = styled.p`
   font-size: var(--tamanhoFonteGrande);
   margin-bottom: var(--espacamentoGrande);
   animation: fadeIn 0.7s ease-out;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteMedio);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequeno);
+  }
+`;
+
+const StatusConectividade = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacamentoPequeno);
+  margin-bottom: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  border-radius: var(--bordaRaioMedio);
+  font-size: var(--tamanhoFontePequeno);
+  font-weight: 500;
+  transition: all var(--transicaoRapida);
+  
+  ${props => props.isOnline ? `
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  ` : `
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  `}
+  
+  .status-icon {
+    font-size: 0.9em;
+    animation: ${props => props.isOnline ? 'pulse' : 'none'} 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequeno);
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--espacamentoPequeno);
+  }
 `;
 
 const GridCards = styled.div`
@@ -43,6 +114,16 @@ const GridCards = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--espacamentoGrande);
   margin-bottom: var(--espacamentoExtraGrande);
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--espacamentoMedio);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: var(--espacamentoPequeno);
+  }
 `;
 
 const Card = styled.div`
@@ -157,21 +238,28 @@ const BotaoAcao = styled.button`
   }
 `;
 
-const TelaInicial = ({ notas, links, onNovoItem, forcarAtualizacao }) => {
-  // Reagir à atualização forçada
-  useEffect(() => {
-    if (forcarAtualizacao > 0) {
-      // Forçar re-renderização dos cards
-    }
-  }, [forcarAtualizacao, notas, links]);
+const TelaInicial = ({ notas, links, onNovoItem, onNovoLink, forcarAtualizacao, isOnline }) => {
+  const estatisticas = {
+    totalNotas: Array.isArray(notas) ? notas.length : 0,
+    totalLinks: Array.isArray(links) ? links.length : 0,
+    notasFavoritas: Array.isArray(notas) ? notas.filter(nota => nota.favorito).length : 0,
+    linksFavoritos: Array.isArray(links) ? links.filter(link => link.favorito).length : 0
+  };
 
   return (
     <Container>
       <Header>
-        <Titulo>Bem-vindo ao WRTmind</Titulo>
-        <Subtitulo>
-          Gerencie suas notas e links de forma organizada e eficiente.
-        </Subtitulo>
+        <Titulo>WRTmind</Titulo>
+        <Subtitulo>Organize suas ideias e links de forma inteligente</Subtitulo>
+        
+        {/* Indicador de Status de Conectividade */}
+        <StatusConectividade isOnline={isOnline}>
+          <FontAwesomeIcon 
+            icon={isOnline ? faWifi : faTimes} 
+            className="status-icon"
+          />
+          {isOnline ? 'Online - Sincronizado' : 'Offline - Modo local'}
+        </StatusConectividade>
       </Header>
 
       <GridCards>
@@ -202,7 +290,7 @@ const TelaInicial = ({ notas, links, onNovoItem, forcarAtualizacao }) => {
         </Card>
 
         {/* Links */}
-        <Card onClick={() => onNovoItem('link')}>
+        <Card onClick={() => onNovoLink()}>
           <CardIcon className="card-icon">
             <FontAwesomeIcon icon={faLink} />
           </CardIcon>
@@ -222,7 +310,7 @@ const TelaInicial = ({ notas, links, onNovoItem, forcarAtualizacao }) => {
               <StatLabel>Favoritos</StatLabel>
             </Stat>
           </CardStats>
-          <BotaoAcao onClick={(e) => { e.stopPropagation(); onNovoItem('link'); }}>
+          <BotaoAcao onClick={(e) => { e.stopPropagation(); onNovoLink(); }}>
             <FontAwesomeIcon icon={faPlus} /> Adicionar Link
           </BotaoAcao>
         </Card>

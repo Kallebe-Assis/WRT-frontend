@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import styled from 'styled-components';
 
@@ -37,34 +37,43 @@ const EditorContainer = styled.div`
 `;
 
 const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo...", height = "auto" }) => {
-  const handleEditorChange = (content, editor) => {
-    onChange(content);
-    ajustarAltura(editor);
-  };
+  const editorRef = useRef(null);
+  const [previousValue, setPreviousValue] = useState(value);
 
   const ajustarAltura = (editor) => {
     if (height === "auto" && editor) {
       try {
+        console.log('Tentando ajustar altura do editor...');
+        
         // Verificar se o editor está inicializado e tem o método getBody
         if (editor && typeof editor.getBody === 'function') {
           const body = editor.getBody();
           if (body) {
+            console.log('Body encontrado, calculando altura...');
             const contentHeight = body.scrollHeight;
             const minHeight = 300;
             const maxHeight = 800;
             const newHeight = Math.max(minHeight, Math.min(contentHeight + 50, maxHeight));
             
+            console.log(`Altura calculada: ${contentHeight}px, nova altura: ${newHeight}px`);
+            
             // Usar a API correta do TinyMCE para redimensionar
             if (editor.theme && typeof editor.theme.resizeTo === 'function') {
               editor.theme.resizeTo(null, newHeight);
+              console.log('Altura ajustada via theme.resizeTo');
             } else if (editor.getContainer) {
               // Fallback: ajustar via CSS
               const editorElement = editor.getContainer();
               if (editorElement) {
                 editorElement.style.height = `${newHeight}px`;
+                console.log('Altura ajustada via CSS');
               }
             }
+          } else {
+            console.log('Body não encontrado');
           }
+        } else {
+          console.log('Editor não inicializado ou sem método getBody');
         }
       } catch (error) {
         console.warn('Erro ao ajustar altura do editor:', error);
@@ -72,12 +81,82 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
     }
   };
 
-  const handleEditorInit = (editor) => {
-    // Ajustar altura inicial quando o editor for inicializado
+  const handleEditorChange = (content, editor) => {
+    onChange(content);
+    
+    // Ajustar altura após mudança de conteúdo
     setTimeout(() => {
       ajustarAltura(editor);
     }, 100);
+    
+    // Forçar ajuste de altura também quando o editor é usado pela primeira vez
+    if (editor && height === "auto" && value) {
+      setTimeout(() => {
+        ajustarAltura(editor);
+      }, 200);
+    }
+    
+    // Forçar ajuste de altura quando o editor é usado pela primeira vez em uma nova nota
+    if (editor && height === "auto" && value && content !== value) {
+      console.log('Primeira interação com editor, forçando ajuste...');
+      setTimeout(() => {
+        ajustarAltura(editor);
+      }, 300);
+    }
   };
+
+  const handleEditorInit = (editor) => {
+    editorRef.current = editor;
+    
+    // Forçar ajuste de altura sempre que o editor for inicializado
+    const forcarAjuste = () => {
+      if (editor && height === "auto") {
+        console.log('Editor inicializado, forçando ajuste de altura...');
+        ajustarAltura(editor);
+      }
+    };
+
+    // Múltiplas tentativas para garantir que funcione
+    setTimeout(forcarAjuste, 100);
+    setTimeout(forcarAjuste, 300);
+    setTimeout(forcarAjuste, 500);
+    setTimeout(forcarAjuste, 1000);
+  };
+
+  // Ajustar altura quando o valor mudar (incluindo quando a nota é aberta)
+  useEffect(() => {
+    if (editorRef.current && height === "auto") {
+      console.log('Valor mudou, forçando ajuste de altura...');
+      setTimeout(() => {
+        ajustarAltura(editorRef.current);
+      }, 100);
+    }
+  }, [value, height]);
+
+  // Ajustar altura quando o componente é montado com conteúdo
+  useEffect(() => {
+    if (height === "auto") {
+      console.log('Componente montado, forçando ajuste de altura...');
+      setTimeout(() => {
+        if (editorRef.current) {
+          ajustarAltura(editorRef.current);
+        }
+      }, 300);
+    }
+  }, []); // Executar apenas uma vez quando o componente é montado
+
+  // Force height adjustment when value changes, including previous value check
+  useEffect(() => {
+    if (value !== previousValue) {
+      console.log('Valor mudou, forçando ajuste de altura...');
+      setTimeout(() => {
+        if (editorRef.current) {
+          ajustarAltura(editorRef.current);
+        }
+      }, 100);
+      setPreviousValue(value); // Update previous value
+    }
+  }, [value, previousValue]);
 
   return (
     <EditorContainer>
@@ -92,13 +171,16 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
           menubar: false,
           autoresize_bottom_margin: 20,
           autoresize_overflow_padding: 20,
+          // Desabilitar corretor ortográfico
+          browser_spellcheck: false,
+          spellchecker: false,
           plugins: [
             // Core editing features
             'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
             // Premium features (included in free trial)
-            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
           ],
-          toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+          toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
           content_style: `
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -169,7 +251,9 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
           elementpath: false,
           resize: true,
           statusbar: false,
-          browser_spellcheck: true,
+          // Desabilitar corretor ortográfico
+          browser_spellcheck: false,
+          spellchecker: false,
           contextmenu: true,
           paste_data_images: true,
           image_advtab: true,
@@ -251,8 +335,56 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
           ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not implemented')),
           setup: (editor) => {
             // Configurações adicionais se necessário
+            // Não usar listeners problemáticos
+            
+            // Ajustar altura quando o editor for inicializado
             editor.on('init', () => {
-              // Editor inicializado
+              if (height === "auto") {
+                console.log('Editor inicializado, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 300);
+              }
+            });
+            
+            // Ajustar altura quando o conteúdo for definido
+            editor.on('SetContent', () => {
+              if (height === "auto") {
+                console.log('Conteúdo definido no editor, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 200);
+              }
+            });
+            
+            // Ajustar altura quando o editor ganhar foco
+            editor.on('focus', () => {
+              if (height === "auto") {
+                console.log('Editor ganhou foco, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
+            });
+
+            // Ajustar altura quando o editor for clicado
+            editor.on('click', () => {
+              if (height === "auto") {
+                console.log('Editor foi clicado, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
+            });
+
+            // Ajustar altura quando o usuário começar a digitar
+            editor.on('keydown', () => {
+              if (height === "auto") {
+                console.log('Usuário começou a digitar, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
             });
           }
         }}

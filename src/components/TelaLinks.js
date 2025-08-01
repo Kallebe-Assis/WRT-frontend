@@ -138,8 +138,9 @@ const CardLink = styled.div`
 const CardHeader = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: var(--espacamentoPequeno);
+  position: relative;
 `;
 
 const CardTitle = styled.h3`
@@ -147,10 +148,13 @@ const CardTitle = styled.h3`
   font-weight: 600;
   color: var(--corTextoPrimaria);
   margin: 0;
+  text-align: center;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.2;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 `;
 
 const CardActions = styled.div`
@@ -159,6 +163,9 @@ const CardActions = styled.div`
   gap: 2px;
   opacity: 0;
   transition: opacity var(--transicaoRapida);
+  position: absolute;
+  right: 0;
+  top: 0;
   
   ${CardLink}:hover & {
     opacity: 1;

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faStickyNote,
   faSignOutAlt,
-  faSync,
   faClock,
-  faHeart
+  faHeart,
+  faSync,
+  faFolder
 } from '@fortawesome/free-solid-svg-icons';
 import { NotasAPIProvider, useNotasAPIContext } from './context/NotasAPIContext';
 import AuthScreen from './components/AuthScreen';
@@ -46,6 +46,14 @@ const ContentArea = styled.div`
   transition: margin-left var(--transicaoMedia);
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    margin-left: var(--larguraMenuRecolhido);
+  }
+
+  @media (max-width: 480px) {
+    margin-left: 0;
+  }
 `;
 
 const Header = styled.header`
@@ -59,6 +67,20 @@ const Header = styled.header`
   height: 80px;
   box-sizing: border-box;
   backdrop-filter: blur(10px);
+  flex-wrap: wrap;
+  gap: var(--espacamentoMedio);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    height: auto;
+    min-height: 80px;
+    flex-direction: column;
+    gap: var(--espacamentoPequeno);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+  }
 `;
 
 const UserInfo = styled.div`
@@ -71,6 +93,19 @@ const UserInfo = styled.div`
   padding: var(--espacamentoPequeno) var(--espacamentoMedio);
   border-radius: var(--bordaRaioGrande);
   border: 1px solid var(--corBordaPrimaria);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    gap: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--espacamentoPequeno);
+  }
 `;
 
 const LogoutButton = styled.button`
@@ -92,6 +127,46 @@ const LogoutButton = styled.button`
     background: linear-gradient(135deg, var(--corErroHover) 0%, #b71c1c 100%);
     transform: translateY(-2px);
     box-shadow: var(--sombraMedia);
+  }
+`;
+
+const SyncButton = styled.button`
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  padding: 10px 18px;
+  font-size: var(--tamanhoFontePequena);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--sombraLeve);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraMedia);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 14px;
+    font-size: var(--tamanhoFontePequena);
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 12px;
+    font-size: var(--tamanhoFontePequena);
+    gap: 4px;
   }
 `;
 
@@ -121,28 +196,16 @@ const Logo = styled.button`
   &:active {
     transform: scale(0.98);
   }
-`;
 
-const StatusBar = styled.div`
-  background: linear-gradient(90deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
-  border-bottom: 1px solid var(--corBordaPrimaria);
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-  backdrop-filter: blur(5px);
-`;
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteGrande);
+    padding: var(--espacamentoPequeno);
+  }
 
-const StatusItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  background: var(--corFundoSecundaria);
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  border-radius: var(--bordaRaioMedia);
-  border: 1px solid var(--corBordaPrimaria);
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFonteMedio);
+    padding: var(--espacamentoPequeno);
+  }
 `;
 
 const StatusIndicator = styled.div`
@@ -162,37 +225,172 @@ const StatusIndicator = styled.div`
   animation: ${props => props.status === 'syncing' ? 'pulse 2s infinite' : 'none'};
 `;
 
-const SyncButton = styled.button`
-  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
-  color: white;
-  border: none;
-  border-radius: var(--bordaRaioMedia);
-  padding: 8px 16px;
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
+const StatusInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: var(--sombraLeve);
+  gap: var(--espacamentoPequeno);
+  background: var(--corFundoSecundaria);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  border-radius: var(--bordaRaioMedia);
+  border: 1px solid var(--corBordaPrimaria);
+  font-size: var(--tamanhoFontePequena);
+  color: var(--corTextoSecundaria);
+  flex-wrap: wrap;
 
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
-    transform: translateY(-2px);
-    box-shadow: var(--sombraMedia);
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    gap: var(--espacamentoPequeno);
   }
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--espacamentoPequeno);
   }
 `;
 
 const ContentWrapper = styled.div`
   flex: 1;
   overflow-y: auto;
+`;
+
+// Botão flutuante para arquivos
+const FloatingButton = styled.button`
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  }
+  
+  &:active {
+    transform: translateY(-1px) scale(1.02);
+  }
+  
+  @media (max-width: 768px) {
+    bottom: 20px;
+    right: 20px;
+    width: 55px;
+    height: 55px;
+    font-size: 20px;
+  }
+`;
+
+// Overlay do modal
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: ${props => props.isOpen ? '1' : '0'};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+// Modal principal
+const ModalContent = styled.div`
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  transform: ${props => props.isOpen ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(20px)'};
+  opacity: ${props => props.isOpen ? '1' : '0'};
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+    border-radius: 20px 20px 0 0;
+  }
+`;
+
+// Título do modal
+const ModalTitle = styled.h1`
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ${props => props.isOpen ? 'slideInUp 0.6s ease-out' : 'none'};
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
+`;
+
+// Botão de fechar
+const CloseButton = styled.button`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    transform: scale(1.1);
+  }
 `;
 
 // Hook para gerenciar status de sincronização
@@ -242,12 +440,15 @@ const AppContent = () => {
     notasAtivas,
     menuRecolhido,
     recarregarDados,
-    topicos
+    topicos,
+    isOnline // Adicionar status de conectividade
   } = useNotasAPIContext();
 
   const [user, setUser] = useState(null);
   const [telaAtiva, setTelaAtiva] = useState('inicial');
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalLinkAberto, setModalLinkAberto] = useState(false);
+  const [modalArquivosAberto, setModalArquivosAberto] = useState(false);
   const [itemAtual, setItemAtual] = useState(null);
   const [modoModal, setModoModal] = useState('editar');
   const [carregandoModal, setCarregandoModal] = useState(false);
@@ -257,7 +458,6 @@ const AppContent = () => {
   const [itemFullscreen, setItemFullscreen] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [logModalAberto, setLogModalAberto] = useState(false);
-  const [modalLinkAberto, setModalLinkAberto] = useState(false);
   const [linkAtual, setLinkAtual] = useState(null);
   const [modoModalLink, setModoModalLink] = useState('criar');
   const [links, setLinks] = useState([]);
@@ -606,6 +806,14 @@ const AppContent = () => {
     setItemAtual(null);
   };
 
+  const handleAbrirModalArquivos = () => {
+    setModalArquivosAberto(true);
+  };
+
+  const handleFecharModalArquivos = () => {
+    setModalArquivosAberto(false);
+  };
+
   const carregarLogsSistema = async () => {
     console.log('Carregando logs do sistema...');
   };
@@ -624,10 +832,6 @@ const AppContent = () => {
 
   const handleAbrirConfiguracoes = () => {
     setTelaAtiva('configuracoes');
-  };
-
-  const handleLogoClick = () => {
-    setTelaAtiva('inicial');
   };
 
   const sincronizarManual = async () => {
@@ -680,10 +884,12 @@ const AppContent = () => {
             carregando={carregando}
             carregandoLinks={carregandoLinks}
             onNovoItem={handleNovoItem}
+            onNovoLink={handleNovoLink}
             onEditarItem={handleEditarItem}
             onVisualizarItem={handleVisualizarItem}
             onTelaCheia={handleTelaCheia}
             forcarAtualizacao={forcarAtualizacao}
+            isOnline={isOnline}
           />
         );
 
@@ -785,10 +991,33 @@ const AppContent = () => {
         />
         <ContentArea menuRecolhido={menuRecolhido}>
           <Header>
-            <Logo onClick={handleLogoClick}>
-              <FontAwesomeIcon icon={faStickyNote} />
+            <Logo>
               WRTmind
             </Logo>
+            <SyncButton 
+              onClick={sincronizarManual} 
+              disabled={syncStatus === 'syncing'}
+              title="Sincronizar dados"
+            >
+              <FontAwesomeIcon 
+                icon={faSync} 
+                spin={syncStatus === 'syncing'} 
+              />
+              {syncStatus === 'syncing' ? 'Sincronizando...' : 'Sincronizar'}
+            </SyncButton>
+            <StatusInfo>
+              <StatusIndicator status={syncStatus} />
+              <span>
+                {syncStatus === 'online' ? 'Online' :
+                 syncStatus === 'syncing' ? 'Sincronizando...' : 'Offline'}
+              </span>
+              {lastSync && (
+                <span style={{ marginLeft: 'var(--espacamentoMedio)' }}>
+                  <FontAwesomeIcon icon={faClock} />
+                  Última sincronização: {lastSync.toLocaleTimeString()}
+                </span>
+              )}
+            </StatusInfo>
             <UserInfo>
               <span>Olá, {user.nome}</span>
               <LogoutButton onClick={handleLogout}>
@@ -797,28 +1026,6 @@ const AppContent = () => {
               </LogoutButton>
             </UserInfo>
           </Header>
-
-          <StatusBar>
-            <div style={{ display: 'flex', gap: 'var(--espacamentoGrande)' }}>
-              <StatusItem>
-                <StatusIndicator status={syncStatus} />
-                <span>
-                  {syncStatus === 'online' ? 'Online' :
-                   syncStatus === 'syncing' ? 'Sincronizando...' : 'Offline'}
-                </span>
-              </StatusItem>
-              {lastSync && (
-                <StatusItem>
-                  <FontAwesomeIcon icon={faClock} />
-                  <span>Última sincronização: {lastSync.toLocaleTimeString()}</span>
-                </StatusItem>
-              )}
-            </div>
-            <SyncButton onClick={sincronizarManual} disabled={syncStatus === 'syncing'}>
-              <FontAwesomeIcon icon={faSync} spin={syncStatus === 'syncing'} />
-              Sincronizar
-            </SyncButton>
-          </StatusBar>
 
           <ContentWrapper>
             {renderizarConteudo()}
@@ -870,6 +1077,23 @@ const AppContent = () => {
         onLimparLogs={limparLogsSistema}
         onExportarLogs={exportarLogs}
       />
+
+      {/* Botão flutuante para arquivos */}
+      <FloatingButton onClick={handleAbrirModalArquivos} title="Arquivos da Luciana">
+        <FontAwesomeIcon icon={faFolder} />
+      </FloatingButton>
+
+      {/* Modal de arquivos */}
+      <ModalOverlay isOpen={modalArquivosAberto} onClick={handleFecharModalArquivos}>
+        <ModalContent isOpen={modalArquivosAberto} onClick={(e) => e.stopPropagation()}>
+          <CloseButton onClick={handleFecharModalArquivos}>
+            ×
+          </CloseButton>
+          <ModalTitle isOpen={modalArquivosAberto}>
+            ARQUIVOS DA LUCIANA
+          </ModalTitle>
+        </ModalContent>
+      </ModalOverlay>
     </AppContainer>
   );
 };

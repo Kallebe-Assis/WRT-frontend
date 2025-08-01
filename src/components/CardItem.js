@@ -64,13 +64,15 @@ const CardTitle = styled.h3`
   color: var(--corTextoPrimaria);
   margin: 0;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: ${props => props.tipo === 'link' ? 'visible' : 'hidden'};
+  text-overflow: ${props => props.tipo === 'link' ? 'clip' : 'ellipsis'};
+  white-space: ${props => props.tipo === 'link' ? 'normal' : 'nowrap'};
   transition: all var(--transicaoRapida);
   max-width: 100%;
   line-height: 1.2;
-  max-height: 2.4em;
+  max-height: ${props => props.tipo === 'link' ? 'none' : '2.4em'};
+  word-wrap: ${props => props.tipo === 'link' ? 'break-word' : 'normal'};
+  text-align: ${props => props.tipo === 'link' ? 'center' : 'left'};
   
   ${Card}:hover & {
     white-space: normal;
@@ -206,7 +208,7 @@ const ExportButton = styled(CardActionButton)`
 
 const DropdownMenu = styled.div`
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   right: 0;
   background: var(--corFundoPrimaria);
   border: 1px solid var(--corBordaPrimaria);
@@ -216,8 +218,9 @@ const DropdownMenu = styled.div`
   min-width: 150px;
   opacity: ${props => props.isOpen ? '1' : '0'};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(10px)'};
   transition: all var(--transicaoRapida);
+  margin-bottom: 5px;
 `;
 
 const DropdownItem = styled.button`
@@ -377,7 +380,9 @@ const CardItem = ({
   return (
     <Card onClick={handleClick}>
       <CardHeader>
-        <CardTitle>
+        <CardTitle
+          tipo={tipo}
+        >
           {getTitulo()}
         </CardTitle>
         {tipo === 'nota' && onFavoritar && (

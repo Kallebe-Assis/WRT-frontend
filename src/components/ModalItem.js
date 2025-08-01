@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import RichTextEditor from './RichTextEditor';
 import FullFormattedContent from './FullFormattedContent';
+import { notasAPI } from '../config/api';
 
 // Animação do spinner
 const spin = keyframes`
@@ -56,7 +57,7 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--espacamentoGrande);
+  padding: var(--espacamentoMedio);
   border-bottom: 1px solid var(--corBordaPrimaria);
 `;
 
@@ -76,7 +77,7 @@ const BotaoHeader = styled.button`
   background: transparent;
   border: 1px solid var(--corBordaPrimaria);
   color: var(--corTextoSecundaria);
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: var(--bordaRaioPequena);
   font-size: 0.8rem;
   cursor: pointer;
@@ -124,9 +125,10 @@ const BotaoExcluir = styled(BotaoHeader)`
 `;
 
 const ModalTitle = styled.h2`
-  color: var(--corTextoPrimaria);
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--corTextoPrimaria);
 `;
 
 const BotaoFechar = styled.button`
@@ -313,6 +315,29 @@ const BotaoFavorito = styled(BotaoAcao)`
   }
 `;
 
+const AutoSaveIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--corTextoSecundaria);
+  margin-right: var(--espacamentoMedio);
+  
+  .auto-save-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: ${props => props.isSaving ? '#ffa500' : props.hasChanges ? '#4CAF50' : '#ccc'};
+    animation: ${props => props.isSaving ? 'pulse 1s infinite' : 'none'};
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+`;
+
 const ModalItem = ({
   isVisible,
   item,
@@ -330,36 +355,172 @@ const ModalItem = ({
     topico: ''
   });
 
+  // Sistema de auto-save
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const autoSaveTimerRef = useRef(null);
+  const lastSavedDataRef = useRef(null);
+
   // Atualizar formData quando item mudar
   useEffect(() => {
     if (item) {
-      setFormData({
+      const newFormData = {
         titulo: item.titulo || item.nome || '',
         conteudo: item.conteudo || '',
         topico: item.topico || item.categoria || ''
-      });
+      };
+      setFormData(newFormData);
+      lastSavedDataRef.current = JSON.stringify(newFormData);
+      setHasChanges(false);
     } else {
       setFormData({
         titulo: '',
         conteudo: '',
         topico: ''
       });
+      lastSavedDataRef.current = null;
+      setHasChanges(false);
     }
   }, [item]);
 
+  // Função para detectar mudanças
+  const detectChanges = (newFormData) => {
+    const currentData = JSON.stringify(newFormData);
+    const hasChanges = currentData !== lastSavedDataRef.current;
+    setHasChanges(hasChanges);
+    return hasChanges;
+  };
+
+  // Função de auto-save
+  const performAutoSave = async (isManual = false) => {
+    if (!hasChanges || !item?.id || modo !== 'editar') return;
+
+    try {
+      setIsAutoSaving(true);
+      console.log(isManual ? 'Save manual executando...' : 'Auto-save executando...');
+      
+      if (isManual) {
+        // Save manual - usa onSave e fecha modal
+        if (onSave) {
+          console.log('Save manual: Iniciando...');
+          await onSave(item.id, formData);
+          console.log('Save manual: Concluído!');
+          lastSavedDataRef.current = JSON.stringify(formData);
+          setHasChanges(false);
+          console.log('Save manual concluído!');
+          onClose();
+        }
+      } else {
+        // Auto-save - chama API diretamente sem fechar modal
+        try {
+          console.log('Auto-save: Iniciando chamada para API...');
+          console.log('Auto-save: Dados a serem salvos:', formData);
+          console.log('Auto-save: ID da nota:', item.id);
+          
+          // Verificar se os dados estão no formato correto
+          const dadosParaSalvar = {
+            titulo: formData.titulo,
+            conteudo: formData.conteudo,
+            topico: formData.topico,
+            categoria: formData.topico // Adicionar categoria se necessário
+          };
+          
+          console.log('Auto-save: Dados formatados:', dadosParaSalvar);
+          
+          const resultado = await notasAPI.atualizar(item.id, dadosParaSalvar);
+          console.log('Auto-save: Resposta da API:', resultado);
+          
+          lastSavedDataRef.current = JSON.stringify(formData);
+          setHasChanges(false);
+          console.log('Auto-save concluído com sucesso!');
+        } catch (apiError) {
+          console.error('Erro no auto-save API:', apiError);
+          console.error('Detalhes do erro:', apiError.message);
+        }
+      }
+    } catch (error) {
+      console.error('Erro no save:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
+
+  // Timer de auto-save
+  useEffect(() => {
+    if (hasChanges && modo === 'editar' && item?.id) {
+      // Limpar timer anterior
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      // Configurar novo timer
+      autoSaveTimerRef.current = setTimeout(() => {
+        performAutoSave(false); // Auto-save não fecha o modal
+      }, 3000); // 3 segundos
+    }
+
+    // Cleanup ao desmontar
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [hasChanges, formData, modo, item?.id]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: value
-    }));
+    };
+    setFormData(newFormData);
+    detectChanges(newFormData);
+  };
+
+  const handleContentChange = (content) => {
+    const newFormData = {
+      ...formData,
+      conteudo: content
+    };
+    setFormData(newFormData);
+    detectChanges(newFormData);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSave) {
-      onSave(item?.id, formData);
+      if (hasChanges) {
+        // Forçar save manual que fecha o modal
+        performAutoSave(true);
+      } else {
+        // Se não há mudanças, apenas fecha o modal
+        onClose();
+      }
     }
+  };
+
+  // Função para fechar modal com atualização
+  const handleClose = () => {
+    // Se há mudanças salvas pelo auto-save, forçar atualização
+    if (!hasChanges && lastSavedDataRef.current) {
+      console.log('Fechando modal com dados atualizados pelo auto-save');
+      // Forçar uma atualização da lista de notas
+      if (onSave) {
+        // Chama onSave silenciosamente para atualizar a lista
+        onSave(item?.id, formData);
+      }
+    }
+    
+    // Se há mudanças não salvas, perguntar se quer salvar
+    if (hasChanges) {
+      const confirmar = window.confirm('Há alterações não salvas. Deseja salvar antes de fechar?');
+      if (confirmar) {
+        performAutoSave(true); // Save manual que fecha o modal
+        return;
+      }
+    }
+    
+    onClose();
   };
 
   const handleDelete = () => {
@@ -390,17 +551,27 @@ const ModalItem = ({
   if (!isVisible) return null;
 
   return (
-    <ModalOverlay onClick={onClose}>
+    <ModalOverlay onClick={handleClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <form onSubmit={handleSubmit}>
           <ModalHeader>
             <HeaderLeft>
               <ModalTitle>{getTitulo()}</ModalTitle>
-              <BotaoFechar onClick={onClose}>
+              <BotaoFechar onClick={handleClose}>
                 <FontAwesomeIcon icon={faTimes} />
               </BotaoFechar>
             </HeaderLeft>
             <HeaderRight>
+              {modo === 'editar' && item?.id && (
+                <AutoSaveIndicator 
+                  hasChanges={hasChanges} 
+                  isSaving={isAutoSaving}
+                >
+                  <div className="auto-save-icon"></div>
+                  {isAutoSaving ? 'Salvando...' : hasChanges ? 'Alterações não salvas' : 'Salvo'}
+                </AutoSaveIndicator>
+              )}
+
               {modo !== 'visualizar' && (
                 <BotaoSalvar type="submit" disabled={carregando}>
                   {carregando ? (
@@ -429,7 +600,7 @@ const ModalItem = ({
                 </BotaoExcluir>
               )}
 
-              <BotaoHeader onClick={onClose} disabled={carregando}>
+              <BotaoHeader onClick={handleClose} disabled={carregando}>
                 Cancelar
               </BotaoHeader>
             </HeaderRight>
@@ -492,8 +663,9 @@ const ModalItem = ({
                 <FullFormattedContent content={formData.conteudo} />
               ) : (
                 <RichTextEditor
+                  key={`editor-${item?.id || 'new'}-${modo}`}
                   value={formData.conteudo}
-                  onChange={(content) => setFormData(prev => ({ ...prev, conteudo: content }))}
+                  onChange={handleContentChange}
                   disabled={modo === 'visualizar'}
                 />
               )}
