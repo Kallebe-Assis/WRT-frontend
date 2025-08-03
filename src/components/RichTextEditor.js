@@ -51,9 +51,9 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
           if (body) {
             console.log('Body encontrado, calculando altura...');
             const contentHeight = body.scrollHeight;
-            const minHeight = 300;
+            const minHeight = 400;
             const maxHeight = 800;
-            const newHeight = Math.max(minHeight, Math.min(contentHeight + 50, maxHeight));
+            const newHeight = Math.max(minHeight, Math.min(contentHeight + 100, maxHeight));
             
             console.log(`Altura calculada: ${contentHeight}px, nova altura: ${newHeight}px`);
             
@@ -69,6 +69,14 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
                 console.log('Altura ajustada via CSS');
               }
             }
+            
+            // Forçar reflow para garantir que o scroll funcione
+            setTimeout(() => {
+              if (body) {
+                body.style.overflowY = 'auto';
+                body.style.maxHeight = `${newHeight}px`;
+              }
+            }, 100);
           } else {
             console.log('Body não encontrado');
           }
@@ -167,7 +175,7 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
         onInit={handleEditorInit}
         disabled={disabled}
         init={{
-          height: height === "auto" ? 300 : height,
+          height: height === "auto" ? 400 : height,
           menubar: false,
           autoresize_bottom_margin: 20,
           autoresize_overflow_padding: 20,
@@ -190,7 +198,9 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
               background: var(--corFundoPrimaria);
               padding: 16px;
               margin: 0;
-              min-height: ${height === "auto" ? "300px" : "auto"};
+              min-height: ${height === "auto" ? "400px" : "auto"};
+              max-height: ${height === "auto" ? "800px" : "auto"};
+              overflow-y: auto;
             }
             h1, h2, h3, h4, h5, h6 {
               color: var(--corTextoPrimaria);

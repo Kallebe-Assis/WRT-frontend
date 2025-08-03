@@ -1,7 +1,12 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -10,45 +15,56 @@ const LoadingContainer = styled.div`
   justify-content: center;
   padding: var(--espacamentoExtraGrande);
   min-height: 400px;
-  text-align: center;
+  color: var(--corTextoSecundaria);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoGrande);
+    min-height: 300px;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoMedio);
+    min-height: 250px;
+  }
 `;
 
 const Spinner = styled.div`
-  font-size: 2rem;
+  font-size: var(--tamanhoFonteExtraGrande);
+  animation: ${spin} 1s linear infinite;
+  margin-bottom: var(--espacamentoMedio);
   color: var(--corPrimaria);
-  margin-bottom: var(--espacamentoGrande);
-  animation: spin 1s linear infinite;
 
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteGrande);
+    margin-bottom: var(--espacamentoPequeno);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFonteMedia);
   }
 `;
 
 const LoadingText = styled.p`
-  color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFonteMedia);
+  text-align: center;
   margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFontePequena);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
+  }
 `;
 
-const LoadingSubtext = styled.p`
-  color: var(--corTextoTerciaria);
-  font-size: var(--tamanhoFontePequena);
-  margin: var(--espacamentoPequeno) 0 0 0;
-`;
-
-const NotasLoading = ({ mensagem = 'Carregando notas...', subMensagem = 'Aguarde um momento' }) => {
+const NotasLoading = ({ mensagem = "Carregando..." }) => {
   return (
     <LoadingContainer>
       <Spinner>
         <FontAwesomeIcon icon={faSpinner} />
       </Spinner>
       <LoadingText>{mensagem}</LoadingText>
-      <LoadingSubtext>{subMensagem}</LoadingSubtext>
     </LoadingContainer>
   );
 };

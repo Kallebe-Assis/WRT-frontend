@@ -74,6 +74,18 @@ const TelaNotas = ({
     return notasProcessadas;
   }, [notas, filtro, ordenacao, direcao]);
 
+  // Obter categorias únicas das notas
+  const categorias = useMemo(() => {
+    if (!notas) return [];
+    
+    const categoriasUnicas = notas
+      .map(nota => nota.topico || nota.categoria)
+      .filter(Boolean)
+      .filter((value, index, self) => self.indexOf(value) === index);
+    
+    return categoriasUnicas.sort();
+  }, [notas]);
+
   if (carregando) {
     return (
       <div style={{ padding: 'var(--espacamentoGrande)', textAlign: 'center' }}>
@@ -97,6 +109,7 @@ const TelaNotas = ({
       onImprimir={onImprimirItem}
       onTelaCheia={onTelaCheia}
       onFavoritar={onFavoritarItem}
+      categorias={categorias}
     />
   );
 };

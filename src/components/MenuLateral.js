@@ -13,6 +13,23 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
 
+const MenuOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: calc(var(--zIndexDropdown) - 1);
+  opacity: ${props => props.visible ? 1 : 0};
+  visibility: ${props => props.visible ? 'visible' : 'hidden'};
+  transition: all var(--transicaoMedia);
+  
+  @media (min-width: 769px) {
+    display: none;
+  }
+`;
+
 const MenuContainer = styled.div`
   position: fixed;
   left: 0;
@@ -29,10 +46,16 @@ const MenuContainer = styled.div`
 
   @media (max-width: 768px) {
     width: ${props => props.recolhido ? '60px' : '250px'};
+    transform: ${props => props.mobileVisible ? 'translateX(0)' : 'translateX(-100%)'};
+    transition: transform var(--transicaoMedia), width var(--transicaoMedia);
   }
 
   @media (max-width: 480px) {
     width: ${props => props.recolhido ? '50px' : '200px'};
+  }
+
+  @media (max-width: 360px) {
+    width: ${props => props.recolhido ? '45px' : '180px'};
   }
 `;
 
@@ -45,6 +68,11 @@ const MenuHeader = styled.div`
   height: var(--alturaHeader);
   min-height: 60px;
   background: linear-gradient(135deg, var(--corFundoSecundaria) 0%, var(--corFundoTerciaria) 100%);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    min-height: 50px;
+  }
 `;
 
 const TituloMenu = styled.h2`
@@ -59,6 +87,10 @@ const TituloMenu = styled.h2`
   white-space: nowrap;
   overflow: hidden;
   font-weight: 700;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteExtraGrande);
+  }
 `;
 
 const BotaoAlternar = styled.button`
@@ -87,6 +119,11 @@ const BotaoAlternar = styled.button`
     cursor: not-allowed;
     transform: none;
   }
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+  }
 `;
 
 const MenuContent = styled.div`
@@ -94,14 +131,18 @@ const MenuContent = styled.div`
   height: calc(100vh - var(--alturaHeader));
   overflow-y: auto;
   overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+  }
 `;
 
 const SecaoMenu = styled.div`
   margin-bottom: var(--espacamentoGrande);
-  opacity: ${props => props.recolhido ? 0 : 1};
-  transition: opacity var(--transicaoMedia);
-  pointer-events: ${props => props.recolhido ? 'none' : 'auto'};
-  visibility: ${props => props.recolhido ? 'hidden' : 'visible'};
+
+  @media (max-width: 768px) {
+    margin-bottom: var(--espacamentoMedio);
+  }
 `;
 
 const TituloSecao = styled.h3`
@@ -111,8 +152,15 @@ const TituloSecao = styled.h3`
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--espacamentoMedio);
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
   white-space: nowrap;
   overflow: hidden;
+
+  @media (max-width: 768px) {
+    font-size: 10px;
+    margin-bottom: var(--espacamentoPequeno);
+  }
 `;
 
 const SecaoBusca = styled.div`
@@ -229,6 +277,19 @@ const Contador = styled.span`
   flex-shrink: 0;
   opacity: ${props => props.recolhido ? 0 : 1};
   transition: opacity var(--transicaoMedia);
+
+  @media (max-width: 768px) {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    margin-left: var(--espacamentoPequeno);
+  }
+
+  @media (max-width: 480px) {
+    min-width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
 `;
 
 const SecaoConfiguracoes = styled.div`
@@ -261,6 +322,106 @@ const BotaoConfiguracoes = styled.button`
   }
 `;
 
+const ListaItens = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const ItemMenu = styled.li`
+  margin-bottom: var(--espacamentoPequeno);
+`;
+
+const BotaoMenu = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  padding: var(--espacamentoMedio);
+  background: ${props => props.ativo ? 'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)' : 'transparent'};
+  color: ${props => props.ativo ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)'};
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  text-align: left;
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: ${props => props.ativo ? '600' : '500'};
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: ${props => props.ativo 
+      ? 'linear-gradient(135deg, var(--corPrimariaHover) 0%, var(--corSecundariaHover) 100%)' 
+      : 'var(--corFundoTerciaria)'};
+    transform: translateX(4px);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    gap: var(--espacamentoPequeno);
+  }
+`;
+
+const IconeMenu = styled.div`
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: var(--tamanhoFonteMedia);
+
+  @media (max-width: 768px) {
+    width: 18px;
+    height: 18px;
+    font-size: var(--tamanhoFontePequena);
+  }
+`;
+
+const TextoMenu = styled.span`
+  opacity: ${props => props.recolhido ? 0 : 1};
+  transition: opacity var(--transicaoMedia);
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 1;
+`;
+
+
+
+const BotaoMobile = styled.button`
+  position: fixed;
+  top: var(--espacamentoMedio);
+  left: var(--espacamentoMedio);
+  z-index: calc(var(--zIndexDropdown) + 1);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  color: var(--corTextoClara);
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  box-shadow: var(--sombraMedia);
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: var(--sombraForte);
+  }
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`;
+
 const MenuLateral = ({ 
   onAbrirConfiguracoes, 
   telaAtiva, 
@@ -281,6 +442,12 @@ const MenuLateral = ({
   } = useNotasAPIContext();
 
   const [favoritos, setFavoritos] = useState([]); // Estado para armazenar os favoritos
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+
+  // Função para alternar a visibilidade do menu mobile
+  const toggleMobileMenu = () => {
+    setMobileMenuVisible(!mobileMenuVisible);
+  };
 
   // Carregar favoritos quando componente montar
   useEffect(() => {
@@ -374,76 +541,82 @@ const MenuLateral = ({
   ];
 
   return (
-    <MenuContainer recolhido={menuRecolhido}>
-      <MenuHeader recolhido={menuRecolhido}>
-        <TituloMenu recolhido={menuRecolhido}>WRTmind</TituloMenu>
-        <BotaoAlternar onClick={alternarMenu}>
-          <FontAwesomeIcon
-            icon={menuRecolhido ? faTimes : faBars}
-            size="sm"
-          />
-        </BotaoAlternar>
-      </MenuHeader>
-
-      <MenuContent>
-        <SecaoBusca recolhido={menuRecolhido}>
-          <TituloSecao recolhido={menuRecolhido}>Buscar</TituloSecao>
-          <ContainerBusca>
-            <IconeBusca recolhido={menuRecolhido}>
-              <FontAwesomeIcon icon={faSearch} size="sm" />
-            </IconeBusca>
-            <InputBusca
-              type="text"
-              placeholder="Buscar por título..."
-              value={termoBusca}
-              onChange={(e) => definirTermoBusca(e.target.value)}
-              recolhido={menuRecolhido}
+    <>
+      <MenuOverlay visible={mobileMenuVisible} onClick={toggleMobileMenu} />
+      <MenuContainer recolhido={menuRecolhido} mobileVisible={mobileMenuVisible}>
+        <MenuHeader recolhido={menuRecolhido}>
+          <TituloMenu recolhido={menuRecolhido}>WRTmind</TituloMenu>
+          <BotaoAlternar onClick={alternarMenu}>
+            <FontAwesomeIcon
+              icon={menuRecolhido ? faTimes : faBars}
+              size="sm"
             />
-          </ContainerBusca>
-        </SecaoBusca>
+          </BotaoAlternar>
+        </MenuHeader>
 
-        <SecaoConfiguracoes recolhido={menuRecolhido}>
-          <BotaoConfiguracoes
-            onClick={onAbrirConfiguracoes}
-            title={menuRecolhido ? 'Configurações' : ''}
-          >
-            <IconeNavegacao>
-              <FontAwesomeIcon icon={faCog} size="sm" />
-            </IconeNavegacao>
-            <TextoNavegacao recolhido={menuRecolhido}>
-              Configurações
-            </TextoNavegacao>
-          </BotaoConfiguracoes>
-        </SecaoConfiguracoes>
+        <MenuContent>
+          <SecaoBusca recolhido={menuRecolhido}>
+            <TituloSecao recolhido={menuRecolhido}>Buscar</TituloSecao>
+            <ContainerBusca>
+              <IconeBusca recolhido={menuRecolhido}>
+                <FontAwesomeIcon icon={faSearch} size="sm" />
+              </IconeBusca>
+              <InputBusca
+                type="text"
+                placeholder="Buscar por título..."
+                value={termoBusca}
+                onChange={(e) => definirTermoBusca(e.target.value)}
+                recolhido={menuRecolhido}
+              />
+            </ContainerBusca>
+          </SecaoBusca>
 
-        <SecaoMenu recolhido={menuRecolhido}>
-          <TituloSecao recolhido={menuRecolhido}>Navegação</TituloSecao>
-          <ListaNavegacao>
-            {itensNavegacao.map(item => (
-              <ItemNavegacao key={item.id}>
-                <BotaoNavegacao
-                  ativo={telaAtiva === item.id}
-                  onClick={() => onTelaChange(item.id)}
-                  title={menuRecolhido ? item.titulo : ''}
-                >
-                  <IconeNavegacao>
-                    <FontAwesomeIcon icon={item.icone} size="sm" />
-                  </IconeNavegacao>
-                  <TextoNavegacao recolhido={menuRecolhido}>
-                    {item.titulo}
-                  </TextoNavegacao>
-                  {item.contador !== undefined && (
-                    <Contador ativo={telaAtiva === item.id} recolhido={menuRecolhido}>
-                      {item.contador}
-                    </Contador>
-                  )}
-                </BotaoNavegacao>
-              </ItemNavegacao>
-            ))}
-          </ListaNavegacao>
-        </SecaoMenu>
-      </MenuContent>
-    </MenuContainer>
+          <SecaoConfiguracoes recolhido={menuRecolhido}>
+            <BotaoConfiguracoes
+              onClick={onAbrirConfiguracoes}
+              title={menuRecolhido ? 'Configurações' : ''}
+            >
+              <IconeNavegacao>
+                <FontAwesomeIcon icon={faCog} size="sm" />
+              </IconeNavegacao>
+              <TextoNavegacao recolhido={menuRecolhido}>
+                Configurações
+              </TextoNavegacao>
+            </BotaoConfiguracoes>
+          </SecaoConfiguracoes>
+
+          <SecaoMenu recolhido={menuRecolhido}>
+            <TituloSecao recolhido={menuRecolhido}>Navegação</TituloSecao>
+            <ListaNavegacao>
+              {itensNavegacao.map(item => (
+                <ItemNavegacao key={item.id}>
+                  <BotaoNavegacao
+                    ativo={telaAtiva === item.id}
+                    onClick={() => onTelaChange(item.id)}
+                    title={menuRecolhido ? item.titulo : ''}
+                  >
+                    <IconeNavegacao>
+                      <FontAwesomeIcon icon={item.icone} size="sm" />
+                    </IconeNavegacao>
+                    <TextoNavegacao recolhido={menuRecolhido}>
+                      {item.titulo}
+                    </TextoNavegacao>
+                    {item.contador !== undefined && (
+                      <Contador ativo={telaAtiva === item.id} recolhido={menuRecolhido}>
+                        {item.contador}
+                      </Contador>
+                    )}
+                  </BotaoNavegacao>
+                </ItemNavegacao>
+              ))}
+            </ListaNavegacao>
+          </SecaoMenu>
+        </MenuContent>
+      </MenuContainer>
+      <BotaoMobile onClick={toggleMobileMenu}>
+        <FontAwesomeIcon icon={faBars} size="lg" />
+      </BotaoMobile>
+    </>
   );
 };
 

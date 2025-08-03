@@ -79,6 +79,11 @@ const GlobalStyles = createGlobalStyle`
     --zIndexModal: 2500;
     --zIndexOverlay: 1300;
     --zIndexLoading: 1400;
+    
+    /* Breakpoints */
+    --breakpointTablet: 768px;
+    --breakpointMobile: 480px;
+    --breakpointMobileSmall: 360px;
   }
 
   * {
@@ -97,10 +102,12 @@ const GlobalStyles = createGlobalStyle`
     color: var(--corTextoPrimaria) !important;
     line-height: 1.6;
     margin: 0 !important;
+    overflow-x: hidden;
   }
 
   html {
     scroll-behavior: smooth;
+    font-size: 16px;
   }
 
   /* Animações */
@@ -303,21 +310,96 @@ const GlobalStyles = createGlobalStyle`
     animation: shake 0.5s ease-in-out;
   }
 
-  /* Responsividade */
+  /* Responsividade - Tablet */
   @media (max-width: 768px) {
     :root {
       --espacamentoGrande: 16px;
       --espacamentoExtraGrande: 24px;
       --tamanhoFonteTitulo: 20px;
+      --larguraMenu: 250px;
+      --larguraMenuRecolhido: 60px;
+      --alturaHeader: 60px;
+    }
+    
+    html {
+      font-size: 14px;
     }
   }
 
+  /* Responsividade - Mobile */
   @media (max-width: 480px) {
     :root {
       --espacamentoMedio: 12px;
       --espacamentoGrande: 16px;
       --tamanhoFonteGrande: 14px;
       --tamanhoFonteExtraGrande: 18px;
+      --larguraMenu: 200px;
+      --larguraMenuRecolhido: 50px;
+      --alturaHeader: 56px;
+    }
+    
+    html {
+      font-size: 13px;
+    }
+    
+    body {
+      font-size: var(--tamanhoFonteMedia);
+    }
+  }
+
+  /* Responsividade - Mobile Pequeno */
+  @media (max-width: 360px) {
+    :root {
+      --espacamentoPequeno: 6px;
+      --espacamentoMedio: 10px;
+      --espacamentoGrande: 14px;
+      --tamanhoFontePequena: 10px;
+      --tamanhoFonteMedia: 12px;
+      --tamanhoFonteGrande: 13px;
+      --larguraMenu: 180px;
+      --larguraMenuRecolhido: 45px;
+      --alturaHeader: 50px;
+    }
+    
+    html {
+      font-size: 12px;
+    }
+  }
+
+  /* Melhorias para touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    /* Aumentar área de toque para botões */
+    button, 
+    [role="button"],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Melhorar scroll em dispositivos touch */
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Orientação landscape em mobile */
+  @media (max-width: 768px) and (orientation: landscape) {
+    :root {
+      --alturaHeader: 50px;
+    }
+  }
+
+  /* Prevenir zoom em inputs em iOS */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    select,
+    textarea,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"] {
+      font-size: 16px;
     }
   }
 `;

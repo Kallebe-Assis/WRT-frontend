@@ -31,34 +31,72 @@ const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100vw;
+  height: 100vh;
+  background: var(--corFundoModal);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: var(--espacamentoMedio);
+  z-index: var(--zIndexModal);
+  padding: var(--espacamentoPequeno);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    padding-top: 50px;
+  }
 `;
 
 const ModalContent = styled.div`
-  background: var(--corFundoCard);
+  background: var(--corFundoSecundaria);
   border-radius: var(--bordaRaioGrande);
-  width: 95%;
-  height: 95vh;
-  max-width: 1400px;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--sombraForte);
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+  width: 90vw;
+  min-width: 800px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+    max-height: calc(100vh - 120px);
+    border-radius: var(--bordaRaioMedia);
+  }
+
+  @media (max-width: 480px) {
+    max-height: calc(100vh - 100px);
+    border-radius: var(--bordaRaioPequena);
+  }
 `;
 
 const ModalHeader = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: var(--espacamentoMedio);
-  border-bottom: 1px solid var(--corBordaPrimaria);
+  justify-content: space-between;
+  padding: var(--espacamentoGrande);
+  border-bottom: 2px solid var(--corBordaPrimaria);
+  background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoMedio);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--espacamentoPequeno);
+  }
 `;
 
 const HeaderLeft = styled.div`
@@ -125,10 +163,20 @@ const BotaoExcluir = styled(BotaoHeader)`
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
   color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteTitulo);
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteExtraGrande);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFonteGrande);
+    text-align: center;
+  }
 `;
 
 const BotaoFechar = styled.button`
@@ -148,16 +196,55 @@ const BotaoFechar = styled.button`
 
 const ModalBody = styled.div`
   padding: var(--espacamentoGrande);
+  overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
+  max-height: 70vh;
+  scrollbar-width: thin;
+  scrollbar-color: var(--corBordaPrimaria) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--corBordaPrimaria);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--corPrimaria);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoMedio);
+    max-height: 60vh;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    max-height: 50vh;
+  }
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoGrande);
   flex: 1;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 768px) {
+    margin-bottom: var(--espacamentoMedio);
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: var(--espacamentoPequeno);
+  }
 `;
 
 const FormGroupConteudo = styled.div`
@@ -165,7 +252,9 @@ const FormGroupConteudo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 400px;
+  max-height: 60vh;
+  overflow: visible;
 `;
 
 const FormRow = styled.div`
@@ -186,9 +275,14 @@ const FormGroupTopico = styled.div`
 
 const Label = styled.label`
   display: block;
-  color: var(--corTextoPrimaria);
   margin-bottom: var(--espacamentoPequeno);
-  font-weight: 500;
+  color: var(--corTextoPrimaria);
+  font-weight: 600;
+  font-size: var(--tamanhoFonteMedia);
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFontePequena);
+  }
 `;
 
 const Input = styled.input`
@@ -206,6 +300,16 @@ const Input = styled.input`
     border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    min-height: 44px;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+  }
 `;
 
 const Textarea = styled.textarea`
@@ -216,15 +320,30 @@ const Textarea = styled.textarea`
   background: var(--corFundoPrimaria);
   color: var(--corTextoPrimaria);
   font-size: var(--tamanhoFonteMedia);
-  font-family: inherit;
-  resize: vertical;
-  min-height: 400px;
   transition: all var(--transicaoMedia);
+  resize: vertical;
+  min-height: 350px;
+  max-height: 50vh;
+  font-family: inherit;
+  overflow-y: auto;
 
   &:focus {
     outline: none;
     border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    min-height: 250px;
+    max-height: 40vh;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    min-height: 200px;
+    max-height: 35vh;
   }
 `;
 
@@ -248,11 +367,23 @@ const Select = styled.select`
 
 const ModalFooter = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: var(--espacamentoGrande);
-  border-top: 1px solid var(--corBordaPrimaria);
+  justify-content: flex-end;
   gap: var(--espacamentoMedio);
+  padding: var(--espacamentoGrande);
+  border-top: 2px solid var(--corBordaPrimaria);
+  background: var(--corFundoTerciaria);
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoMedio);
+    gap: var(--espacamentoPequeno);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    flex-direction: column;
+    gap: var(--espacamentoPequeno);
+  }
 `;
 
 const BotaoAcao = styled.button`
@@ -385,6 +516,14 @@ const ModalItem = ({
 
   // Função para detectar mudanças
   const detectChanges = (newFormData) => {
+    // Para notas novas, considerar mudanças se há conteúdo
+    if (modo === 'novo' || !item?.id) {
+      const temConteudo = newFormData.titulo?.trim() || newFormData.conteudo?.trim();
+      setHasChanges(!!temConteudo);
+      return !!temConteudo;
+    }
+
+    // Para notas existentes, comparar com dados originais
     const currentData = JSON.stringify(newFormData);
     const hasChanges = currentData !== lastSavedDataRef.current;
     setHasChanges(hasChanges);
@@ -393,7 +532,30 @@ const ModalItem = ({
 
   // Função de auto-save
   const performAutoSave = async (isManual = false) => {
-    if (!hasChanges || !item?.id || modo !== 'editar') return;
+    if (!hasChanges) return;
+
+    // Para notas novas, sempre usar onSave
+    if (modo === 'novo' || !item?.id) {
+      if (onSave) {
+        try {
+          setIsAutoSaving(true);
+          console.log('Salvando nota nova...');
+          await onSave(null, formData); // null para indicar que é uma nota nova
+          console.log('Nota nova salva com sucesso!');
+          lastSavedDataRef.current = JSON.stringify(formData);
+          setHasChanges(false);
+          onClose();
+        } catch (error) {
+          console.error('Erro ao salvar nota nova:', error);
+        } finally {
+          setIsAutoSaving(false);
+        }
+      }
+      return;
+    }
+
+    // Para notas existentes (modo editar)
+    if (modo !== 'editar' || !item?.id) return;
 
     try {
       setIsAutoSaving(true);
@@ -445,7 +607,7 @@ const ModalItem = ({
     }
   };
 
-  // Timer de auto-save
+  // Timer de auto-save (apenas para notas existentes)
   useEffect(() => {
     if (hasChanges && modo === 'editar' && item?.id) {
       // Limpar timer anterior
@@ -489,8 +651,11 @@ const ModalItem = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSave) {
-      if (hasChanges) {
-        // Forçar save manual que fecha o modal
+      // Para notas novas, sempre tentar salvar
+      if (modo === 'novo' || !item?.id) {
+        performAutoSave(true);
+      } else if (hasChanges) {
+        // Para notas existentes, só salvar se há mudanças
         performAutoSave(true);
       } else {
         // Se não há mudanças, apenas fecha o modal
@@ -501,22 +666,35 @@ const ModalItem = ({
 
   // Função para fechar modal com atualização
   const handleClose = () => {
-    // Se há mudanças salvas pelo auto-save, forçar atualização
-    if (!hasChanges && lastSavedDataRef.current) {
-      console.log('Fechando modal com dados atualizados pelo auto-save');
-      // Forçar uma atualização da lista de notas
-      if (onSave) {
-        // Chama onSave silenciosamente para atualizar a lista
-        onSave(item?.id, formData);
+    // Para notas novas, sempre perguntar se quer salvar se há conteúdo
+    if (modo === 'novo' || !item?.id) {
+      const temConteudo = formData.titulo?.trim() || formData.conteudo?.trim();
+      if (temConteudo) {
+        const confirmar = window.confirm('Deseja salvar esta nota antes de fechar?');
+        if (confirmar) {
+          performAutoSave(true); // Save manual que fecha o modal
+          return;
+        }
       }
-    }
-    
-    // Se há mudanças não salvas, perguntar se quer salvar
-    if (hasChanges) {
-      const confirmar = window.confirm('Há alterações não salvas. Deseja salvar antes de fechar?');
-      if (confirmar) {
-        performAutoSave(true); // Save manual que fecha o modal
-        return;
+    } else {
+      // Para notas existentes
+      // Se há mudanças salvas pelo auto-save, forçar atualização
+      if (!hasChanges && lastSavedDataRef.current) {
+        console.log('Fechando modal com dados atualizados pelo auto-save');
+        // Forçar uma atualização da lista de notas
+        if (onSave) {
+          // Chama onSave silenciosamente para atualizar a lista
+          onSave(item?.id, formData);
+        }
+      }
+      
+      // Se há mudanças não salvas, perguntar se quer salvar
+      if (hasChanges) {
+        const confirmar = window.confirm('Há alterações não salvas. Deseja salvar antes de fechar?');
+        if (confirmar) {
+          performAutoSave(true); // Save manual que fecha o modal
+          return;
+        }
       }
     }
     

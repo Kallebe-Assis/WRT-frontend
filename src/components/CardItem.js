@@ -21,12 +21,13 @@ const Card = styled.div`
   background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioGrande);
-  padding: var(--espacamentoMedio);
+  padding: ${props => props.tipo === 'link' ? '8px' : 'var(--espacamentoMedio)'};
   transition: all var(--transicaoMedia);
   cursor: pointer;
   position: relative;
   box-shadow: var(--sombraLeve);
   overflow: hidden;
+  min-height: ${props => props.tipo === 'link' ? '130px' : 'auto'};
   
   &::before {
     content: '';
@@ -49,17 +50,29 @@ const Card = styled.div`
       opacity: 1;
     }
   }
+
+  @media (max-width: 768px) {
+    padding: ${props => props.tipo === 'link' ? '6px' : 'var(--espacamentoPequeno)'};
+    margin-bottom: var(--espacamentoPequeno);
+    min-height: ${props => props.tipo === 'link' ? '110px' : 'auto'};
+  }
+
+  @media (max-width: 480px) {
+    padding: ${props => props.tipo === 'link' ? '5px' : 'var(--espacamentoPequeno)'};
+    border-radius: var(--bordaRaioMedia);
+    min-height: ${props => props.tipo === 'link' ? '90px' : 'auto'};
+  }
 `;
 
 const CardHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoMedio)'};
 `;
 
 const CardTitle = styled.h3`
-  font-size: var(--tamanhoFonteGrande);
+  font-size: ${props => props.tipo === 'link' ? '12px' : 'var(--tamanhoFonteGrande)'};
   font-weight: 600;
   color: var(--corTextoPrimaria);
   margin: 0;
@@ -81,6 +94,16 @@ const CardTitle = styled.h3`
     word-wrap: break-word;
     max-height: none;
   }
+
+  @media (max-width: 768px) {
+    font-size: ${props => props.tipo === 'link' ? '11px' : 'var(--tamanhoFonteMedia)'};
+    line-height: 1.3;
+  }
+
+  @media (max-width: 480px) {
+    font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFontePequena)'};
+    line-height: 1.4;
+  }
 `;
 
 const CardActions = styled.div`
@@ -93,6 +116,16 @@ const CardActions = styled.div`
   ${Card}:hover & {
     opacity: 1;
   }
+
+  @media (max-width: 768px) {
+    opacity: 1;
+    gap: var(--espacamentoPequeno);
+  }
+
+  @media (max-width: 480px) {
+    gap: var(--espacamentoPequeno);
+    flex-wrap: wrap;
+  }
 `;
 
 const CardActionButton = styled.button`
@@ -100,14 +133,15 @@ const CardActionButton = styled.button`
   border: 1px solid var(--corBordaPrimaria);
   color: var(--corTextoSecundaria);
   cursor: pointer;
-  padding: 6px;
+  padding: ${props => props.tipo === 'link' ? '2px' : '6px'};
   border-radius: var(--bordaRaioMedia);
   transition: all var(--transicaoRapida);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: ${props => props.tipo === 'link' ? '20px' : '32px'};
+  height: ${props => props.tipo === 'link' ? '20px' : '32px'};
+  font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFonteMedia)'};
   
   &:hover {
     background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
@@ -116,17 +150,48 @@ const CardActionButton = styled.button`
     transform: scale(1.1);
     box-shadow: var(--sombraLeve);
   }
+
+  @media (max-width: 768px) {
+    width: ${props => props.tipo === 'link' ? '20px' : '36px'};
+    height: ${props => props.tipo === 'link' ? '20px' : '36px'};
+    padding: ${props => props.tipo === 'link' ? '2px' : '8px'};
+    min-height: ${props => props.tipo === 'link' ? '20px' : '44px'};
+    min-width: ${props => props.tipo === 'link' ? '20px' : '44px'};
+    font-size: ${props => props.tipo === 'link' ? '8px' : 'var(--tamanhoFontePequena)'};
+  }
+
+  @media (max-width: 480px) {
+    width: ${props => props.tipo === 'link' ? '18px' : '32px'};
+    height: ${props => props.tipo === 'link' ? '18px' : '32px'};
+    padding: ${props => props.tipo === 'link' ? '1px' : '6px'};
+    min-height: ${props => props.tipo === 'link' ? '18px' : '32px'};
+    min-width: ${props => props.tipo === 'link' ? '18px' : '32px'};
+    font-size: ${props => props.tipo === 'link' ? '7px' : 'var(--tamanhoFontePequena)'};
+  }
 `;
 
 const CardContent = styled.div`
   color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFonteMedia);
   line-height: 1.6;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoMedio)'};
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: ${props => props.tipo === 'link' ? '1' : '3'};
   -webkit-box-orient: vertical;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFontePequena);
+    line-height: 1.5;
+    margin-bottom: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoPequeno)'};
+    -webkit-line-clamp: ${props => props.tipo === 'link' ? '1' : '2'};
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
+    line-height: 1.4;
+    -webkit-line-clamp: ${props => props.tipo === 'link' ? '1' : '2'};
+  }
 `;
 
 const CardFooter = styled.div`
@@ -135,9 +200,24 @@ const CardFooter = styled.div`
   justify-content: space-between;
   font-size: var(--tamanhoFontePequena);
   color: var(--corTextoTerciaria);
-  padding-top: var(--espacamentoMedio);
+  padding-top: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoMedio)'};
   border-top: 1px solid var(--corBordaPrimaria);
-  gap: var(--espacamentoMedio);
+  gap: ${props => props.tipo === 'link' ? 'var(--espacamentoPequeno)' : 'var(--espacamentoMedio)'};
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    padding-top: var(--espacamentoPequeno);
+    gap: var(--espacamentoPequeno);
+    font-size: 10px;
+    justify-content: ${props => props.tipo === 'link' ? 'center' : 'space-between'};
+  }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
+    gap: var(--espacamentoPequeno);
+    text-align: center;
+  }
 `;
 
 const CardMeta = styled.div`
@@ -146,6 +226,17 @@ const CardMeta = styled.div`
   gap: var(--espacamentoPequeno);
   flex: 1;
   min-width: 0;
+  justify-content: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
+
+  @media (max-width: 768px) {
+    justify-content: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    justify-content: center;
+    width: 100%;
+  }
 `;
 
 const CardDate = styled.span`
@@ -186,15 +277,28 @@ const FavoriteButton = styled.button`
 const CardTag = styled.span`
   background: var(--corPrimaria);
   color: white;
-  padding: 4px 12px;
+  padding: ${props => props.tipo === 'link' ? '2px 6px' : '4px 12px'};
   border-radius: var(--bordaRaioPequena);
-  font-size: var(--tamanhoFontePequena);
+  font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFontePequena)'};
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: ${props => props.tipo === 'link' ? '80px' : '150px'};
   display: inline-block;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    max-width: ${props => props.tipo === 'link' ? '60px' : '120px'};
+    font-size: ${props => props.tipo === 'link' ? '8px' : '10px'};
+    padding: ${props => props.tipo === 'link' ? '1px 4px' : '2px 8px'};
+  }
+
+  @media (max-width: 480px) {
+    max-width: ${props => props.tipo === 'link' ? '50px' : '100px'};
+    font-size: ${props => props.tipo === 'link' ? '7px' : '9px'};
+    padding: ${props => props.tipo === 'link' ? '1px 3px' : '2px 6px'};
+  }
 `;
 
 const ExportDropdown = styled.div`
@@ -259,8 +363,7 @@ const CardItem = ({
   onCopiar,
   onExportar,
   onImprimir,
-  onTelaCheia,
-  onFavoritar
+  onTelaCheia
 }) => {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -287,10 +390,7 @@ const CardItem = ({
     }
   };
 
-  const handleFavoritar = (e) => {
-    e.stopPropagation();
-    onFavoritar(item.id);
-  };
+
 
   const handleEditar = (e) => {
     e.stopPropagation();
@@ -319,6 +419,36 @@ const CardItem = ({
     onImprimir(item);
   };
 
+  const handleExportarPDF = async (e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    try {
+      const resultado = await exportarParaPDF(item);
+      if (!resultado.success) {
+        alert(`Erro ao exportar PDF: ${resultado.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      alert('Erro ao exportar PDF. Tente novamente.');
+    }
+  };
+
+  const handleExportarDOCX = async (e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    try {
+      const resultado = await exportarParaDOCX(item);
+      if (!resultado.success) {
+        alert(`Erro ao exportar DOCX: ${resultado.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao exportar DOCX:', error);
+      alert('Erro ao exportar DOCX. Tente novamente.');
+    }
+  };
+
   const getContent = () => {
     if (tipo === 'nota') {
       // Função para limpar HTML e extrair texto puro
@@ -343,7 +473,8 @@ const CardItem = ({
         ? `${conteudoLimpo.substring(0, 150)}...`
         : conteudoLimpo;
     } else if (tipo === 'link') {
-      return item.url;
+      // Para links, não mostrar a URL no conteúdo
+      return '';
     }
     return '';
   };
@@ -378,45 +509,70 @@ const CardItem = ({
   };
 
   return (
-    <Card onClick={handleClick}>
-      <CardHeader>
+    <Card onClick={handleClick} tipo={tipo}>
+      <CardHeader tipo={tipo}>
         <CardTitle
           tipo={tipo}
         >
           {getTitulo()}
         </CardTitle>
-        {tipo === 'nota' && onFavoritar && (
-          <FavoriteButton
-            onClick={handleFavoritar}
-            favorito={item.favorito}
-          >
-            <FontAwesomeIcon 
-              icon={faStar} 
-            />
-          </FavoriteButton>
-        )}
+
       </CardHeader>
       
-      <CardContent>
+      {tipo === 'link' && item.imagemUrl && (
+        <div style={{ 
+          marginBottom: '4px', 
+          textAlign: 'center',
+          borderRadius: 'var(--bordaRaioMedia)',
+          overflow: 'hidden',
+          height: '60px',
+          width: '100%',
+          position: 'relative'
+        }}>
+          <img 
+            src={item.imagemUrl} 
+            alt={getTitulo()}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              borderRadius: 'var(--bordaRaioMedia)',
+              backgroundColor: 'var(--corFundoSecundaria)'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
+      <CardContent tipo={tipo}>
         {getContent()}
       </CardContent>
       
-      <CardFooter>
-        <CardMeta>
+      <CardFooter tipo={tipo}>
+        <CardMeta tipo={tipo}>
           {tipo === 'nota' && item.topico && (
-            <CardTag>{item.topico}</CardTag>
+            <CardTag tipo={tipo}>{item.topico}</CardTag>
           )}
           {tipo === 'link' && item.categoria && (
-            <CardTag>
+            <CardTag tipo={tipo}>
               {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
             </CardTag>
           )}
         </CardMeta>
         
-        <div style={{ display: 'flex', gap: 'var(--espacamentoPequeno)', flexShrink: 0 }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: tipo === 'link' ? '4px' : 'var(--espacamentoPequeno)', 
+          flexShrink: 0,
+          justifyContent: tipo === 'link' ? 'center' : 'flex-end',
+          flexWrap: 'wrap'
+        }}>
           <CardActionButton
             onClick={handleEditar}
             title="Editar"
+            tipo={tipo}
           >
             <FontAwesomeIcon icon={faEdit} />
           </CardActionButton>
@@ -424,6 +580,7 @@ const CardItem = ({
           <CardActionButton
             onClick={handleExcluir}
             title="Excluir"
+            tipo={tipo}
           >
             <FontAwesomeIcon icon={faTrash} />
           </CardActionButton>
@@ -435,6 +592,7 @@ const CardItem = ({
                 window.open(item.url, '_blank');
               }}
               title="Abrir link"
+              tipo={tipo}
             >
               <FontAwesomeIcon icon={faExternalLinkAlt} />
             </CardActionButton>
@@ -445,6 +603,7 @@ const CardItem = ({
               <CardActionButton
                 onClick={handleCopiar}
                 title="Copiar"
+                tipo={tipo}
               >
                 <FontAwesomeIcon icon={faCopy} />
               </CardActionButton>
@@ -465,15 +624,15 @@ const CardItem = ({
                     <FontAwesomeIcon icon={faFileExport} />
                   </ExportButton>
                   <DropdownMenu isOpen={showMenu}>
-                    <DropdownItem onClick={() => {
+                    <DropdownItem onClick={(e) => {
                       setShowMenu(false);
-                      exportarParaPDF(item);
+                      handleExportarPDF(e);
                     }}>
                       <FontAwesomeIcon icon={faFilePdf} /> PDF
                     </DropdownItem>
-                    <DropdownItem onClick={() => {
+                    <DropdownItem onClick={(e) => {
                       setShowMenu(false);
-                      exportarParaDOCX(item);
+                      handleExportarDOCX(e);
                     }}>
                       <FontAwesomeIcon icon={faFileWord} /> DOCX
                     </DropdownItem>
@@ -485,6 +644,7 @@ const CardItem = ({
                 <CardActionButton
                   onClick={handleImprimir}
                   title="Imprimir"
+                  tipo={tipo}
                 >
                   <FontAwesomeIcon icon={faPrint} />
                 </CardActionButton>

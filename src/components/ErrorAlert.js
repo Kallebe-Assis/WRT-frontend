@@ -1,235 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import './ErrorAlert.css';
+import React from 'react';
+import styled from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle, faTimes } from '@fortawesome/free-solid-svg-icons';
 
-const ErrorAlert = ({ 
-  error, 
-  onClose, 
-  onRetry, 
-  autoClose = true, 
-  autoCloseDelay = 5000,
-  showSuggestions = true,
-  position = 'top-right'
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  useEffect(() => {
-    if (error) {
-      setIsVisible(true);
-      setIsExpanded(false);
-
-      // Auto-close após delay
-      if (autoClose && autoCloseDelay > 0) {
-        const timer = setTimeout(() => {
-          handleClose();
-        }, autoCloseDelay);
-
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [error, autoClose, autoCloseDelay]);
-
-  const handleClose = () => {
-    setIsVisible(false);
-    if (onClose) {
-      onClose();
-    }
-  };
-
-  const handleRetry = () => {
-    if (onRetry) {
-      onRetry();
-    }
-    handleClose();
-  };
-
-  const getErrorIcon = (errorType) => {
-    switch (errorType) {
-      case 'BAD_REQUEST':
-        return '⚠️';
-      case 'UNAUTHORIZED':
-        return '🔐';
-      case 'FORBIDDEN':
-        return '🚫';
-      case 'NOT_FOUND':
-        return '🔍';
-      case 'TIMEOUT':
-        return '⏰';
-      case 'RATE_LIMIT':
-        return '🚦';
-      case 'SERVER_ERROR':
-        return '💥';
-      case 'SERVICE_UNAVAILABLE':
-        return '🔧';
-      case 'NETWORK_ERROR':
-        return '📡';
+const AlertContainer = styled.div`
+  background: ${props => {
+    switch (props.tipo) {
+      case 'erro':
+        return 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+      case 'sucesso':
+        return 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+      case 'aviso':
+        return 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+      case 'info':
+        return 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
       default:
-        return '❌';
+        return 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
     }
-  };
-
-  const getErrorColor = (errorType) => {
-    switch (errorType) {
-      case 'BAD_REQUEST':
-        return '#f39c12';
-      case 'UNAUTHORIZED':
-        return '#e67e22';
-      case 'FORBIDDEN':
-        return '#e74c3c';
-      case 'NOT_FOUND':
-        return '#9b59b6';
-      case 'TIMEOUT':
-        return '#34495e';
-      case 'RATE_LIMIT':
-        return '#f1c40f';
-      case 'SERVER_ERROR':
-        return '#e74c3c';
-      case 'SERVICE_UNAVAILABLE':
-        return '#95a5a6';
-      case 'NETWORK_ERROR':
-        return '#3498db';
+  }};
+  border: 2px solid ${props => {
+    switch (props.tipo) {
+      case 'erro':
+        return 'var(--corErro)';
+      case 'sucesso':
+        return 'var(--corSucesso)';
+      case 'aviso':
+        return 'var(--corAviso)';
+      case 'info':
+        return 'var(--corInfo)';
       default:
-        return '#e74c3c';
+        return 'var(--corErro)';
     }
-  };
+  }};
+  border-radius: var(--bordaRaioMedia);
+  padding: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoMedio);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacamentoMedio);
+  position: relative;
+  box-shadow: var(--sombraLeve);
 
-  const getRecoverySuggestions = (errorType) => {
-    const suggestions = {
-      'BAD_REQUEST': [
-        'Verifique os dados fornecidos',
-        'Certifique-se de que todos os campos obrigatórios estão preenchidos',
-        'Tente novamente com dados diferentes'
-      ],
-      'UNAUTHORIZED': [
-        'Faça login novamente',
-        'Limpe os cookies do navegador',
-        'Verifique suas credenciais'
-      ],
-      'FORBIDDEN': [
-        'Verifique se você tem permissão para acessar este recurso',
-        'Entre em contato com o administrador',
-        'Tente fazer login com uma conta diferente'
-      ],
-      'NOT_FOUND': [
-        'Verifique se o endereço está correto',
-        'O recurso pode ter sido removido ou movido',
-        'Tente navegar para a página inicial'
-      ],
-      'TIMEOUT': [
-        'Sua conexão pode estar lenta',
-        'Tente novamente',
-        'Verifique sua conexão com a internet'
-      ],
-      'RATE_LIMIT': [
-        'Aguarde alguns segundos antes de tentar novamente',
-        'Reduza a frequência de suas ações',
-        'Tente novamente em alguns minutos'
-      ],
-      'SERVER_ERROR': [
-        'Tente novamente em alguns segundos',
-        'Verifique se o serviço está funcionando',
-        'Se o problema persistir, entre em contato com o suporte'
-      ],
-      'SERVICE_UNAVAILABLE': [
-        'O serviço está temporariamente indisponível',
-        'Tente novamente em alguns minutos',
-        'Verifique o status do sistema'
-      ],
-      'NETWORK_ERROR': [
-        'Verifique sua conexão com a internet',
-        'Tente recarregar a página',
-        'Verifique se o servidor está acessível'
-      ],
-      'UNKNOWN_ERROR': [
-        'Tente novamente',
-        'Recarregue a página',
-        'Se o problema persistir, entre em contato com o suporte'
-      ]
-    };
-
-    return suggestions[errorType] || suggestions['UNKNOWN_ERROR'];
-  };
-
-  if (!error || !isVisible) {
-    return null;
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    margin-bottom: var(--espacamentoPequeno);
+    gap: var(--espacamentoPequeno);
   }
 
-  const errorType = error.error?.type || 'UNKNOWN_ERROR';
-  const errorMessage = error.error?.message || 'Ocorreu um erro inesperado';
-  const suggestions = getRecoverySuggestions(errorType);
-  const icon = getErrorIcon(errorType);
-  const color = getErrorColor(errorType);
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--espacamentoPequeno);
+  }
+`;
+
+const IconContainer = styled.div`
+  color: ${props => {
+    switch (props.tipo) {
+      case 'erro':
+        return 'var(--corErro)';
+      case 'sucesso':
+        return 'var(--corSucesso)';
+      case 'aviso':
+        return 'var(--corAviso)';
+      case 'info':
+        return 'var(--corInfo)';
+      default:
+        return 'var(--corErro)';
+    }
+  }};
+  font-size: var(--tamanhoFonteGrande);
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteMedia);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
+    text-align: center;
+  }
+`;
+
+const ContentContainer = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const Title = styled.h4`
+  color: ${props => {
+    switch (props.tipo) {
+      case 'erro':
+        return 'var(--corErro)';
+      case 'sucesso':
+        return 'var(--corSucesso)';
+      case 'aviso':
+        return 'var(--corAviso)';
+      case 'info':
+        return 'var(--corInfo)';
+      default:
+        return 'var(--corErro)';
+    }
+  }};
+  font-size: var(--tamanhoFonteGrande);
+  font-weight: 600;
+  margin: 0 0 var(--espacamentoPequeno) 0;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFonteMedia);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
+    text-align: center;
+  }
+`;
+
+const Message = styled.p`
+  color: var(--corTextoPrimaria);
+  font-size: var(--tamanhoFonteMedia);
+  margin: 0;
+  line-height: 1.5;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFontePequena);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
+    text-align: center;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--corTextoSecundaria);
+  cursor: pointer;
+  padding: var(--espacamentoPequeno);
+  border-radius: var(--bordaRaioPequena);
+  transition: all var(--transicaoRapida);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--corTextoPrimaria);
+  }
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+    align-self: center;
+  }
+`;
+
+const ErrorAlert = ({ 
+  tipo = 'erro', 
+  titulo = 'Erro', 
+  mensagem = 'Ocorreu um erro inesperado.', 
+  onFechar,
+  mostrar = true 
+}) => {
+  if (!mostrar) return null;
 
   return (
-    <div className={`error-alert error-alert-${position}`}>
-      <div 
-        className="error-alert-content"
-        style={{ borderLeftColor: color }}
-      >
-        <div className="error-alert-header">
-          <div className="error-alert-icon">
-            {icon}
-          </div>
-          <div className="error-alert-title">
-            <h4>Erro</h4>
-            <p>{errorMessage}</p>
-          </div>
-          <div className="error-alert-actions">
-            {showSuggestions && (
-              <button
-                className="error-alert-toggle"
-                onClick={() => setIsExpanded(!isExpanded)}
-                title="Ver sugestões"
-              >
-                {isExpanded ? '−' : '+'}
-              </button>
-            )}
-            <button
-              className="error-alert-close"
-              onClick={handleClose}
-              title="Fechar"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        {showSuggestions && isExpanded && (
-          <div className="error-alert-suggestions">
-            <h5>O que você pode fazer:</h5>
-            <ul>
-              {suggestions.map((suggestion, index) => (
-                <li key={index}>{suggestion}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="error-alert-footer">
-          {onRetry && (
-            <button
-              className="error-alert-retry"
-              onClick={handleRetry}
-            >
-              🔄 Tentar Novamente
-            </button>
-          )}
-          
-          {process.env.NODE_ENV === 'development' && error.error?.originalMessage && (
-            <details className="error-alert-details">
-              <summary>Detalhes técnicos</summary>
-              <pre>{error.error.originalMessage}</pre>
-              {error.error.status && (
-                <p><strong>Status:</strong> {error.error.status}</p>
-              )}
-              {error.error.timestamp && (
-                <p><strong>Timestamp:</strong> {new Date(error.error.timestamp).toLocaleString()}</p>
-              )}
-            </details>
-          )}
-        </div>
-      </div>
-    </div>
+    <AlertContainer tipo={tipo}>
+      <IconContainer tipo={tipo}>
+        <FontAwesomeIcon icon={faExclamationTriangle} />
+      </IconContainer>
+      
+      <ContentContainer>
+        <Title tipo={tipo}>{titulo}</Title>
+        <Message>{mensagem}</Message>
+      </ContentContainer>
+      
+      {onFechar && (
+        <CloseButton onClick={onFechar} title="Fechar">
+          <FontAwesomeIcon icon={faTimes} />
+        </CloseButton>
+      )}
+    </AlertContainer>
   );
 };
 

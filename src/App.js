@@ -48,11 +48,18 @@ const ContentArea = styled.div`
   flex-direction: column;
 
   @media (max-width: 768px) {
-    margin-left: var(--larguraMenuRecolhido);
+    margin-left: 0;
+    padding-top: 50px;
   }
 
   @media (max-width: 480px) {
     margin-left: 0;
+    padding-top: 45px;
+  }
+
+  @media (max-width: 360px) {
+    margin-left: 0;
+    padding-top: 40px;
   }
 `;
 
@@ -73,13 +80,26 @@ const Header = styled.header`
   @media (max-width: 768px) {
     padding: var(--espacamentoPequeno);
     height: auto;
-    min-height: 80px;
-    flex-direction: column;
+    min-height: 50px;
+    flex-direction: row;
     gap: var(--espacamentoPequeno);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--zIndexDropdown);
   }
 
   @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
+    padding: 6px var(--espacamentoPequeno);
+    min-height: 45px;
+    gap: 6px;
+  }
+
+  @media (max-width: 360px) {
+    padding: 4px var(--espacamentoPequeno);
+    min-height: 40px;
+    gap: 4px;
   }
 `;
 
@@ -95,16 +115,26 @@ const UserInfo = styled.div`
   border: 1px solid var(--corBordaPrimaria);
 
   @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
+    padding: 6px var(--espacamentoPequeno);
     gap: var(--espacamentoPequeno);
     font-size: var(--tamanhoFontePequena);
+    flex: 1;
+    min-width: 0;
   }
 
   @media (max-width: 480px) {
-    flex-direction: column;
+    padding: 4px var(--espacamentoPequeno);
+    gap: 4px;
+    font-size: 11px;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
-    gap: var(--espacamentoPequeno);
+    text-align: left;
+  }
+
+  @media (max-width: 360px) {
+    padding: 3px var(--espacamentoPequeno);
+    gap: 3px;
+    font-size: 10px;
   }
 `;
 
@@ -127,6 +157,30 @@ const LogoutButton = styled.button`
     background: linear-gradient(135deg, var(--corErroHover) 0%, #b71c1c 100%);
     transform: translateY(-2px);
     box-shadow: var(--sombraMedia);
+  }
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: var(--tamanhoFontePequena);
+    gap: 4px;
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 3px;
+    min-height: 32px;
+    min-width: 32px;
+  }
+
+  @media (max-width: 360px) {
+    padding: 3px 6px;
+    font-size: 9px;
+    gap: 2px;
+    min-height: 28px;
+    min-width: 28px;
   }
 `;
 
@@ -158,15 +212,27 @@ const SyncButton = styled.button`
   }
 
   @media (max-width: 768px) {
-    padding: 8px 14px;
+    padding: 6px 10px;
     font-size: var(--tamanhoFontePequena);
-    gap: 6px;
+    gap: 4px;
+    min-height: 36px;
+    min-width: 36px;
   }
 
   @media (max-width: 480px) {
-    padding: 6px 12px;
-    font-size: var(--tamanhoFontePequena);
-    gap: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 3px;
+    min-height: 32px;
+    min-width: 32px;
+  }
+
+  @media (max-width: 360px) {
+    padding: 3px 6px;
+    font-size: 9px;
+    gap: 2px;
+    min-height: 28px;
+    min-width: 28px;
   }
 `;
 
@@ -238,16 +304,24 @@ const StatusInfo = styled.div`
   flex-wrap: wrap;
 
   @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
+    padding: 6px var(--espacamentoPequeno);
     font-size: var(--tamanhoFontePequena);
     gap: var(--espacamentoPequeno);
   }
 
   @media (max-width: 480px) {
-    flex-direction: column;
+    padding: 4px var(--espacamentoPequeno);
+    font-size: 10px;
+    gap: 4px;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
-    gap: var(--espacamentoPequeno);
+    text-align: left;
+  }
+
+  @media (max-width: 360px) {
+    padding: 3px var(--espacamentoPequeno);
+    font-size: 9px;
+    gap: 3px;
   }
 `;
 
