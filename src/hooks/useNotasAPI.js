@@ -308,6 +308,7 @@ const useNotasAPI = () => {
   // Função para forçar refresh
   const refreshNotas = useCallback(async () => {
     console.log('🔄 Forçando refresh completo das notas...');
+    console.log('🔄 Stack trace:', new Error().stack);
     await carregarNotas(true); // forceRefresh = true
   }, [carregarNotas]);
 

@@ -44,6 +44,8 @@ export const NotasAPIProvider = ({ children }) => {
       recarregarDados: refreshNotas
     };
     
+    console.log('Funções do contexto de notas expostas no window');
+    
     return () => {
       delete window.notasContext;
     };

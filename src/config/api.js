@@ -66,6 +66,13 @@ const listarLinks = async () => {
     
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Se for erro 401, não fazer logout automaticamente, apenas logar o erro
+      if (response.status === 401) {
+        console.error('Erro de autenticação ao listar links:', errorText);
+        throw new Error('Erro de autenticação. Verifique se você está logado.');
+      }
+      
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
@@ -112,6 +119,13 @@ const criarLink = async (link) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Se for erro 401, não fazer logout automaticamente, apenas logar o erro
+      if (response.status === 401) {
+        console.error('Erro de autenticação ao criar link:', errorText);
+        throw new Error('Erro de autenticação. Verifique se você está logado.');
+      }
+      
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
@@ -148,6 +162,13 @@ const atualizarLink = async (id, link) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Se for erro 401, não fazer logout automaticamente, apenas logar o erro
+      if (response.status === 401) {
+        console.error('Erro de autenticação ao atualizar link:', errorText);
+        throw new Error('Erro de autenticação. Verifique se você está logado.');
+      }
+      
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
@@ -178,6 +199,13 @@ const deletarLink = async (id) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Se for erro 401, não fazer logout automaticamente, apenas logar o erro
+      if (response.status === 401) {
+        console.error('Erro de autenticação ao deletar link:', errorText);
+        throw new Error('Erro de autenticação. Verifique se você está logado.');
+      }
+      
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 

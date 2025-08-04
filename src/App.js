@@ -6,7 +6,7 @@ import {
   faClock,
   faHeart,
   faSync,
-  faFolder
+  faQuestionCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { NotasAPIProvider, useNotasAPIContext } from './context/NotasAPIContext';
 import AuthScreen from './components/AuthScreen';
@@ -467,6 +467,38 @@ const CloseButton = styled.button`
   }
 `;
 
+// ModalBody para conteúdo adicional
+const ModalBody = styled.div`
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  text-align: left;
+`;
+
+// Informações de contato
+const ContactInfo = styled.div`
+  text-align: left;
+  h3 {
+    margin-bottom: 10px;
+    color: #334155;
+  }
+  p {
+    margin-bottom: 15px;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+`;
+
+const ContactItem = styled.div`
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 0.9rem;
+  strong {
+    color: #334155;
+    font-weight: 600;
+  }
+`;
+
 // Hook para gerenciar status de sincronização
 function useSyncStatus() {
   const [syncStatus, setSyncStatus] = useState('online');
@@ -562,17 +594,20 @@ const AppContent = () => {
   const carregarDadosIniciais = async (userData) => {
     if (!userData) return;
 
+    console.log('🔄 Carregando dados iniciais...');
     try {
       await carregarNotas();
       await carregarLinks();
+      console.log('✅ Dados iniciais carregados com sucesso');
     } catch (error) {
-      console.error('Erro ao carregar dados iniciais:', error);
+      console.error('❌ Erro ao carregar dados iniciais:', error);
     }
   };
 
   // Carregar links quando usuário logar
   useEffect(() => {
     if (user && user.id && !carregandoLinks) {
+      console.log('Carregando links devido a mudança no usuário...');
       carregarLinks();
     }
   }, [user?.id]);
@@ -581,10 +616,12 @@ const AppContent = () => {
     try {
       if (!user) return;
 
+      console.log('Iniciando carregamento de links...');
       setCarregandoLinks(true);
       try {
         const response = await linksAPI.buscarTodos();
         const links = response.links || response.data || [];
+        console.log('Links carregados:', links.length);
         setLinks(links);
       } catch (error) {
         console.error('Erro ao carregar links:', error);
@@ -803,27 +840,68 @@ const AppContent = () => {
     }
   };
 
+  // Função para auto-save que não fecha o modal
+  const handleAutoSaveItem = async (id, formData) => {
+    try {
+      const isLink = formData.url !== undefined;
+
+      if (isLink) {
+        if (id) {
+          await editarNota(id, formData);
+        } else {
+          await adicionarNota(formData);
+        }
+      } else {
+        if (id) {
+          await editarNota(id, formData);
+        } else {
+          await adicionarNota(formData);
+        }
+      }
+
+      // NÃO fecha o modal no auto-save
+      console.log('Auto-save concluído sem fechar modal');
+    } catch (error) {
+      console.error('Erro no auto-save:', error);
+      // Não mostrar alerta no auto-save para não incomodar o usuário
+    }
+  };
+
   const handleSalvarLink = async (formData) => {
     try {
+      console.log('Salvando link...', formData);
+      
       if (linkAtual) {
+        // Atualizando link existente
         const response = await linksAPI.atualizar(linkAtual.id, formData);
         const dadosAtualizados = response.data || { ...linkAtual, ...formData };
+        
+        // Atualizar apenas os links localmente
         setLinks(prev => {
           const novosLinks = prev.map(link =>
             link.id === linkAtual.id ? dadosAtualizados : link
           );
           return novosLinks;
         });
+        
+        console.log('Link atualizado com sucesso');
       } else {
+        // Criando novo link
         const response = await linksAPI.criar(formData);
         const novoLink = response.data || response.link;
+        
         if (novoLink) {
+          // Adicionar apenas o novo link à lista local
           setLinks(prev => [...prev, novoLink]);
+          console.log('Novo link criado com sucesso');
         }
       }
 
+      // Fechar modal sem recarregar todo o sistema
       setModalLinkAberto(false);
       setLinkAtual(null);
+      
+      console.log('Modal de link fechado sem recarregar sistema');
     } catch (error) {
       console.error('Erro ao salvar link:', error);
       if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
@@ -1114,6 +1192,7 @@ const AppContent = () => {
         modo={modoModal}
         categorias={categorias}
         onSave={handleSalvarItem}
+        onAutoSave={handleAutoSaveItem}
         onDelete={handleExcluirItem}
         onClose={handleFecharModal}
         carregando={carregandoModal}
@@ -1153,8 +1232,8 @@ const AppContent = () => {
       />
 
       {/* Botão flutuante para arquivos */}
-      <FloatingButton onClick={handleAbrirModalArquivos} title="Arquivos da Luciana">
-        <FontAwesomeIcon icon={faFolder} />
+      <FloatingButton onClick={handleAbrirModalArquivos} title="Ajuda/Contato">
+        <FontAwesomeIcon icon={faQuestionCircle} />
       </FloatingButton>
 
       {/* Modal de arquivos */}
@@ -1164,8 +1243,30 @@ const AppContent = () => {
             ×
           </CloseButton>
           <ModalTitle isOpen={modalArquivosAberto}>
-            ARQUIVOS DA LUCIANA
+            SUPORTE E CONTATO
           </ModalTitle>
+          <ModalBody>
+            <ContactInfo>
+              <h3>Precisa de ajuda?</h3>
+              <p>Entre em contato conosco para suporte técnico:</p>
+              
+              <ContactItem>
+                <strong>Nome:</strong> Kallebe Assis
+              </ContactItem>
+              
+              <ContactItem>
+                <strong>Telefone:</strong> (22) 99264-0767
+              </ContactItem>
+              
+              <ContactItem>
+                <strong>Email:</strong> kallebe@g2telecom.com.br
+              </ContactItem>
+              
+              <ContactItem>
+                <strong>Horário de Atendimento:</strong> Segunda a Sexta, 9h às 17h
+              </ContactItem>
+            </ContactInfo>
+          </ModalBody>
         </ModalContent>
       </ModalOverlay>
     </AppContainer>

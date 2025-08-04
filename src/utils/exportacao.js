@@ -512,6 +512,8 @@ const converterHTMLParaDOCX = (html) => {
 
 // Função para exportar nota para PDF com formatação preservada
 export const exportarParaPDF = async (nota) => {
+  let tempDiv = null;
+  
   try {
     // Validar dados da nota
     if (!nota) {
@@ -525,7 +527,7 @@ export const exportarParaPDF = async (nota) => {
     const conteudo = nota.conteudo || 'Sem conteúdo';
 
     // Criar elemento temporário para renderizar o conteúdo formatado
-    const tempDiv = document.createElement('div');
+    tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '0';
@@ -544,6 +546,8 @@ export const exportarParaPDF = async (nota) => {
     tempDiv.style.minHeight = '600px';
     tempDiv.style.display = 'block';
     tempDiv.style.visibility = 'visible';
+    tempDiv.style.zIndex = '-9999'; // Garantir que fique atrás de tudo
+    tempDiv.style.pointerEvents = 'none'; // Não interferir com interações
     
     // Adicionar conteúdo da nota com formatação preservada
     tempDiv.innerHTML = `
@@ -566,16 +570,17 @@ export const exportarParaPDF = async (nota) => {
       </div>
     `;
     
+    // Adicionar ao DOM de forma isolada
     document.body.appendChild(tempDiv);
     
-    // Aguardar renderização completa
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Aguardar renderização completa com timeout maior
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Calcular altura real do conteúdo
     const computedHeight = Math.max(tempDiv.scrollHeight, tempDiv.offsetHeight, 800);
     console.log('Altura calculada do conteúdo:', computedHeight);
     
-    // Converter para canvas com configurações otimizadas
+    // Converter para canvas com configurações otimizadas e isoladas
     const canvas = await html2canvas(tempDiv, {
       scale: 2,
       useCORS: true,
@@ -593,12 +598,12 @@ export const exportarParaPDF = async (nota) => {
       ignoreElements: (element) => {
         return element.tagName === 'SCRIPT' || 
                element.tagName === 'STYLE' || 
-               element.classList.contains('no-export');
+               element.classList.contains('no-export') ||
+               element.classList.contains('tox-tinymce') || // Ignorar elementos do TinyMCE
+               element.classList.contains('tox-edit-area') ||
+               element.classList.contains('tox-edit-focus');
       }
     });
-    
-    // Remover elemento temporário
-    document.body.removeChild(tempDiv);
     
     // Verificar se o canvas foi criado corretamente
     if (!canvas || canvas.width === 0 || canvas.height === 0) {
@@ -630,49 +635,49 @@ export const exportarParaPDF = async (nota) => {
     const imgWidth = usableWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-              // Se a altura da imagem for menor que a altura útil, adicionar apenas uma página
-     if (imgHeight <= usableHeight) {
-       pdf.addImage(canvas, 'PNG', marginLeft, marginTop, imgWidth, imgHeight);
-       console.log('PDF com uma página, altura da imagem:', imgHeight, 'mm');
-     } else {
-       // Se a altura da imagem for maior que a altura útil, dividir em múltiplas páginas
-       let heightLeft = imgHeight;
-       let currentPage = 0;
-       
-       while (heightLeft > 0) {
-         if (currentPage > 0) {
-           pdf.addPage();
-         }
-         
-         const pageHeight = Math.min(usableHeight, heightLeft);
-         const sourceY = imgHeight - heightLeft;
-         const sourceHeight = pageHeight;
-         
-         // Converter coordenadas de mm para pixels do canvas
-         const canvasHeight = canvas.height;
-         const sourceYPixels = Math.round((sourceY / imgHeight) * canvasHeight);
-         const sourceHeightPixels = Math.round((sourceHeight / imgHeight) * canvasHeight);
-         
-         pdf.addImage(
-           canvas, 
-           'PNG', 
-           marginLeft, 
-           marginTop, 
-           imgWidth, 
-           pageHeight,
-           undefined,
-           undefined,
-           0,
-           sourceYPixels,
-           sourceHeightPixels
-         );
-         
-         heightLeft -= usableHeight;
-         currentPage++;
-       }
-       
-       console.log(`PDF com ${currentPage} páginas, altura total: ${imgHeight}mm`);
-     }
+    // Se a altura da imagem for menor que a altura útil, adicionar apenas uma página
+    if (imgHeight <= usableHeight) {
+      pdf.addImage(canvas, 'PNG', marginLeft, marginTop, imgWidth, imgHeight);
+      console.log('PDF com uma página, altura da imagem:', imgHeight, 'mm');
+    } else {
+      // Se a altura da imagem for maior que a altura útil, dividir em múltiplas páginas
+      let heightLeft = imgHeight;
+      let currentPage = 0;
+      
+      while (heightLeft > 0) {
+        if (currentPage > 0) {
+          pdf.addPage();
+        }
+        
+        const pageHeight = Math.min(usableHeight, heightLeft);
+        const sourceY = imgHeight - heightLeft;
+        const sourceHeight = pageHeight;
+        
+        // Converter coordenadas de mm para pixels do canvas
+        const canvasHeight = canvas.height;
+        const sourceYPixels = Math.round((sourceY / imgHeight) * canvasHeight);
+        const sourceHeightPixels = Math.round((sourceHeight / imgHeight) * canvasHeight);
+        
+        pdf.addImage(
+          canvas, 
+          'PNG', 
+          marginLeft, 
+          marginTop, 
+          imgWidth, 
+          pageHeight,
+          undefined,
+          undefined,
+          0,
+          sourceYPixels,
+          sourceHeightPixels
+        );
+        
+        heightLeft -= usableHeight;
+        currentPage++;
+      }
+      
+      console.log(`PDF com ${currentPage} páginas, altura total: ${imgHeight}mm`);
+    }
     
     // Gerar nome do arquivo seguro
     const safeTitle = titulo.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
@@ -776,6 +781,16 @@ export const exportarParaPDF = async (nota) => {
         success: false, 
         message: 'Erro ao exportar para PDF. Tente novamente ou use outro formato de exportação.' 
       };
+    }
+  } finally {
+    // Garantir que o elemento temporário seja removido
+    if (tempDiv && tempDiv.parentNode) {
+      try {
+        document.body.removeChild(tempDiv);
+        console.log('Elemento temporário removido com sucesso');
+      } catch (removeError) {
+        console.warn('Erro ao remover elemento temporário:', removeError);
+      }
     }
   }
 };
