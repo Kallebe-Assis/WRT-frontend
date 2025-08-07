@@ -539,6 +539,7 @@ const AppContent = () => {
     categorias,
     carregando,
     carregarNotas,
+    carregarCategorias,
     adicionarNota,
     editarNota,
     excluirNota,
@@ -590,17 +591,20 @@ const AppContent = () => {
     }
   }, []);
 
-  // Função para carregar todos os dados iniciais
+  // Carregar dados iniciais quando o usuário fizer login
   const carregarDadosIniciais = async (userData) => {
-    if (!userData) return;
-
-    console.log('🔄 Carregando dados iniciais...');
+    console.log('Carregando dados iniciais para usuário:', userData);
+    
     try {
-      await carregarNotas();
-      await carregarLinks();
-      console.log('✅ Dados iniciais carregados com sucesso');
+      await Promise.all([
+        carregarNotas(),
+        carregarLinks(),
+        carregarCategorias() // Forçar carregamento de categorias
+      ]);
+      
+      console.log('Dados iniciais carregados com sucesso');
     } catch (error) {
-      console.error('❌ Erro ao carregar dados iniciais:', error);
+      console.error('Erro ao carregar dados iniciais:', error);
     }
   };
 

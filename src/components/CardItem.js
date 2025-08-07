@@ -16,6 +16,7 @@ import {
 import { formatarData } from '../utils/formatacao';
 import { exportarParaPDF, exportarParaDOCX } from '../utils/exportacao';
 import FullscreenButton from './FullscreenButton';
+import { useNotasAPIContext } from '../context/NotasAPIContext';
 
 const Card = styled.div`
   background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
@@ -275,7 +276,7 @@ const FavoriteButton = styled.button`
 `;
 
 const CardTag = styled.span`
-  background: var(--corPrimaria);
+  background: ${props => props.cor || 'var(--corPrimaria)'};
   color: white;
   padding: ${props => props.tipo === 'link' ? '2px 6px' : '4px 12px'};
   border-radius: var(--bordaRaioPequena);
@@ -363,11 +364,49 @@ const CardItem = ({
   onCopiar,
   onExportar,
   onImprimir,
-  onTelaCheia
+  onTelaCheia,
+  onToggleFavorite,
+  isFavorite,
+  showActions = true
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const { categorias } = useNotasAPIContext();
 
-  // Fechar menu quando clicar fora
+  // Função para buscar a cor da categoria baseada no nome
+  const getCategoriaCor = (categoriaNome) => {
+    console.log('🔍 Buscando cor para:', categoriaNome, 'Tipo:', typeof categoriaNome);
+    console.log('📝 Item completo:', item);
+    console.log('📂 Categorias disponíveis:', categorias);
+    
+    if (!categoriaNome) return 'var(--corPrimaria)';
+    
+    // Se a categoria já é um objeto com cor, usar a cor diretamente
+    if (typeof categoriaNome === 'object' && categoriaNome.cor) {
+      return categoriaNome.cor;
+    }
+    
+    // Se é uma string, buscar a cor no contexto de categorias
+    if (typeof categoriaNome === 'string' && Array.isArray(categorias)) {
+      const categoria = categorias.find(cat => {
+        if (typeof cat === 'object' && cat.nome) {
+          return cat.nome === categoriaNome;
+        }
+        if (typeof cat === 'object' && cat.id) {
+          return cat.id === categoriaNome;
+        }
+        return false;
+      });
+      
+      if (categoria && typeof categoria === 'object' && categoria.cor) {
+        console.log(`✅ Cor encontrada: ${categoria.cor} para categoria: ${categoriaNome}`);
+        return categoria.cor;
+      }
+    }
+    
+    console.log('❌ Usando cor padrão para categoria:', categoriaNome);
+    return 'var(--corPrimaria)'; // Cor padrão
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showMenu && !event.target.closest('.export-dropdown')) {
@@ -380,6 +419,14 @@ const CardItem = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
+
+  useEffect(() => {
+    // Forçar a atualização da cor da categoria quando as categorias mudarem
+    // Isso garante que a cor seja atualizada mesmo que o componente não seja recarregado
+    // ou se a categoria já foi carregada anteriormente.
+    // A lógica de busca agora usa o contexto global, então não precisamos de um estado local
+    // para armazenar a cor, mas podemos manter a função para reutilização.
+  }, [categorias]);
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -553,10 +600,15 @@ const CardItem = ({
       <CardFooter tipo={tipo}>
         <CardMeta tipo={tipo}>
           {tipo === 'nota' && item.topico && (
-            <CardTag tipo={tipo}>{item.topico}</CardTag>
+            <CardTag tipo={tipo} cor={item.cor}>{item.topico}</CardTag>
+          )}
+          {tipo === 'nota' && item.categoria && (
+            <CardTag tipo={tipo} cor={getCategoriaCor(item.categoria)}>
+              {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
+            </CardTag>
           )}
           {tipo === 'link' && item.categoria && (
-            <CardTag tipo={tipo}>
+            <CardTag tipo={tipo} cor={getCategoriaCor(item.categoria)}>
               {typeof item.categoria === 'object' ? item.categoria.nome || 'Categoria' : item.categoria}
             </CardTag>
           )}

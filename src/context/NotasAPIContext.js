@@ -51,6 +51,19 @@ export const NotasAPIProvider = ({ children }) => {
     };
   }, [carregarNotas, carregarCategorias, refreshNotas]);
 
+  // Log quando categorias mudarem
+  useEffect(() => {
+    console.log('=== CONTEXTO CATEGORIAS ===');
+    console.log('Categorias carregadas:', categorias);
+    console.log('Tipo das categorias:', Array.isArray(categorias) ? 'Array' : typeof categorias);
+    if (Array.isArray(categorias)) {
+      console.log('Número de categorias:', categorias.length);
+      categorias.forEach((cat, index) => {
+        console.log(`Categoria ${index}:`, cat);
+      });
+    }
+  }, [categorias]);
+
   // Filtrar e ordenar notas usando useMemo para otimização
   const notasFiltradas = useMemo(() => {
     // Garantir que notas seja um array
@@ -131,30 +144,15 @@ export const NotasAPIProvider = ({ children }) => {
     }
   };
 
+  // Excluir nota
   const excluirNota = async (id) => {
     try {
-      console.log('🗑️ Context: Excluindo nota:', id);
-      await deletarNota(id);
-      console.log('✅ Context: Nota excluída com sucesso');
+      console.log('🗑️ Excluindo nota:', id);
+      const response = await deletarNota(id);
+      console.log('✅ Nota excluída com sucesso');
+      return response;
     } catch (error) {
-      console.error('❌ Context: Erro ao excluir nota:', error);
-      throw error;
-    }
-  };
-
-  const visualizarNota = async (id) => {
-    try {
-      // Garantir que notas seja um array
-      const notasArray = Array.isArray(notas) ? notas : [];
-      
-      // Buscar nota diretamente do array de notas
-      const nota = notasArray.find(n => n.id === id);
-      if (!nota) {
-        throw new Error('Nota não encontrada');
-      }
-      return nota;
-    } catch (error) {
-      console.error('Erro ao buscar nota:', error);
+      console.error('❌ Erro ao excluir nota:', error);
       throw error;
     }
   };
@@ -245,7 +243,7 @@ export const NotasAPIProvider = ({ children }) => {
       }).length : 0;
       return acc;
     }, {}) : {},
-    notasPorCategoria: Array.isArray(categorias) ? categorias.map(categoria => ({
+    categoriasComQuantidade: Array.isArray(categorias) ? categorias.map(categoria => ({
       categoria: categoria,
       quantidade: Array.isArray(notas) ? notas.filter(nota => nota.categoria === categoria).length : 0
     })) : []

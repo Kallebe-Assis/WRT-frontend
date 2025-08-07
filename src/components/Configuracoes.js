@@ -716,8 +716,36 @@ const Configuracoes = ({
     try {
       if (categoriaEditando) {
         await categoriasAPI.atualizar(categoriaEditando.id, formData);
+        
+        // Forçar sincronização após editar categoria
+        if (onSincronizar) {
+          await onSincronizar();
+        }
+        
+        // Aguardar um pouco e recarregar categorias
+        setTimeout(async () => {
+          await carregarCategorias();
+          // Forçar atualização do contexto se disponível
+          if (window.notasContext && window.notasContext.carregarCategorias) {
+            await window.notasContext.carregarCategorias(true);
+          }
+        }, 1000);
       } else {
         await categoriasAPI.criar(formData);
+        
+        // Forçar sincronização completa
+        if (onSincronizar) {
+          await onSincronizar();
+        }
+        
+        // Aguardar um pouco e recarregar categorias
+        setTimeout(async () => {
+          await carregarCategorias();
+          // Forçar atualização do contexto se disponível
+          if (window.notasContext && window.notasContext.carregarCategorias) {
+            await window.notasContext.carregarCategorias(true);
+          }
+        }, 1000);
       }
       
       setModalAberto(false);
@@ -735,6 +763,21 @@ const Configuracoes = ({
 
     try {
       await categoriasAPI.deletar(id);
+      
+      // Forçar sincronização após deletar categoria
+      if (onSincronizar) {
+        await onSincronizar();
+      }
+      
+      // Aguardar um pouco e recarregar categorias
+      setTimeout(async () => {
+        await carregarCategorias();
+        // Forçar atualização do contexto se disponível
+        if (window.notasContext && window.notasContext.carregarCategorias) {
+          await window.notasContext.carregarCategorias(true);
+        }
+      }, 1000);
+      
       carregarCategorias();
     } catch (error) {
       console.error('Erro ao excluir categoria:', error);

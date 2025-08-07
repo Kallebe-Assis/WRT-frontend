@@ -411,7 +411,7 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
             // Premium features (included in free trial)
             'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
           ],
-          toolbar: 'undo redo | fontfamily fontsize | bold italic underline strikethrough | link image | align lineheight | numlist bullist indent outdent | removeformat',
+          toolbar: 'undo redo | fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image | table | codesample | align lineheight | numlist bullist indent outdent | checklist | removeformat',
           content_style: `
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

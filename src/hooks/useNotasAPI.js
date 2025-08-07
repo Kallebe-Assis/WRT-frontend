@@ -168,17 +168,22 @@ const useNotasAPI = () => {
 
   // Carregar categorias com cache
   const carregarCategorias = useCallback(async (forceRefresh = false) => {
+    console.log('=== CARREGANDO CATEGORIAS ===');
+    console.log('Force refresh:', forceRefresh);
+    
     try {
       // Se não for refresh forçado, tentar usar cache primeiro
       if (!forceRefresh) {
         const cachedData = getCachedCategorias();
         if (cachedData) {
+          console.log('Usando cache de categorias:', cachedData);
           setCategorias(cachedData);
           
           // Carregar dados atualizados em background
           setTimeout(async () => {
             try {
               const freshData = await categoriasAPI.listar();
+              console.log('Categorias atualizadas em background:', freshData);
               setCategorias(freshData.categorias || []);
               setCachedCategorias(freshData.categorias || []);
               console.log('Categorias atualizadas em background');
@@ -195,6 +200,7 @@ const useNotasAPI = () => {
       console.log('Carregando categorias do servidor...');
       const data = await categoriasAPI.listar();
       const categoriasData = data.categorias || [];
+      console.log('Categorias carregadas do servidor:', categoriasData);
       setCategorias(categoriasData);
       setCachedCategorias(categoriasData);
     } catch (error) {
