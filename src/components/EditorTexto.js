@@ -21,7 +21,8 @@ import {
   faPalette,
   faFillDrip,
   faKeyboard,
-  faMinus
+  faMinus,
+  faCheckSquare
 } from '@fortawesome/free-solid-svg-icons';
 
 const EditorContainer = styled.div`
@@ -231,6 +232,190 @@ const AreaTexto = styled.div`
   a:hover {
     color: var(--corSecundaria);
   }
+
+  /* Estilos para o checklist */
+  .checklist {
+    background: var(--corFundoSecundaria);
+    border-radius: var(--bordaRaioMedia);
+    padding: var(--espacamentoMedio);
+    margin: var(--espacamentoMedio) 0;
+    border: 1px solid var(--corBordaPrimaria);
+  }
+
+  .checklist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--espacamentoMedio);
+    padding-bottom: var(--espacamentoPequeno);
+    border-bottom: 1px solid var(--corBordaPrimaria);
+  }
+
+  .checklist-header h3 {
+    margin: 0;
+    color: var(--corTextoPrimaria);
+    font-size: var(--tamanhoFonteMedia);
+    font-weight: 600;
+  }
+
+  .checklist-stats {
+    font-size: var(--tamanhoFontePequena);
+    color: var(--corTextoSecundaria);
+  }
+
+  .checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacamentoPequeno);
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: var(--espacamentoPequeno);
+    padding: var(--espacamentoPequeno);
+    border-radius: var(--bordaRaioPequena);
+    background: var(--corFundoPrimaria);
+    border: 1px solid var(--corBordaPrimaria);
+    transition: all var(--transicaoRapida);
+    cursor: pointer;
+  }
+
+  .checklist-item:hover {
+    background: var(--corFundoHover);
+    border-color: var(--corPrimaria);
+  }
+
+  .checklist-item.completed {
+    background: var(--corFundoTerciaria);
+    opacity: 0.7;
+    text-decoration: line-through;
+    color: var(--corTextoSecundaria);
+  }
+
+  .checkbox {
+    background: none;
+    border: none;
+    color: var(--corTextoSecundaria);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--bordaRaioPequena);
+    transition: all var(--transicaoRapida);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .checkbox:hover {
+    background: var(--corFundoHover);
+    color: var(--corPrimaria);
+  }
+
+  .checkbox[data-checked="true"] {
+    color: var(--corPrimaria);
+  }
+
+  .item-text {
+    flex: 1;
+    font-size: var(--tamanhoFonteMedia);
+    color: inherit;
+    word-break: break-word;
+  }
+
+  .item-actions {
+    display: flex;
+    gap: var(--espacamentoPequeno);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+
+  .checklist-item:hover .item-actions {
+    opacity: 1;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    color: var(--corTextoSecundaria);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--bordaRaioPequena);
+    transition: all var(--transicaoRapida);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn:hover {
+    background: var(--corFundoHover);
+    color: var(--corPrimaria);
+  }
+
+  .action-btn.delete:hover {
+    color: var(--corErro);
+  }
+
+  .add-item-form {
+    display: flex;
+    gap: var(--espacamentoPequeno);
+    margin-top: var(--espacamentoMedio);
+    padding-top: var(--espacamentoMedio);
+    border-top: 1px solid var(--corBordaPrimaria);
+  }
+
+  .add-item-input {
+    flex: 1;
+    padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+    border: 1px solid var(--corBordaPrimaria);
+    border-radius: var(--bordaRaioPequena);
+    font-size: var(--tamanhoFonteMedia);
+    background: var(--corFundoPrimaria);
+    color: var(--corTextoPrimaria);
+  }
+
+  .add-item-input:focus {
+    outline: none;
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+
+  .add-item-input::placeholder {
+    color: var(--corTextoSecundaria);
+  }
+
+  .add-item-btn {
+    background: var(--corPrimaria);
+    color: white;
+    border: none;
+    border-radius: var(--bordaRaioPequena);
+    padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+    font-size: var(--tamanhoFonteMedia);
+    cursor: pointer;
+    transition: all var(--transicaoRapida);
+    display: flex;
+    align-items: center;
+    gap: var(--espacamentoPequeno);
+  }
+
+  .add-item-btn:hover {
+    background: var(--corSecundaria);
+    transform: translateY(-1px);
+  }
+
+  .edit-item-input {
+    flex: 1;
+    padding: var(--espacamentoPequeno);
+    border: 1px solid var(--corPrimaria);
+    border-radius: var(--bordaRaioPequena);
+    font-size: var(--tamanhoFonteMedia);
+    background: var(--corFundoPrimaria);
+    color: var(--corTextoPrimaria);
+  }
+
+  .edit-item-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
 `;
 
 const coresTexto = [
@@ -360,6 +545,42 @@ const EditorTexto = ({
     executarComando('insertHorizontalRule');
   };
 
+  const inserirChecklist = () => {
+    const checklistHTML = `
+      <div class="checklist" data-checklist="true">
+        <div class="checklist-header">
+          <h3>Checklist</h3>
+          <div class="checklist-stats">0 de 0 concluído</div>
+        </div>
+        <div class="checklist-items">
+          <div class="checklist-item" data-item-id="${Date.now()}">
+            <button class="checkbox" data-checked="false">
+              <i class="fas fa-square"></i>
+            </button>
+            <span class="item-text">Novo item</span>
+            <div class="item-actions">
+              <button class="action-btn edit" title="Editar item">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" title="Excluir item">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="add-item-form">
+          <input type="text" class="add-item-input" placeholder="Adicionar novo item...">
+          <button class="add-item-btn">
+            <i class="fas fa-plus"></i>
+            Adicionar
+          </button>
+        </div>
+      </div>
+    `;
+    
+    executarComando('insertHTML', checklistHTML);
+  };
+
   const podeDesfazer = indiceHistorico > 0;
   const podeRefazer = indiceHistorico < historico.length - 1;
 
@@ -459,6 +680,12 @@ const EditorTexto = ({
                 <FontAwesomeIcon icon={faListOl} />
               </BotaoFerramenta>
               <BotaoFerramenta
+                onClick={inserirChecklist}
+                title="Inserir Checklist"
+              >
+                <FontAwesomeIcon icon={faCheckSquare} />
+              </BotaoFerramenta>
+              <BotaoFerramenta
                 onClick={() => executarComando('formatBlock', '<blockquote>')}
                 title="Citação"
               >
@@ -556,6 +783,48 @@ const EditorTexto = ({
                 e.preventDefault();
                 window.open(target.href, '_blank', 'noopener,noreferrer');
               }
+              
+              // Verificar se o clique foi em um checkbox do checklist
+              if (target.classList.contains('checkbox')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const isChecked = target.getAttribute('data-checked') === 'true';
+                target.setAttribute('data-checked', !isChecked);
+                
+                // Atualizar ícone
+                const icon = target.querySelector('i');
+                if (icon) {
+                  icon.className = !isChecked ? 'fas fa-check-square' : 'fas fa-square';
+                }
+                
+                // Atualizar item
+                const item = target.closest('.checklist-item');
+                if (item) {
+                  item.classList.toggle('completed', !isChecked);
+                }
+                
+                // Atualizar estatísticas
+                atualizarEstatisticasChecklist(target.closest('.checklist'));
+              }
+              
+              // Verificar se o clique foi em um botão de ação do checklist
+              if (target.classList.contains('action-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (target.classList.contains('edit')) {
+                  editarItemChecklist(target.closest('.checklist-item'));
+                } else if (target.classList.contains('delete')) {
+                  deletarItemChecklist(target.closest('.checklist-item'));
+                }
+              }
+              
+              // Verificar se o clique foi no botão adicionar do checklist
+              if (target.classList.contains('add-item-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                adicionarItemChecklist(target.closest('.checklist'));
+              }
             }}
             style={{ 
               minHeight: alturaMinima, 
@@ -595,6 +864,104 @@ const EditorTexto = ({
       )}
     </EditorContainer>
   );
+};
+
+// Funções auxiliares para o checklist
+const atualizarEstatisticasChecklist = (checklistElement) => {
+  if (!checklistElement) return;
+  
+  const items = checklistElement.querySelectorAll('.checklist-item');
+  const completedItems = checklistElement.querySelectorAll('.checklist-item.completed');
+  
+  const stats = checklistElement.querySelector('.checklist-stats');
+  if (stats) {
+    stats.textContent = `${completedItems.length} de ${items.length} concluído`;
+  }
+};
+
+const editarItemChecklist = (itemElement) => {
+  if (!itemElement) return;
+  
+  const textElement = itemElement.querySelector('.item-text');
+  if (!textElement) return;
+  
+  const currentText = textElement.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentText;
+  input.className = 'edit-item-input';
+  input.style.cssText = `
+    flex: 1;
+    padding: var(--espacamentoPequeno);
+    border: 1px solid var(--corPrimaria);
+    border-radius: var(--bordaRaioPequena);
+    font-size: var(--tamanhoFonteMedia);
+    background: var(--corFundoPrimaria);
+    color: var(--corTextoPrimaria);
+  `;
+  
+  input.addEventListener('blur', () => {
+    textElement.textContent = input.value;
+    input.remove();
+  });
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      textElement.textContent = input.value;
+      input.remove();
+    } else if (e.key === 'Escape') {
+      input.remove();
+    }
+  });
+  
+  textElement.replaceWith(input);
+  input.focus();
+  input.select();
+};
+
+const deletarItemChecklist = (itemElement) => {
+  if (!itemElement) return;
+  
+  if (confirm('Tem certeza que deseja excluir este item?')) {
+    itemElement.remove();
+    const checklist = itemElement.closest('.checklist');
+    if (checklist) {
+      atualizarEstatisticasChecklist(checklist);
+    }
+  }
+};
+
+const adicionarItemChecklist = (checklistElement) => {
+  if (!checklistElement) return;
+  
+  const input = checklistElement.querySelector('.add-item-input');
+  const text = input.value.trim();
+  
+  if (!text) return;
+  
+  const itemsContainer = checklistElement.querySelector('.checklist-items');
+  const newItem = document.createElement('div');
+  newItem.className = 'checklist-item';
+  newItem.setAttribute('data-item-id', Date.now());
+  
+  newItem.innerHTML = `
+    <button class="checkbox" data-checked="false">
+      <i class="fas fa-square"></i>
+    </button>
+    <span class="item-text">${text}</span>
+    <div class="item-actions">
+      <button class="action-btn edit" title="Editar item">
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="action-btn delete" title="Excluir item">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `;
+  
+  itemsContainer.appendChild(newItem);
+  input.value = '';
+  atualizarEstatisticasChecklist(checklistElement);
 };
 
 export default EditorTexto; 

@@ -6,7 +6,7 @@ export const TINYMCE_CONFIG = {
     // APENAS PLUGINS GRATUITOS
     'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount'
   ],
-  toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+  toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image media table | align lineheight | numlist bullist indent outdent | checklist texttochecklist | emoticons charmap | removeformat',
   content_style: `
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -69,6 +69,44 @@ export const TINYMCE_CONFIG = {
     table th {
       background: var(--corFundoSecundaria);
       font-weight: 600;
+    }
+    
+    /* Estilos para o checklist simples */
+    .simple-checklist {
+      margin: 4px 0;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 2px 0;
+      padding: 2px 0;
+    }
+
+    .simple-checkbox {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .item-text {
+      flex: 1;
+      font-size: 14px;
+      color: var(--corTextoPrimaria);
+      cursor: text;
+      min-height: 1em;
+      outline: none;
+      word-wrap: break-word;
+    }
+
+    .item-text:empty:before {
+      content: "Digite aqui...";
+      color: var(--corTextoTerciaria);
+      font-style: italic;
+      pointer-events: none;
     }
   `,
   placeholder: "Digite o conteúdo...",
@@ -150,6 +188,77 @@ export const TINYMCE_CONFIG = {
     '#a64d79', 'Pink 37'
   ],
   setup: (editor) => {
+    // Função para criar HTML do checklist
+    function createChecklistHTML(text = '') {
+      return `
+        <div class="simple-checklist">
+          <div class="checklist-item">
+            <input type="checkbox" class="simple-checkbox">
+            <span class="item-text" contenteditable="true">${text}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Adicionar comando personalizado para checklist simples
+    editor.addCommand('mceChecklist', function() {
+      const selection = editor.selection;
+      const selectedText = selection.getContent({format: 'text'});
+      
+      if (selectedText && selectedText.trim()) {
+        // Se há texto selecionado, transformar em checkbox
+        editor.insertContent(createChecklistHTML(selectedText));
+      } else {
+        // Se não há texto selecionado, criar checkbox vazio
+        editor.insertContent(createChecklistHTML());
+        
+        // Focar no texto para edição
+        setTimeout(() => {
+          const textSpan = editor.getBody().querySelector('.item-text:last-child');
+          if (textSpan) {
+            editor.selection.setCursorLocation(textSpan, 0);
+          }
+        }, 100);
+      }
+    });
+
+    // Adicionar comando para transformar texto selecionado em checkbox
+    editor.addCommand('mceTextToChecklist', function() {
+      const selection = editor.selection;
+      const selectedText = selection.getContent({format: 'text'});
+      
+      if (selectedText && selectedText.trim()) {
+        editor.insertContent(createChecklistHTML(selectedText));
+      }
+    });
+
+    // Adicionar botão de checklist na toolbar com ícone melhorado
+    editor.ui.registry.addButton('checklist', {
+      text: '☐',
+      tooltip: 'Inserir Checklist (vazio ou com texto selecionado)',
+      onAction: function() {
+        editor.execCommand('mceChecklist');
+      }
+    });
+
+    // Adicionar botão para transformar texto em checklist com ícone melhorado
+    editor.ui.registry.addButton('texttochecklist', {
+      text: '☑',
+      tooltip: 'Transformar texto selecionado em checklist',
+      onAction: function() {
+        editor.execCommand('mceTextToChecklist');
+      }
+    });
+
+    // Adicionar atalhos de teclado
+    editor.addShortcut('meta+shift+c', 'Inserir Checklist', function() {
+      editor.execCommand('mceChecklist');
+    });
+
+    editor.addShortcut('meta+shift+t', 'Texto para Checklist', function() {
+      editor.execCommand('mceTextToChecklist');
+    });
+
     // Configurações adicionais se necessário
     editor.on('init', () => {
       // Editor inicializado
