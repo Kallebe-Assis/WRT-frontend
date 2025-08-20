@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -10,7 +10,7 @@ import {
   faEdit,
   faEye
 } from '@fortawesome/free-solid-svg-icons';
-import RichTextEditor from './RichTextEditor';
+import TiptapEditor from './TiptapEditor';
 import FullFormattedContent from './FullFormattedContent';
 import { notasAPI } from '../config/api';
 
@@ -535,19 +535,58 @@ const ModalItem = ({
     }
 
     // Para notas existentes, comparar com dados originais
-    const currentData = JSON.stringify(newFormData);
-    const hasChanges = currentData !== lastSavedDataRef.current;
+    // Comparar apenas título e tópico com JSON, mas conteúdo com normalização
+    const originalData = lastSavedDataRef.current ? JSON.parse(lastSavedDataRef.current) : null;
+    
+    if (!originalData) {
+      setHasChanges(true);
+      return true;
+    }
+
+    // Comparar título e tópico
+    const tituloChanged = newFormData.titulo !== originalData.titulo;
+    const topicoChanged = newFormData.topico !== originalData.topico;
+    
+    // Para o conteúdo, normalizar HTML antes de comparar
+    const normalizeContent = (content) => {
+      if (!content) return '';
+      // Remover espaços extras e quebras de linha desnecessárias
+      return content.replace(/\s+/g, ' ').trim();
+    };
+    
+    const conteudoChanged = normalizeContent(newFormData.conteudo) !== normalizeContent(originalData.conteudo);
+    
+    const hasChanges = tituloChanged || topicoChanged || conteudoChanged;
+    
+    console.log('🔍 Detecção de mudanças:', {
+      tituloChanged,
+      topicoChanged,
+      conteudoChanged,
+      hasChanges,
+      originalTitulo: originalData.titulo,
+      newTitulo: newFormData.titulo,
+      originalTopico: originalData.topico,
+      newTopico: newFormData.topico,
+      originalConteudoLength: originalData.conteudo?.length,
+      newConteudoLength: newFormData.conteudo?.length
+    });
+    
     setHasChanges(hasChanges);
     return hasChanges;
   };
 
   // Função de auto-save
-  const performAutoSave = async (isManual = false) => {
-    if (!onSave && !onAutoSave) return;
+  const performAutoSave = useCallback(async (isManual = false) => {
+    console.log(`🔧 performAutoSave chamado - isManual: ${isManual}`);
+    
+    if (!onSave && !onAutoSave) {
+      console.log('❌ Nenhuma função de save disponível');
+      return;
+    }
     
     try {
       setIsAutoSaving(true);
-      console.log('Executando auto-save...');
+      console.log(`💾 Executando ${isManual ? 'save manual' : 'auto-save'}...`);
       
       // Usar função apropriada baseada no tipo de save
       if (isManual) {
@@ -568,12 +607,14 @@ const ModalItem = ({
       lastSavedDataRef.current = JSON.stringify(formData);
       setHasChanges(false);
       
-      console.log('Auto-save concluído com sucesso');
+      console.log(`✅ ${isManual ? 'Save manual' : 'Auto-save'} concluído com sucesso`);
       
       // Se for save manual (botão Atualizar clicado), fechar modal
       if (isManual) {
-        console.log('Save manual concluído, fechando modal...');
+        console.log('🚪 Save manual concluído, fechando modal...');
         onClose();
+      } else {
+        console.log('🔄 Auto-save concluído, modal permanece aberto');
       }
     } catch (error) {
       console.error('Erro no auto-save:', error);
@@ -586,21 +627,28 @@ const ModalItem = ({
     } finally {
       setIsAutoSaving(false);
     }
-  };
+  }, [onSave, onAutoSave, item?.id, formData, onClose]);
 
   // Timer de auto-save (apenas para notas existentes)
   useEffect(() => {
+    console.log(`🕐 useEffect auto-save - hasChanges: ${hasChanges}, modoLocal: ${modoLocal}, itemId: ${item?.id}`);
+    
     if (hasChanges && modoLocal === 'editar' && item?.id) {
+      console.log('⏰ Configurando timer de auto-save...');
+      
       // Limpar timer anterior
       if (autoSaveTimerRef.current) {
+        console.log('🧹 Limpando timer anterior');
         clearTimeout(autoSaveTimerRef.current);
       }
 
       // Configurar novo timer
       autoSaveTimerRef.current = setTimeout(() => {
-        console.log('Timer de auto-save disparado - salvando sem fechar modal');
+        console.log('⏰ Timer de auto-save disparado - salvando sem fechar modal');
         performAutoSave(false); // Auto-save NUNCA fecha o modal
       }, 3000); // 3 segundos
+    } else {
+      console.log('⏰ Condições não atendidas para auto-save');
     }
 
     // Cleanup ao desmontar
@@ -609,7 +657,7 @@ const ModalItem = ({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [hasChanges, formData, modoLocal, item?.id]);
+  }, [hasChanges, modoLocal, item?.id, formData.titulo, formData.conteudo, formData.topico, performAutoSave]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -630,30 +678,19 @@ const ModalItem = ({
     detectChanges(newFormData);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = () => {
+    console.log('Botão Atualizar clicado - executando save manual');
+    
+    // Sempre salvar quando o usuário clica em Atualizar
     if (onSave) {
-      console.log('Botão Atualizar clicado - executando save manual');
-      
-      // Para notas novas, sempre tentar salvar
-      if (modoLocal === 'novo' || !item?.id) {
-        console.log('Salvando nota nova...');
-        performAutoSave(true); // Save manual que fecha o modal
-      } else if (hasChanges) {
-        // Para notas existentes, só salvar se há mudanças
-        console.log('Salvando nota existente com mudanças...');
-        performAutoSave(true); // Save manual que fecha o modal
-      } else {
-        // Se não há mudanças, apenas fecha o modal
-        console.log('Não há mudanças, fechando modal...');
-        onClose();
-      }
+      console.log('Salvando nota...');
+      performAutoSave(true); // Save manual que fecha o modal
     }
   };
 
-  // Função para fechar modal com atualização
+  // Função para fechar modal - APENAS quando usuário clica explicitamente
   const handleClose = () => {
-    console.log('Função handleClose chamada');
+    console.log('Função handleClose chamada - usuário clicou explicitamente');
     
     // Para notas novas, sempre perguntar se quer salvar se há conteúdo
     if (modoLocal === 'novo' || !item?.id) {
@@ -667,18 +704,7 @@ const ModalItem = ({
         }
       }
     } else {
-      // Para notas existentes
-      // Se há mudanças salvas pelo auto-save, forçar atualização
-      if (!hasChanges && lastSavedDataRef.current) {
-        console.log('Fechando modal com dados atualizados pelo auto-save');
-        // Forçar uma atualização da lista de notas
-        if (onSave) {
-          // Chama onSave silenciosamente para atualizar a lista
-          onSave(item?.id, formData);
-        }
-      }
-      
-      // Se há mudanças não salvas, perguntar se quer salvar
+      // Para notas existentes, perguntar se quer salvar se há mudanças
       if (hasChanges) {
         const confirmar = window.confirm('Há alterações não salvas. Deseja salvar antes de fechar?');
         if (confirmar) {
@@ -731,9 +757,9 @@ const ModalItem = ({
   if (!isVisible) return null;
 
   return (
-    <ModalOverlay onClick={handleClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={handleSubmit}>
+    <ModalOverlay>
+      <ModalContent>
+        <div>
           <ModalHeader>
             <HeaderLeft>
               <ModalTitle>{getTitulo()}</ModalTitle>
@@ -761,7 +787,7 @@ const ModalItem = ({
               )}
 
               {modoLocal !== 'visualizar' && (
-                <BotaoSalvar type="submit" disabled={carregando}>
+                <BotaoSalvar onClick={handleSubmit} disabled={carregando}>
                   {carregando ? (
                     <Spinner />
                   ) : (
@@ -850,7 +876,7 @@ const ModalItem = ({
               {modoLocal === 'visualizar' ? (
                 <FullFormattedContent content={formData.conteudo} />
               ) : (
-                <RichTextEditor
+                <TiptapEditor
                   key={`editor-${item?.id || 'new'}-${modoLocal}`}
                   value={formData.conteudo}
                   onChange={handleContentChange}
@@ -865,7 +891,7 @@ const ModalItem = ({
           <ModalFooter>
             {/* Botões movidos para o ModalHeader */}
           </ModalFooter>
-        </form>
+        </div>
       </ModalContent>
     </ModalOverlay>
   );

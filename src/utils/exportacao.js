@@ -599,7 +599,7 @@ export const exportarParaPDF = async (nota) => {
         return element.tagName === 'SCRIPT' || 
                element.tagName === 'STYLE' || 
                element.classList.contains('no-export') ||
-               element.classList.contains('tox-tinymce') || // Ignorar elementos do TinyMCE
+       
                element.classList.contains('tox-edit-area') ||
                element.classList.contains('tox-edit-focus');
       }

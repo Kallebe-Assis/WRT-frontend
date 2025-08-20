@@ -31,13 +31,90 @@ const FullContentContainer = styled.div`
     margin: 0 0 12px 0;
   }
 
-  ul, ol {
+  /* Lista não ordenada (com bolinhas) */
+  ul {
+    list-style-type: disc;
+    margin: 0 0 12px 0;
+    padding-left: 24px;
+  }
+
+  /* Lista ordenada (com números) */
+  ol {
+    list-style-type: decimal;
     margin: 0 0 12px 0;
     padding-left: 24px;
   }
 
   li {
     margin: 0 0 4px 0;
+  }
+
+  /* Lista de tarefas (checkboxes) */
+  ul[data-type="taskList"] {
+    list-style: none;
+    padding: 0;
+  }
+
+  ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    margin: 0.2em 0;
+    padding: 0.2em 0;
+  }
+
+  ul[data-type="taskList"] li > label {
+    flex: 0 0 auto;
+    margin-right: 0.5em;
+    user-select: none;
+    display: flex;
+    align-items: center;
+  }
+
+  ul[data-type="taskList"] li > div {
+    flex: 1 1 auto;
+  }
+
+  ul[data-type="taskList"] li input[type="checkbox"] {
+    margin: 0.25em 0.5em 0.25em 0;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Classes específicas do Tiptap */
+  .task-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .task-list li,
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    margin: 0.2em 0;
+    padding: 0.2em 0;
+  }
+
+  .task-list li > label,
+  .task-item > label {
+    flex: 0 0 auto;
+    margin-right: 0.5em;
+    user-select: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .task-list li > div,
+  .task-item > div {
+    flex: 1 1 auto;
+  }
+
+  .task-list li input[type="checkbox"],
+  .task-item input[type="checkbox"] {
+    margin: 0.25em 0.5em 0.25em 0;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
   }
 
   blockquote {
