@@ -1,14 +1,12 @@
-// Configuração centralizada do TinyMCE
+// Configuração centralizada do TinyMCE - APENAS PLUGINS GRATUITOS
 export const TINYMCE_CONFIG = {
   height: 450,
   menubar: false,
   plugins: [
-    // Core editing features
-    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-    // Premium features (included in free trial)
-    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+    // APENAS PLUGINS GRATUITOS
+    'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount'
   ],
-  toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+  toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
   content_style: `
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -151,13 +149,6 @@ export const TINYMCE_CONFIG = {
     '#674ea7', 'Pink 36',
     '#a64d79', 'Pink 37'
   ],
-  tinycomments_mode: 'embedded',
-  tinycomments_author: 'WRTmind User',
-  mergetags_list: [
-    { value: 'First.Name', title: 'First Name' },
-    { value: 'Email', title: 'Email' },
-  ],
-  ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not implemented')),
   setup: (editor) => {
     // Configurações adicionais se necessário
     editor.on('init', () => {

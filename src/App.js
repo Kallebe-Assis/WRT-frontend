@@ -23,7 +23,7 @@ import NotaTelaCheia from './components/NotaTelaCheia';
 import FullscreenViewer from './components/FullscreenViewer';
 import LogModal from './components/LogModal';
 import GlobalStyles from './styles/GlobalStyles';
-import { linksAPI } from './config/api';
+import useLinksAPI from './hooks/useLinksAPI';
 import { exportarParaPDF } from './utils/exportacao';
 
 const AppContainer = styled.div`
@@ -551,6 +551,18 @@ const AppContent = () => {
     isOnline // Adicionar status de conectividade
   } = useNotasAPIContext();
 
+  // Hook personalizado para links
+  const {
+    links,
+    setLinks,
+    loading: carregandoLinks,
+    error: erroLinks,
+    carregarLinks,
+    criarLink,
+    atualizarLink,
+    deletarLink
+  } = useLinksAPI();
+
   const [user, setUser] = useState(null);
   const [telaAtiva, setTelaAtiva] = useState('inicial');
   const [modalAberto, setModalAberto] = useState(false);
@@ -567,8 +579,6 @@ const AppContent = () => {
   const [logModalAberto, setLogModalAberto] = useState(false);
   const [linkAtual, setLinkAtual] = useState(null);
   const [modoModalLink, setModoModalLink] = useState('criar');
-  const [links, setLinks] = useState([]);
-  const [carregandoLinks, setCarregandoLinks] = useState(false);
   const [forcarAtualizacao, setForcarAtualizacao] = useState(0);
 
   const { syncStatus, lastSync, setSyncStatus, setLastSync } = useSyncStatus();
@@ -614,28 +624,7 @@ const AppContent = () => {
       console.log('Carregando links devido a mudança no usuário...');
       carregarLinks();
     }
-  }, [user?.id]);
-
-  const carregarLinks = async () => {
-    try {
-      if (!user) return;
-
-      console.log('Iniciando carregamento de links...');
-      setCarregandoLinks(true);
-      try {
-        const response = await linksAPI.buscarTodos();
-        const links = response.links || response.data || [];
-        console.log('Links carregados:', links.length);
-        setLinks(links);
-      } catch (error) {
-        console.error('Erro ao carregar links:', error);
-      } finally {
-        setCarregandoLinks(false);
-      }
-    } catch (error) {
-      console.error('Erro no carregarLinks:', error);
-    }
-  };
+  }, [user?.id, carregarLinks]);
 
   // Handlers para eventos de notas
   const handleAbrirNota = (event) => {
@@ -805,20 +794,11 @@ const AppContent = () => {
     try {
       setCarregandoModal(true);
 
-      const isLink = formData.url !== undefined;
-
-      if (isLink) {
-        if (id) {
-          await editarNota(id, formData);
-        } else {
-          await adicionarNota(formData);
-        }
+      // Sempre usar funções de notas para o modal de notas
+      if (id) {
+        await editarNota(id, formData);
       } else {
-        if (id) {
-          await editarNota(id, formData);
-        } else {
-          await adicionarNota(formData);
-        }
+        await adicionarNota(formData);
       }
 
       setModalAberto(false);
@@ -847,20 +827,11 @@ const AppContent = () => {
   // Função para auto-save que não fecha o modal
   const handleAutoSaveItem = async (id, formData) => {
     try {
-      const isLink = formData.url !== undefined;
-
-      if (isLink) {
-        if (id) {
-          await editarNota(id, formData);
-        } else {
-          await adicionarNota(formData);
-        }
+      // Sempre usar funções de notas para o auto-save de notas
+      if (id) {
+        await editarNota(id, formData);
       } else {
-        if (id) {
-          await editarNota(id, formData);
-        } else {
-          await adicionarNota(formData);
-        }
+        await adicionarNota(formData);
       }
 
       // NÃO fecha o modal no auto-save
@@ -874,57 +845,71 @@ const AppContent = () => {
   const handleSalvarLink = async (formData) => {
     try {
       console.log('Salvando link...', formData);
+      setCarregandoModal(true);
       
       if (linkAtual) {
         // Atualizando link existente
-        const response = await linksAPI.atualizar(linkAtual.id, formData);
-        const dadosAtualizados = response.data || { ...linkAtual, ...formData };
-        
-        // Atualizar apenas os links localmente
-        setLinks(prev => {
-          const novosLinks = prev.map(link =>
-            link.id === linkAtual.id ? dadosAtualizados : link
-          );
-          return novosLinks;
-        });
-        
+        await atualizarLink(linkAtual.id, formData);
         console.log('Link atualizado com sucesso');
       } else {
         // Criando novo link
-        const response = await linksAPI.criar(formData);
-        const novoLink = response.data || response.link;
-        
-        if (novoLink) {
-          // Adicionar apenas o novo link à lista local
-          setLinks(prev => [...prev, novoLink]);
-          console.log('Novo link criado com sucesso');
-        }
+        await criarLink(formData);
+        console.log('Novo link criado com sucesso');
       }
-
-      // Fechar modal sem recarregar todo o sistema
+      
+      // Fechar modal e limpar estado
       setModalLinkAberto(false);
       setLinkAtual(null);
+      setForcarAtualizacao(prev => prev + 1);
       
       console.log('Modal de link fechado sem recarregar sistema');
     } catch (error) {
       console.error('Erro ao salvar link:', error);
-      if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
-        alert(`Erro ao salvar link: ${error.message}`);
+      let errorMessage = 'Erro ao salvar link';
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        } else if (error.message.includes('HTTP')) {
+          errorMessage = `Erro do servidor: ${error.message}`;
+        } else {
+          errorMessage = error.message;
+        }
       }
+      
+      if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
+        alert(errorMessage);
+      }
+    } finally {
+      setCarregandoModal(false);
     }
   };
 
   const handleExcluirLink = async (linkId) => {
     try {
       if (window.confirm('Tem certeza que deseja excluir este link?')) {
-        await linksAPI.deletar(linkId);
-        setLinks(prev => prev.filter(link => link.id !== linkId));
+        await deletarLink(linkId);
         setModalLinkAberto(false);
         setLinkAtual(null);
+        
+        // Forçar atualização da interface
+        setForcarAtualizacao(prev => prev + 1);
       }
     } catch (error) {
       console.error('Erro ao excluir link:', error);
-      alert('Erro ao excluir link');
+      let errorMessage = 'Erro ao excluir link';
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        } else if (error.message.includes('HTTP')) {
+          errorMessage = `Erro do servidor: ${error.message}`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -1053,6 +1038,7 @@ const AppContent = () => {
         return (
           <TelaNotas
             notas={notasAtivas}
+            categorias={categorias}
             carregando={carregando}
             onNovoItem={handleNovoItem}
             onEditarItem={handleEditarItem}
@@ -1209,6 +1195,7 @@ const AppContent = () => {
         onSave={handleSalvarLink}
         onDelete={handleExcluirLink}
         onClose={() => setModalLinkAberto(false)}
+        carregando={carregandoModal}
       />
 
       <NotaTelaCheia

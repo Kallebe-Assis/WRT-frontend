@@ -32,9 +32,12 @@ export const NotasAPIProvider = ({ children }) => {
     criarNota,
     atualizarNota,
     deletarNota,
+    favoritarNota,
     refreshNotas,
     clearCache
   } = useNotasAPI();
+  
+
 
   // Expor funções no window para uso pela sincronização
   useEffect(() => {
@@ -104,92 +107,29 @@ export const NotasAPIProvider = ({ children }) => {
         break;
       case 'titulo':
         notasParaFiltrar.sort((a, b) => 
-          a.titulo.localeCompare(b.titulo)
+          (a.titulo || '').localeCompare(b.titulo || '')
         );
         break;
-      case 'categoria':
-        notasParaFiltrar.sort((a, b) => 
-          (a.categoria || '').localeCompare(b.categoria || '')
-        );
+      case 'favoritas':
+        // Primeiro favoritas, depois por data de criação
+        notasParaFiltrar.sort((a, b) => {
+          const aFavorita = a.favorita || false;
+          const bFavorita = b.favorita || false;
+          if (aFavorita && !bFavorita) return -1;
+          if (!aFavorita && bFavorita) return 1;
+          return new Date(b.dataCriacao) - new Date(a.dataCriacao);
+        });
         break;
       default:
-        break;
+        notasParaFiltrar.sort((a, b) => 
+          new Date(b.dataCriacao) - new Date(a.dataCriacao)
+        );
     }
 
     return notasParaFiltrar;
   }, [notas, categoriaAtiva, termoBusca, ordenacao]);
 
-  // Funções para gerenciar notas
-  const adicionarNota = async (nota) => {
-    try {
-      console.log('📝 Context: Adicionando nota...');
-      const novaNota = await criarNota(nota);
-      console.log('✅ Context: Nota adicionada com sucesso');
-      return novaNota;
-    } catch (error) {
-      console.error('❌ Context: Erro ao adicionar nota:', error);
-      throw error;
-    }
-  };
-
-  const editarNota = async (id, nota) => {
-    try {
-      console.log('✏️ Context: Editando nota:', id);
-      const notaAtualizada = await atualizarNota(id, nota);
-      console.log('✅ Context: Nota editada com sucesso');
-      return notaAtualizada;
-    } catch (error) {
-      console.error('❌ Context: Erro ao editar nota:', error);
-      throw error;
-    }
-  };
-
-  // Excluir nota
-  const excluirNota = async (id) => {
-    try {
-      console.log('🗑️ Excluindo nota:', id);
-      const response = await deletarNota(id);
-      console.log('✅ Nota excluída com sucesso');
-      return response;
-    } catch (error) {
-      console.error('❌ Erro ao excluir nota:', error);
-      throw error;
-    }
-  };
-
-  const filtrarPorCategoriaEspecifica = async (categoria) => {
-    try {
-      // Garantir que notas seja um array
-      const notasArray = Array.isArray(notas) ? notas : [];
-      
-      // Filtrar notas localmente
-      const notasFiltradas = notasArray.filter(nota => nota.categoria === categoria);
-      return notasFiltradas;
-    } catch (error) {
-      console.error('Erro ao filtrar por categoria:', error);
-      throw error;
-    }
-  };
-
-  const buscarNotas = async (termo) => {
-    try {
-      // Garantir que notas seja um array
-      const notasArray = Array.isArray(notas) ? notas : [];
-      
-      // Buscar notas localmente
-      const termoLower = termo.toLowerCase();
-      const resultados = notasArray.filter(nota =>
-        (nota.titulo && nota.titulo.toLowerCase().includes(termoLower)) ||
-        (nota.conteudo && nota.conteudo.toLowerCase().includes(termoLower))
-      );
-      return resultados;
-    } catch (error) {
-      console.error('Erro ao buscar notas:', error);
-      throw error;
-    }
-  };
-
-  // Funções de interface
+  // Funções de manipulação de estado
   const definirCategoriaAtiva = (categoria) => {
     setCategoriaAtiva(categoria);
   };
@@ -206,7 +146,42 @@ export const NotasAPIProvider = ({ children }) => {
     setOrdenacao(novaOrdenacao);
   };
 
-  // Função para ordenar notas (alias para definirOrdenacao)
+  // Funções de CRUD (aliases para o hook)
+  const adicionarNota = async (dadosNota) => {
+    return await criarNota(dadosNota);
+  };
+
+  const editarNota = async (id, dadosNota) => {
+    return await atualizarNota(id, dadosNota);
+  };
+
+  const excluirNota = async (id) => {
+    return await deletarNota(id);
+  };
+
+  // Função para favoritar/desfavoritar nota
+  const alternarFavorito = async (id, favorita) => {
+    try {
+      const resultado = await favoritarNota(id, favorita);
+      console.log(`✅ Nota ${favorita ? 'favoritada' : 'desfavoritada'}:`, id);
+      return resultado;
+    } catch (error) {
+      console.error('❌ Erro ao favoritar nota:', error);
+      throw error;
+    }
+  };
+
+  // Funções de busca e filtro
+  const buscarNotas = async (termo) => {
+    definirTermoBusca(termo);
+    return notasFiltradas;
+  };
+
+  const filtrarPorCategoriaEspecifica = async (categoria) => {
+    definirCategoriaAtiva(categoria);
+    return notasFiltradas;
+  };
+
   const ordenarNotas = (novaOrdenacao) => {
     definirOrdenacao(novaOrdenacao);
   };
@@ -224,7 +199,7 @@ export const NotasAPIProvider = ({ children }) => {
   // Estatísticas
   const estatisticas = {
     totalNotas: Array.isArray(notas) ? notas.length : 0,
-    notasFavoritas: Array.isArray(notas) ? notas.filter(nota => nota.favorito).length : 0,
+    notasFavoritas: Array.isArray(notas) ? notas.filter(nota => nota.favorita).length : 0,
     notasPorCategoria: Array.isArray(categorias) ? categorias.reduce((acc, categoria) => {
       let nomeCategoria = '';
       if (typeof categoria === 'object' && categoria.nome) {
@@ -282,8 +257,9 @@ export const NotasAPIProvider = ({ children }) => {
     adicionarNota,
     editarNota,
     excluirNota,
+    favoritarNota,
+    alternarFavorito,
     restaurarNota: () => {}, // Não disponível no hook atual
-    alternarFavorito: () => {}, // Não disponível no hook atual
     filtrarPorCategoria: filtrarNotasPorCategoria, // Alias para filtrarNotasPorCategoria
     ordenarNotas,
     buscarNotas,

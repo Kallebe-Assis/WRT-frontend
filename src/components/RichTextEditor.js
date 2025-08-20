@@ -98,122 +98,42 @@ const EditorContainer = styled.div`
   .tox .tox-listbox__select:focus {
     border-color: var(--corPrimaria);
   }
-
-  /* Garantir que os menus apareçam corretamente */
-  .tox .tox-menu.tox-selected-menu {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  /* Estilos para o toolbar */
-  .tox .tox-toolbar__group {
-    position: relative;
-  }
-
-  /* Garantir que os dropdowns tenham espaço suficiente */
-  .tox .tox-toolbar__primary {
-    overflow: visible;
-  }
-
-  .tox .tox-toolbar__overflow {
-    overflow: visible;
-  }
-
-  /* Garantir que todos os elementos do TinyMCE apareçam na frente */
-  .tox-tinymce {
-    z-index: 10001 !important;
-  }
-
-  .tox .tox-toolbar {
-    z-index: 10002 !important;
-  }
-
-  .tox .tox-menu {
-    z-index: 10003 !important;
-  }
 `;
 
-const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digite o conteúdo...", height = "auto" }) => {
+const RichTextEditor = ({ 
+  value, 
+  onChange, 
+  placeholder = "Digite o conteúdo...", 
+  height = "auto",
+  disabled = false 
+}) => {
   const editorRef = useRef(null);
-  const [previousValue, setPreviousValue] = useState(value);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [previousValue, setPreviousValue] = useState(value);
 
-  const ajustarAltura = (editor) => {
-    if (height === "auto" && editor) {
-      try {
-        console.log('Tentando ajustar altura do editor...');
-        
-        // Verificar se o editor está inicializado e tem o método getBody
-        if (editor && typeof editor.getBody === 'function') {
-          const body = editor.getBody();
-          if (body) {
-            console.log('Body encontrado, calculando altura...');
-            const contentHeight = body.scrollHeight;
-            const minHeight = 400;
-            const maxHeight = 800;
-            const newHeight = Math.max(minHeight, Math.min(contentHeight + 100, maxHeight));
-            
-            console.log(`Altura calculada: ${contentHeight}px, nova altura: ${newHeight}px`);
-            
-            // Usar a API correta do TinyMCE para redimensionar
-            if (editor.theme && typeof editor.theme.resizeTo === 'function') {
-              editor.theme.resizeTo(null, newHeight);
-              console.log('Altura ajustada via theme.resizeTo');
-            } else if (editor.getContainer) {
-              // Fallback: ajustar via CSS
-              const editorElement = editor.getContainer();
-              if (editorElement) {
-                editorElement.style.height = `${newHeight}px`;
-                console.log('Altura ajustada via CSS');
-              }
-            }
-            
-            // Forçar reflow para garantir que o scroll funcione
-            setTimeout(() => {
-              if (body) {
-                body.style.overflowY = 'auto';
-                body.style.maxHeight = `${newHeight}px`;
-              }
-            }, 100);
-          } else {
-            console.log('Body não encontrado');
-          }
-        } else {
-          console.log('Editor não inicializado ou sem método getBody');
-        }
-      } catch (error) {
-        console.warn('Erro ao ajustar altura do editor:', error);
-      }
+  const handleEditorChange = (content) => {
+    console.log('Conteúdo alterado:', content);
+    if (onChange) {
+      onChange(content);
     }
   };
 
-  const handleEditorChange = (content, editor) => {
-    if (!isEditorReady) {
-      console.log('Editor ainda não está pronto, ignorando mudança');
-      return;
-    }
-    
-    onChange(content);
-    
-    // Ajustar altura após mudança de conteúdo
-    setTimeout(() => {
-      ajustarAltura(editor);
-    }, 100);
-    
-    // Forçar ajuste de altura também quando o editor é usado pela primeira vez
-    if (editor && height === "auto" && value) {
-      setTimeout(() => {
-        ajustarAltura(editor);
-      }, 200);
-    }
-    
-    // Forçar ajuste de altura quando o editor é usado pela primeira vez em uma nova nota
-    if (editor && height === "auto" && value && content !== value) {
-      console.log('Primeira interação com editor, forçando ajuste...');
-      setTimeout(() => {
-        ajustarAltura(editor);
-      }, 300);
+  const ajustarAltura = (editor) => {
+    if (editor && height === "auto") {
+      try {
+        const body = editor.getBody();
+        if (body) {
+          const scrollHeight = body.scrollHeight;
+          const minHeight = 400;
+          const maxHeight = 800;
+          const newHeight = Math.max(minHeight, Math.min(maxHeight, scrollHeight + 50));
+          
+          editor.theme.resizeTo('100%', newHeight);
+          console.log('Altura ajustada para:', newHeight);
+        }
+      } catch (error) {
+        console.error('Erro ao ajustar altura:', error);
+      }
     }
   };
 
@@ -303,115 +223,11 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
           // Configurações adicionais para evitar conflitos
           auto_focus: false,
           auto_focus_on_editor: false,
-          // Garantir que o editor seja inicializado corretamente
-          setup: (editor) => {
-            // Configurações adicionais se necessário
-            // Não usar listeners problemáticos
-            
-            // Ajustar altura quando o editor for inicializado
-            editor.on('init', () => {
-              console.log('Editor setup: inicializado');
-              if (height === "auto") {
-                console.log('Editor inicializado, ajustando altura...');
-                setTimeout(() => {
-                  ajustarAltura(editor);
-                }, 300);
-              }
-            });
-            
-            // Ajustar altura quando o conteúdo for definido
-            editor.on('SetContent', () => {
-              if (height === "auto") {
-                console.log('Conteúdo definido no editor, ajustando altura...');
-                setTimeout(() => {
-                  ajustarAltura(editor);
-                }, 200);
-              }
-            });
-            
-            // Ajustar altura quando o editor ganhar foco
-            editor.on('focus', () => {
-              if (height === "auto") {
-                console.log('Editor ganhou foco, ajustando altura...');
-                setTimeout(() => {
-                  ajustarAltura(editor);
-                }, 100);
-              }
-            });
-
-            // Ajustar altura quando o editor for clicado
-            editor.on('click', () => {
-              if (height === "auto") {
-                console.log('Editor foi clicado, ajustando altura...');
-                setTimeout(() => {
-                  ajustarAltura(editor);
-                }, 100);
-              }
-            });
-
-            // Ajustar altura quando o usuário começar a digitar
-            editor.on('keydown', () => {
-              if (height === "auto") {
-                console.log('Usuário começou a digitar, ajustando altura...');
-                setTimeout(() => {
-                  ajustarAltura(editor);
-                }, 100);
-              }
-            });
-
-            // Verificar se o editor está funcionando
-            editor.on('load', () => {
-              console.log('Editor carregado com sucesso');
-            });
-
-            // Capturar erros do editor
-            editor.on('error', (error) => {
-              console.error('Erro no editor TinyMCE:', error);
-            });
-
-            // Configurações específicas para dropdowns
-            editor.on('init', () => {
-              // Garantir que os menus apareçam corretamente
-              const toolbar = editor.getContainer().querySelector('.tox-toolbar');
-              if (toolbar) {
-                toolbar.style.zIndex = '10002';
-                toolbar.style.position = 'relative';
-              }
-              
-              // Configurar posicionamento dos menus
-              editor.on('OpenWindow', (e) => {
-                if (e.window && e.window.getBody) {
-                  const body = e.window.getBody();
-                  if (body) {
-                    body.style.zIndex = '10004';
-                  }
-                }
-              });
-
-              // Configurar z-index do container do editor
-              const editorContainer = editor.getContainer();
-              if (editorContainer) {
-                editorContainer.style.zIndex = '10001';
-              }
-
-              // Configurar z-index dos menus quando aparecerem
-              editor.on('ShowMenu', (e) => {
-                if (e.menu && e.menu.getEl) {
-                  const menuEl = e.menu.getEl();
-                  if (menuEl) {
-                    menuEl.style.zIndex = '10003';
-                  }
-                }
-              });
-            });
-          },
+          // APENAS PLUGINS GRATUITOS
           plugins: [
-            // Core editing features
-            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-            // Premium features (included in free trial)
-            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown','importword', 'exportword', 'exportpdf'
+            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount'
           ],
-          toolbar: 'undo redo | fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image | table | codesample | align lineheight | numlist bullist indent outdent | checklist | removeformat',
+          toolbar: 'undo redo | fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link image | table | codesample | align lineheight | numlist bullist indent outdent | removeformat',
           content_style: `
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -559,13 +375,6 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
             '#674ea7', 'Pink 36',
             '#a64d79', 'Pink 37'
           ],
-          tinycomments_mode: 'embedded',
-          tinycomments_author: 'WRTmind User',
-          mergetags_list: [
-            { value: 'First.Name', title: 'First Name' },
-            { value: 'Email', title: 'Email' },
-          ],
-          ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('AI Assistant not implemented')),
           // Configurações específicas para dropdowns
           fixed_toolbar_container: false,
           inline: false,
@@ -590,6 +399,108 @@ const RichTextEditor = ({ value, onChange, disabled = false, placeholder = "Digi
             format: { title: 'Format', items: 'bold italic underline strikethrough superscript subscript codeformat | styles blocks fontfamily fontsize align lineheight | removeformat' },
             tools: { title: 'Tools', items: 'spellchecker spellcheckerlanguage | a11ycheck code wordcount' },
             help: { title: 'Help', items: 'help' }
+          },
+          // Configurações adicionais se necessário
+          setup: (editor) => {
+            // Configurações adicionais se necessário
+            // Não usar listeners problemáticos
+            
+            // Ajustar altura quando o editor for inicializado
+            editor.on('init', () => {
+              console.log('Editor setup: inicializado');
+              if (height === "auto") {
+                console.log('Editor inicializado, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 300);
+              }
+            });
+            
+            // Ajustar altura quando o conteúdo for definido
+            editor.on('SetContent', () => {
+              if (height === "auto") {
+                console.log('Conteúdo definido no editor, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 200);
+              }
+            });
+            
+            // Ajustar altura quando o editor ganhar foco
+            editor.on('focus', () => {
+              if (height === "auto") {
+                console.log('Editor ganhou foco, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
+            });
+
+            // Ajustar altura quando o editor for clicado
+            editor.on('click', () => {
+              if (height === "auto") {
+                console.log('Editor foi clicado, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
+            });
+
+            // Ajustar altura quando o usuário começar a digitar
+            editor.on('keydown', () => {
+              if (height === "auto") {
+                console.log('Usuário começou a digitar, ajustando altura...');
+                setTimeout(() => {
+                  ajustarAltura(editor);
+                }, 100);
+              }
+            });
+
+            // Verificar se o editor está funcionando
+            editor.on('load', () => {
+              console.log('Editor carregado com sucesso');
+            });
+
+            // Capturar erros do editor
+            editor.on('error', (error) => {
+              console.error('Erro no editor TinyMCE:', error);
+            });
+
+            // Configurações específicas para dropdowns
+            editor.on('init', () => {
+              // Garantir que os menus apareçam corretamente
+              const toolbar = editor.getContainer().querySelector('.tox-toolbar');
+              if (toolbar) {
+                toolbar.style.zIndex = '10002';
+                toolbar.style.position = 'relative';
+              }
+              
+              // Configurar posicionamento dos menus
+              editor.on('OpenWindow', (e) => {
+                if (e.window && e.window.getBody) {
+                  const body = e.window.getBody();
+                  if (body) {
+                    body.style.zIndex = '10004';
+                  }
+                }
+              });
+
+              // Configurar z-index do container do editor
+              const editorContainer = editor.getContainer();
+              if (editorContainer) {
+                editorContainer.style.zIndex = '10001';
+              }
+
+              // Configurar z-index dos menus quando aparecerem
+              editor.on('ShowMenu', (e) => {
+                if (e.menu && e.menu.getEl) {
+                  const menuEl = e.menu.getEl();
+                  if (menuEl) {
+                    menuEl.style.zIndex = '10003';
+                  }
+                }
+              });
+            });
           }
         }}
       />

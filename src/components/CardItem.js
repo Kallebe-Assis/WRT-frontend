@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faEdit,
@@ -11,12 +11,57 @@ import {
   faPrint,
   faStar,
   faFilePdf,
-  faFileWord
+  faFileWord,
+  faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 import { formatarData } from '../utils/formatacao';
 import { exportarParaPDF, exportarParaDOCX } from '../utils/exportacao';
 import FullscreenButton from './FullscreenButton';
 import { useNotasAPIContext } from '../context/NotasAPIContext';
+
+// Animações
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
+
+const spin = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+const slideIn = keyframes`
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+`;
 
 const Card = styled.div`
   background: linear-gradient(135deg, var(--corFundoCard) 0%, var(--corFundoSecundaria) 100%);
@@ -28,7 +73,10 @@ const Card = styled.div`
   position: relative;
   box-shadow: var(--sombraLeve);
   overflow: hidden;
-  min-height: ${props => props.tipo === 'link' ? '130px' : 'auto'};
+  min-height: ${props => props.tipo === 'link' ? '120px' : 'auto'};
+  display: flex;
+  flex-direction: column;
+  animation: ${fadeIn} 0.6s ease-out;
   
   &::before {
     content: '';
@@ -44,7 +92,7 @@ const Card = styled.div`
   
   &:hover {
     border-color: var(--corPrimaria);
-    transform: translateY(-4px);
+    transform: translateY(-8px);
     box-shadow: var(--sombraForte);
     
     &::before {
@@ -55,7 +103,7 @@ const Card = styled.div`
   @media (max-width: 768px) {
     padding: ${props => props.tipo === 'link' ? '6px' : 'var(--espacamentoPequeno)'};
     margin-bottom: var(--espacamentoPequeno);
-    min-height: ${props => props.tipo === 'link' ? '110px' : 'auto'};
+    min-height: ${props => props.tipo === 'link' ? '100px' : 'auto'};
   }
 
   @media (max-width: 480px) {
@@ -70,6 +118,8 @@ const CardHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoMedio)'};
+  flex-shrink: 0;
+  animation: ${slideIn} 0.8s ease-out;
 `;
 
 const CardTitle = styled.h3`
@@ -143,6 +193,7 @@ const CardActionButton = styled.button`
   width: ${props => props.tipo === 'link' ? '20px' : '32px'};
   height: ${props => props.tipo === 'link' ? '20px' : '32px'};
   font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFonteMedia)'};
+  position: relative;
   
   &:hover {
     background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
@@ -151,6 +202,15 @@ const CardActionButton = styled.button`
     transform: scale(1.1);
     box-shadow: var(--sombraLeve);
   }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  ${props => props.loading && `
+    pointer-events: none;
+    opacity: 0.7;
+  `}
 
   @media (max-width: 768px) {
     width: ${props => props.tipo === 'link' ? '20px' : '36px'};
@@ -171,6 +231,30 @@ const CardActionButton = styled.button`
   }
 `;
 
+const LoadingSpinner = styled.div`
+  animation: ${spin} 1s linear infinite;
+  color: var(--corPrimaria);
+`;
+
+// Botão de favoritar com estado visual
+const FavoriteButton = styled(CardActionButton)`
+  color: ${props => props.favorita ? '#FFD700' : 'var(--corTextoSecundaria)'};
+  background: ${props => props.favorita 
+    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.2) 100%)' 
+    : 'linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%)'};
+  border-color: ${props => props.favorita ? '#FFD700' : 'var(--corBordaPrimaria)'};
+  
+  &:hover {
+    background: ${props => props.favorita 
+      ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.3) 100%)' 
+      : 'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
+    color: ${props => props.favorita ? '#FFD700' : 'var(--corTextoClara)'};
+    border-color: ${props => props.favorita ? '#FFD700' : 'var(--corPrimaria)'};
+    transform: scale(1.1);
+    box-shadow: var(--sombraLeve);
+  }
+`;
+
 const CardContent = styled.div`
   color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFonteMedia);
@@ -180,6 +264,8 @@ const CardContent = styled.div`
   display: -webkit-box;
   -webkit-line-clamp: ${props => props.tipo === 'link' ? '1' : '3'};
   -webkit-box-orient: vertical;
+  flex: 1;
+  animation: ${fadeIn} 1s ease-out 0.2s both;
 
   @media (max-width: 768px) {
     font-size: var(--tamanhoFontePequena);
@@ -199,106 +285,77 @@ const CardFooter = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoTerciaria);
-  padding-top: ${props => props.tipo === 'link' ? '4px' : 'var(--espacamentoMedio)'};
-  border-top: 1px solid var(--corBordaPrimaria);
-  gap: ${props => props.tipo === 'link' ? 'var(--espacamentoPequeno)' : 'var(--espacamentoMedio)'};
+  gap: var(--espacamentoPequeno);
   flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--espacamentoPequeno);
+  animation: ${fadeIn} 1s ease-out 0.4s both;
 
   @media (max-width: 768px) {
-    padding-top: var(--espacamentoPequeno);
     gap: var(--espacamentoPequeno);
-    font-size: 10px;
-    justify-content: ${props => props.tipo === 'link' ? 'center' : 'space-between'};
   }
 
   @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
     gap: var(--espacamentoPequeno);
-    text-align: center;
+    flex-direction: column;
+    align-items: stretch;
   }
 `;
 
 const CardMeta = styled.div`
   display: flex;
-  align-items: center;
   gap: var(--espacamentoPequeno);
+  flex-wrap: wrap;
   flex: 1;
-  min-width: 0;
-  justify-content: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
 
   @media (max-width: 768px) {
-    justify-content: ${props => props.tipo === 'link' ? 'center' : 'flex-start'};
-    flex-wrap: wrap;
+    gap: var(--espacamentoPequeno);
   }
 
   @media (max-width: 480px) {
+    gap: var(--espacamentoPequeno);
     justify-content: center;
-    width: 100%;
-  }
-`;
-
-const CardDate = styled.span`
-  background: var(--corFundoTerciaria);
-  padding: 4px 8px;
-  border-radius: var(--bordaRaioPequena);
-  font-size: var(--tamanhoFontePequena);
-  color: var(--corTextoSecundaria);
-`;
-
-const FavoriteButton = styled.button`
-  background: ${props => props.favorito ? 
-    'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)' : 
-    'linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%)'};
-  color: ${props => props.favorito ? 'white' : 'var(--corTextoSecundaria)'};
-  border: 1px solid ${props => props.favorito ? '#ff6b6b' : 'var(--corBordaPrimaria)'};
-  border-radius: var(--bordaRaioMedia);
-  padding: 6px;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  
-  &:hover {
-    background: ${props => props.favorito ? 
-      'linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%)' : 
-      'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
-    color: white;
-    border-color: ${props => props.favorito ? '#ee5a52' : 'var(--corPrimaria)'};
-    transform: scale(1.1);
-    box-shadow: var(--sombraLeve);
   }
 `;
 
 const CardTag = styled.span`
   background: ${props => props.cor || 'var(--corPrimaria)'};
-  color: white;
-  padding: ${props => props.tipo === 'link' ? '2px 6px' : '4px 12px'};
+  color: var(--corTextoClara);
+  padding: ${props => props.tipo === 'link' ? '2px 6px' : '4px 8px'};
   border-radius: var(--bordaRaioPequena);
-  font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFontePequena)'};
+  font-size: ${props => props.tipo === 'link' ? '8px' : 'var(--tamanhoFontePequena)'};
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: ${props => props.tipo === 'link' ? '80px' : '150px'};
-  display: inline-block;
-  text-align: center;
+  transition: all var(--transicaoRapida);
+  animation: ${pulse} 2s ease-in-out infinite;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: var(--sombraLeve);
+  }
 
   @media (max-width: 768px) {
-    max-width: ${props => props.tipo === 'link' ? '60px' : '120px'};
-    font-size: ${props => props.tipo === 'link' ? '8px' : '10px'};
-    padding: ${props => props.tipo === 'link' ? '1px 4px' : '2px 8px'};
+    font-size: ${props => props.tipo === 'link' ? '7px' : 'var(--tamanhoFontePequena)'};
+    padding: ${props => props.tipo === 'link' ? '2px 5px' : '3px 7px'};
   }
 
   @media (max-width: 480px) {
-    max-width: ${props => props.tipo === 'link' ? '50px' : '100px'};
-    font-size: ${props => props.tipo === 'link' ? '7px' : '9px'};
-    padding: ${props => props.tipo === 'link' ? '1px 3px' : '2px 6px'};
+    font-size: ${props => props.tipo === 'link' ? '6px' : 'var(--tamanhoFontePequena)'};
+    padding: ${props => props.tipo === 'link' ? '1px 4px' : '2px 6px'};
+  }
+`;
+
+const CardDate = styled.span`
+  color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFontePequena);
+  font-style: italic;
+
+  @media (max-width: 768px) {
+    font-size: var(--tamanhoFontePequena);
+  }
+
+  @media (max-width: 480px) {
+    font-size: var(--tamanhoFontePequena);
   }
 `;
 
@@ -313,209 +370,275 @@ const ExportButton = styled(CardActionButton)`
 
 const DropdownMenu = styled.div`
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   right: 0;
-  background: var(--corFundoPrimaria);
+  background: var(--corFundoSecundaria);
   border: 1px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   box-shadow: var(--sombraForte);
   z-index: 1000;
-  min-width: 150px;
-  opacity: ${props => props.isOpen ? '1' : '0'};
+  min-width: 120px;
+  opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(10px)'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
   transition: all var(--transicaoRapida);
-  margin-bottom: 5px;
+  animation: ${props => props.isOpen ? fadeIn : 'none'} 0.3s ease-out;
 `;
 
 const DropdownItem = styled.button`
   width: 100%;
-  padding: 10px 15px;
+  padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--corTextoSecundaria);
+  color: var(--corTextoPrimaria);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  transition: all var(--transicaoRapida);
-  
+  gap: 8px;
+  font-size: var(--tamanhoFontePequena);
+  transition: background var(--transicaoRapida);
+
   &:hover {
-    background: var(--corFundoSecundaria);
-    color: var(--corTextoPrimaria);
+    background: var(--corFundoTerciaria);
   }
-  
+
   &:first-child {
     border-radius: var(--bordaRaioMedia) var(--bordaRaioMedia) 0 0;
   }
-  
+
   &:last-child {
     border-radius: 0 0 var(--bordaRaioMedia) var(--bordaRaioMedia);
   }
 `;
 
-const CardItem = ({
-  item,
-  tipo,
-  onEditar,
-  onExcluir,
-  onVisualizar,
-  onCopiar,
-  onExportar,
+const CardImage = styled.div`
+  width: 100%;
+  height: ${props => props.tipo === 'link' ? '60px' : '120px'};
+  background: ${props => props.imagemUrl ? `url(${props.imagemUrl})` : 'linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%)'};
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--bordaRaioMedia);
+  margin-bottom: var(--espacamentoPequeno);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  animation: ${fadeIn} 0.8s ease-out 0.1s both;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity var(--transicaoRapida);
+  }
+  
+  ${Card}:hover &::before {
+    opacity: 1;
+  }
+`;
+
+const CardImagePlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  color: white;
+  font-size: ${props => props.tipo === 'link' ? '24px' : '32px'};
+  font-weight: 600;
+`;
+
+const CardUrl = styled.div`
+  font-size: ${props => props.tipo === 'link' ? '10px' : 'var(--tamanhoFontePequena)'};
+  color: var(--corTextoSecundaria);
+  margin-bottom: var(--espacamentoPequeno);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
+  max-width: 100%;
+`;
+
+const CardItem = ({ 
+  item, 
+  tipo, 
+  onEditar, 
+  onExcluir, 
+  onTelaCheia, 
+  onExportar, 
   onImprimir,
-  onTelaCheia,
-  onToggleFavorite,
-  isFavorite,
-  showActions = true
+  onFavoritar 
 }) => {
   const [showMenu, setShowMenu] = useState(false);
-  const { categorias } = useNotasAPIContext();
+  const [isFavorita, setIsFavorita] = useState(item?.favorita || false);
+  const [loadingStates, setLoadingStates] = useState({
+    favoritar: false,
+    exportar: false,
+    copiar: false,
+    excluir: false
+  });
+  const { favoritarNota } = useNotasAPIContext();
 
-  // Função para buscar a cor da categoria baseada no nome
-  const getCategoriaCor = (categoriaNome) => {
-    console.log('🔍 Buscando cor para:', categoriaNome, 'Tipo:', typeof categoriaNome);
-    console.log('📝 Item completo:', item);
-    console.log('📂 Categorias disponíveis:', categorias);
-    
-    if (!categoriaNome) return 'var(--corPrimaria)';
-    
-    // Se a categoria já é um objeto com cor, usar a cor diretamente
-    if (typeof categoriaNome === 'object' && categoriaNome.cor) {
-      return categoriaNome.cor;
+  // Atualizar estado local quando o item mudar
+  useEffect(() => {
+    if (item && typeof item === 'object') {
+      setIsFavorita(item.favorita || false);
     }
-    
-    // Se é uma string, buscar a cor no contexto de categorias
-    if (typeof categoriaNome === 'string' && Array.isArray(categorias)) {
-      const categoria = categorias.find(cat => {
-        if (typeof cat === 'object' && cat.nome) {
-          return cat.nome === categoriaNome;
-        }
-        if (typeof cat === 'object' && cat.id) {
-          return cat.id === categoriaNome;
-        }
-        return false;
-      });
-      
-      if (categoria && typeof categoria === 'object' && categoria.cor) {
-        console.log(`✅ Cor encontrada: ${categoria.cor} para categoria: ${categoriaNome}`);
-        return categoria.cor;
-      }
-    }
-    
-    console.log('❌ Usando cor padrão para categoria:', categoriaNome);
-    return 'var(--corPrimaria)'; // Cor padrão
+  }, [item?.favorita]);
+
+  // Verificação de segurança para item null/undefined
+  if (!item || typeof item !== 'object') {
+    console.warn('CardItem recebeu item inválido:', item);
+    return null;
+  }
+
+  const setLoading = (action, loading) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [action]: loading
+    }));
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showMenu && !event.target.closest('.export-dropdown')) {
-        setShowMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu]);
-
-  useEffect(() => {
-    // Forçar a atualização da cor da categoria quando as categorias mudarem
-    // Isso garante que a cor seja atualizada mesmo que o componente não seja recarregado
-    // ou se a categoria já foi carregada anteriormente.
-    // A lógica de busca agora usa o contexto global, então não precisamos de um estado local
-    // para armazenar a cor, mas podemos manter a função para reutilização.
-  }, [categorias]);
-
-  const handleClick = (e) => {
+  const handleToggleFavorite = async (e) => {
     e.stopPropagation();
-    if (tipo === 'link') {
-      window.open(item.url, '_blank');
-    } else {
-      onEditar(item);
+    
+    if (tipo !== 'nota') return;
+    
+    const novaFavorita = !isFavorita;
+    
+    try {
+      setLoading('favoritar', true);
+      setIsFavorita(novaFavorita); // Atualização otimista
+      
+      // Chamar API para favoritar/desfavoritar
+      await favoritarNota(item.id, novaFavorita);
+      
+      // Se houver callback personalizado, chamar
+      if (onFavoritar) {
+        onFavoritar(item.id, novaFavorita);
+      }
+      
+      console.log(`✅ Nota ${novaFavorita ? 'favoritada' : 'desfavoritada'}:`, item.id);
+    } catch (error) {
+      // Reverter estado em caso de erro
+      setIsFavorita(!novaFavorita);
+      console.error('❌ Erro ao favoritar nota:', error);
+      alert('Erro ao favoritar nota. Tente novamente.');
+    } finally {
+      setLoading('favoritar', false);
     }
   };
-
-
 
   const handleEditar = (e) => {
     e.stopPropagation();
-    onEditar(item);
+    if (onEditar) onEditar(item);
   };
 
-  const handleExcluir = (e) => {
+  const handleExcluir = async (e) => {
     e.stopPropagation();
-    if (window.confirm('Tem certeza que deseja excluir este item?')) {
-      onExcluir(item.id);
+    if (onExcluir) {
+      setLoading('excluir', true);
+      try {
+        await onExcluir(item);
+      } finally {
+        setLoading('excluir', false);
+      }
     }
-  };
-
-  const handleCopiar = (e) => {
-    e.stopPropagation();
-    onCopiar(item);
   };
 
   const handleTelaCheia = (e) => {
     e.stopPropagation();
-    onTelaCheia(item);
+    if (onTelaCheia) onTelaCheia(item);
   };
 
-  const handleImprimir = (e) => {
+  const handleCopiar = async (e) => {
     e.stopPropagation();
-    onImprimir(item);
+    try {
+      setLoading('copiar', true);
+      const textoParaCopiar = tipo === 'nota' 
+        ? `${item.titulo || 'Sem título'}\n\n${item.conteudo || ''}`
+        : `${item.nome || item.titulo || 'Sem título'}\n${item.url || ''}`;
+      
+      await navigator.clipboard.writeText(textoParaCopiar);
+      alert('Conteúdo copiado para a área de transferência!');
+    } catch (error) {
+      console.error('Erro ao copiar:', error);
+      alert('Erro ao copiar conteúdo.');
+    } finally {
+      setLoading('copiar', false);
+    }
   };
 
   const handleExportarPDF = async (e) => {
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
-    try {
-      const resultado = await exportarParaPDF(item);
-      if (!resultado.success) {
-        alert(`Erro ao exportar PDF: ${resultado.message}`);
+    e.stopPropagation();
+    if (tipo === 'nota' && onExportar) {
+      try {
+        setLoading('exportar', true);
+        await exportarParaPDF(item.titulo || 'Sem título', item.conteudo || '');
+        alert('PDF exportado com sucesso!');
+      } catch (error) {
+        console.error('Erro ao exportar PDF:', error);
+        alert('Erro ao exportar PDF.');
+      } finally {
+        setLoading('exportar', false);
       }
-    } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
-      alert('Erro ao exportar PDF. Tente novamente.');
     }
   };
 
   const handleExportarDOCX = async (e) => {
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
-    try {
-      const resultado = await exportarParaDOCX(item);
-      if (!resultado.success) {
-        alert(`Erro ao exportar DOCX: ${resultado.message}`);
+    e.stopPropagation();
+    if (tipo === 'nota' && onExportar) {
+      try {
+        setLoading('exportar', true);
+        await exportarParaDOCX(item.titulo || 'Sem título', item.conteudo || '');
+        alert('DOCX exportado com sucesso!');
+      } catch (error) {
+        console.error('Erro ao exportar DOCX:', error);
+        alert('Erro ao exportar DOCX.');
+      } finally {
+        setLoading('exportar', false);
       }
-    } catch (error) {
-      console.error('Erro ao exportar DOCX:', error);
-      alert('Erro ao exportar DOCX. Tente novamente.');
     }
+  };
+
+  const handleImprimir = (e) => {
+    e.stopPropagation();
+    if (onImprimir) onImprimir(item);
+  };
+
+  const getCategoriaCor = (categoria) => {
+    if (!categoria) return 'var(--corPrimaria)';
+    
+    const cores = {
+      'Trabalho': '#FF6B6B',
+      'Pessoal': '#4ECDC4',
+      'Estudo': '#45B7D1',
+      'Saúde': '#96CEB4',
+      'Finanças': '#FFEAA7',
+      'default': 'var(--corPrimaria)'
+    };
+    
+    const nomeCategoria = typeof categoria === 'object' ? categoria.nome : categoria;
+    return cores[nomeCategoria] || cores.default;
   };
 
   const getContent = () => {
     if (tipo === 'nota') {
-      // Função para limpar HTML e extrair texto puro
-      const limparHTML = (html) => {
-        if (!html) return '';
-        
-        // Criar elemento temporário para extrair texto
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        
-        // Extrair texto puro
-        let texto = tempDiv.textContent || tempDiv.innerText || '';
-        
-        // Limpar espaços extras e quebras de linha
-        texto = texto.replace(/\s+/g, ' ').trim();
-        
-        return texto;
-      };
-
-      const conteudoLimpo = limparHTML(item.conteudo);
+      // Usar o ContentRenderer para extrair texto puro de forma segura
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = item.conteudo || '';
+      const texto = tempDiv.textContent || tempDiv.innerText || '';
+      const conteudoLimpo = texto.replace(/\s+/g, ' ').trim();
+      
       return conteudoLimpo.length > 150 
         ? `${conteudoLimpo.substring(0, 150)}...`
         : conteudoLimpo;
@@ -526,77 +649,46 @@ const CardItem = ({
     return '';
   };
 
-  const getTitulo = () => {
-    if (tipo === 'nota') {
-      // Função para limpar HTML e extrair texto puro
-      const limparHTML = (html) => {
-        if (!html) return '';
-        
-        // Criar elemento temporário para extrair texto
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        
-        // Extrair texto puro
-        let texto = tempDiv.textContent || tempDiv.innerText || '';
-        
-        // Limpar espaços extras e quebras de linha
-        texto = texto.replace(/\s+/g, ' ').trim();
-        
-        return texto;
-      };
-
-      return limparHTML(item.titulo);
-    } else {
-      return item.nome;
-    }
-  };
-
-  const getDate = () => {
-    return item.dataCriacao || item.dataModificacao;
-  };
-
   return (
-    <Card onClick={handleClick} tipo={tipo}>
-      <CardHeader tipo={tipo}>
-        <CardTitle
-          tipo={tipo}
+    <Card tipo={tipo} onClick={() => {
+      if (tipo === 'link') {
+        // Para links, abrir a URL diretamente
+        if (item.url) {
+          window.open(item.url, '_blank');
+        }
+      } else {
+        // Para notas, abrir modal de edição
+        if (onEditar) onEditar(item);
+      }
+    }}>
+      {/* Imagem do link */}
+      {tipo === 'link' && (
+        <CardImage 
+          tipo={tipo} 
+          imagemUrl={item.imagemUrl}
         >
-          {getTitulo()}
-        </CardTitle>
-
-      </CardHeader>
-      
-      {tipo === 'link' && item.imagemUrl && (
-        <div style={{ 
-          marginBottom: '4px', 
-          textAlign: 'center',
-          borderRadius: 'var(--bordaRaioMedia)',
-          overflow: 'hidden',
-          height: '60px',
-          width: '100%',
-          position: 'relative'
-        }}>
-          <img 
-            src={item.imagemUrl} 
-            alt={getTitulo()}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              borderRadius: 'var(--bordaRaioMedia)',
-              backgroundColor: 'var(--corFundoSecundaria)'
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
+          {!item.imagemUrl && (
+            <CardImagePlaceholder tipo={tipo}>
+              <FontAwesomeIcon icon={faExternalLinkAlt} />
+            </CardImagePlaceholder>
+          )}
+        </CardImage>
       )}
-      
-      <CardContent tipo={tipo}>
-        {getContent()}
-      </CardContent>
-      
+
+      <CardHeader tipo={tipo}>
+        <CardTitle tipo={tipo}>
+          {tipo === 'nota' ? (item.titulo || 'Sem título') : (item.nome || item.titulo || 'Sem título')}
+        </CardTitle>
+      </CardHeader>
+
+      {/* URL do link - removida para melhor visualização */}
+
+      {tipo === 'nota' && item.conteudo && (
+        <CardContent tipo={tipo}>
+          {getContent()}
+        </CardContent>
+      )}
+
       <CardFooter tipo={tipo}>
         <CardMeta tipo={tipo}>
           {tipo === 'nota' && item.topico && (
@@ -633,8 +725,15 @@ const CardItem = ({
             onClick={handleExcluir}
             title="Excluir"
             tipo={tipo}
+            loading={loadingStates.excluir}
           >
-            <FontAwesomeIcon icon={faTrash} />
+            {loadingStates.excluir ? (
+              <LoadingSpinner>
+                <FontAwesomeIcon icon={faSpinner} />
+              </LoadingSpinner>
+            ) : (
+              <FontAwesomeIcon icon={faTrash} />
+            )}
           </CardActionButton>
           
           {tipo === 'link' && (
@@ -653,11 +752,37 @@ const CardItem = ({
           {tipo === 'nota' && (
             <>
               <CardActionButton
+                onClick={handleToggleFavorite}
+                title={isFavorita ? "Desfavoritar" : "Favoritar"}
+                tipo={tipo}
+                loading={loadingStates.favoritar}
+                style={{ 
+                  color: isFavorita ? '#FFD700' : 'var(--corTextoSecundaria)',
+                  backgroundColor: isFavorita ? 'rgba(255, 215, 0, 0.1)' : 'transparent'
+                }}
+              >
+                {loadingStates.favoritar ? (
+                  <LoadingSpinner>
+                    <FontAwesomeIcon icon={faSpinner} />
+                  </LoadingSpinner>
+                ) : (
+                  <FontAwesomeIcon icon={faStar} />
+                )}
+              </CardActionButton>
+              
+              <CardActionButton
                 onClick={handleCopiar}
                 title="Copiar"
                 tipo={tipo}
+                loading={loadingStates.copiar}
               >
-                <FontAwesomeIcon icon={faCopy} />
+                {loadingStates.copiar ? (
+                  <LoadingSpinner>
+                    <FontAwesomeIcon icon={faSpinner} />
+                  </LoadingSpinner>
+                ) : (
+                  <FontAwesomeIcon icon={faCopy} />
+                )}
               </CardActionButton>
               
               {tipo === 'nota' && typeof onTelaCheia === 'function' && (
@@ -669,11 +794,21 @@ const CardItem = ({
               
               {onExportar && (
                 <ExportDropdown className="export-dropdown">
-                  <ExportButton onClick={(e) => {
-                    e.stopPropagation();
-                    setShowMenu(!showMenu);
-                  }} title="Exportar">
-                    <FontAwesomeIcon icon={faFileExport} />
+                  <ExportButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(!showMenu);
+                    }} 
+                    title="Exportar"
+                    loading={loadingStates.exportar}
+                  >
+                    {loadingStates.exportar ? (
+                      <LoadingSpinner>
+                        <FontAwesomeIcon icon={faSpinner} />
+                      </LoadingSpinner>
+                    ) : (
+                      <FontAwesomeIcon icon={faFileExport} />
+                    )}
                   </ExportButton>
                   <DropdownMenu isOpen={showMenu}>
                     <DropdownItem onClick={(e) => {

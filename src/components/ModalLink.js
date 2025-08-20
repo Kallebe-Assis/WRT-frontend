@@ -367,7 +367,7 @@ const ModalLink = ({
                 {carregando ? 'Salvando...' : 'Salvar'}
               </SaveButton>
               <CancelButton onClick={onClose} disabled={carregando}>
-                Fechar
+                {carregando ? 'Aguarde...' : 'Fechar'}
               </CancelButton>
             </ButtonGroup>
           )}

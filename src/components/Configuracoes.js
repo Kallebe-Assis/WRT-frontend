@@ -689,10 +689,28 @@ const Configuracoes = ({
   // Carregar categorias
   const carregarCategorias = async () => {
     try {
+      console.log('🔄 Carregando categorias no componente Configuracoes...');
+      setCarregando(true);
+      
       const response = await categoriasAPI.listar();
-      setCategorias(response.categorias || []);
+      console.log('📦 Resposta da API no componente:', response);
+      
+      let categoriasData = [];
+      if (response && response.success && response.categorias) {
+        categoriasData = response.categorias;
+      } else if (response && response.data) {
+        categoriasData = response.data;
+      } else if (Array.isArray(response)) {
+        categoriasData = response;
+      }
+      
+      console.log('✅ Categorias processadas:', categoriasData.length, 'categorias');
+      setCategorias(categoriasData);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
+      console.error('❌ Erro ao carregar categorias:', error);
+      setCategorias([]);
+    } finally {
+      setCarregando(false);
     }
   };
 

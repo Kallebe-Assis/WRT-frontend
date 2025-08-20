@@ -12,10 +12,10 @@ async function makeRequest(endpoint, options = {}) {
     if (!response.ok) {
       const errorText = await response.text();
       
-      // Se for erro 401, limpar dados do usuário
+      // Não fazer logout automático em caso de erro 401
+      // Apenas logar o erro para debug
       if (response.status === 401) {
-        localStorage.removeItem('user');
-        window.dispatchEvent(new CustomEvent('userLogout'));
+        console.warn('Erro de autenticação detectado, mas não fazendo logout automático');
       }
       
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -394,6 +394,37 @@ const excluirNotaDefinitivamente = async (id) => {
   }
 };
 
+const favoritarNota = async (id, favorita) => {
+  try {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const url = `https://wrt-back.vercel.app/api/notas/${id}`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      },
+      body: JSON.stringify({ favorita })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao favoritar nota:', error);
+    throw error;
+  }
+};
+
 const alternarFavorito = async (id) => {
   try {
     const response = await makeRequest(`/notas/${id}/favorito`, { method: 'PUT' });
@@ -464,11 +495,76 @@ const buscarFixadas = async () => {
 const listarCategorias = async () => {
   try {
     const userId = getUserId();
+    
     if (!userId) {
       throw new Error('Usuário não autenticado');
     }
 
-    const url = `https://wrt-back.vercel.app/api/categorias?userId=${userId}`;
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&userId=${userId}`;
+    
+    console.log('🌐 Fazendo requisição para categorias:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erro na resposta da API:', response.status, errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('📦 Resposta da API de categorias:', data);
+    
+    // O backend retorna { success: true, data: [...] }
+    // Precisamos converter para { success: true, categorias: [...] }
+    if (data.success && data.data && Array.isArray(data.data)) {
+      console.log('✅ Convertendo estrutura de resposta:', data.data.length, 'categorias');
+      return {
+        success: true,
+        categorias: data.data
+      };
+    }
+    
+    // Se já tem a estrutura esperada
+    if (data.success && data.categorias && Array.isArray(data.categorias)) {
+      console.log('✅ Estrutura já correta:', data.categorias.length, 'categorias');
+      return data;
+    }
+    
+    // Se é um array direto
+    if (Array.isArray(data)) {
+      console.log('✅ Dados são um array:', data.length, 'categorias');
+      return {
+        success: true,
+        categorias: data
+      };
+    }
+    
+    console.warn('⚠️ Estrutura inesperada:', data);
+    return {
+      success: true,
+      categorias: []
+    };
+  } catch (error) {
+    console.error('❌ Erro ao listar categorias:', error);
+    throw error;
+  }
+};
+
+const buscarCategoriaPorId = async (id) => {
+  try {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&id=${id}&userId=${userId}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -484,27 +580,7 @@ const listarCategorias = async () => {
     }
 
     const data = await response.json();
-    
-    // Retornar estrutura esperada
-    if (data.success !== undefined) {
-      return data; // Já tem a estrutura correta
-    } else {
-      // Converter para estrutura esperada
-      return {
-        success: true,
-        categorias: Array.isArray(data) ? data : (data.categorias || [])
-      };
-    }
-  } catch (error) {
-    console.error('Erro ao listar categorias:', error);
-    throw error;
-  }
-};
-
-const buscarCategoriaPorId = async (id) => {
-  try {
-    const response = await makeRequest(`/categorias/${id}`);
-    return response;
+    return data;
   } catch (error) {
     console.error('Erro ao buscar categoria por ID:', error);
     throw error;
@@ -526,7 +602,7 @@ const criarCategoria = async (categoria) => {
       dataModificacao: new Date().toISOString()
     };
 
-    const url = `https://wrt-back.vercel.app/api/categorias`;
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -563,7 +639,7 @@ const atualizarCategoria = async (id, categoria) => {
       dataModificacao: new Date().toISOString()
     };
 
-    const url = `https://wrt-back.vercel.app/api/categorias/${id}`;
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&id=${id}`;
     
     const response = await fetch(url, {
       method: 'PUT',
@@ -594,7 +670,7 @@ const deletarCategoria = async (id) => {
       throw new Error('Usuário não autenticado');
     }
 
-    const url = `https://wrt-back.vercel.app/api/categorias/${id}`;
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&id=${id}`;
     
     const response = await fetch(url, {
       method: 'DELETE',
@@ -619,8 +695,28 @@ const deletarCategoria = async (id) => {
 
 const restaurarCategoria = async (id) => {
   try {
-    const response = await makeRequest(`/categorias/${id}/restaurar`, { method: 'PUT' });
-    return response;
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&id=${id}&action=restaurar&userId=${userId}`;
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Erro ao restaurar categoria:', error);
     throw error;
@@ -629,8 +725,28 @@ const restaurarCategoria = async (id) => {
 
 const buscarCategoriasDeletadas = async () => {
   try {
-    const response = await makeRequest('/categorias/deletadas');
-    return response;
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const url = `https://wrt-back.vercel.app/api/admin-categorias?type=categorias&action=deletadas&userId=${userId}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-id': userId
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Erro ao buscar categorias deletadas:', error);
     throw error;
@@ -657,6 +773,7 @@ export const notasAPI = {
   deletar: deletarNota,
   restaurar: restaurarNota,
   excluirDefinitivamente: excluirNotaDefinitivamente,
+  favoritar: favoritarNota,
   alternarFavorito: alternarFavorito,
   alternarFixado: alternarFixado,
   atualizarOrdenacao: atualizarOrdenacao,

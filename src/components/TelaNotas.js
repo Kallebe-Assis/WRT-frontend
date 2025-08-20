@@ -4,6 +4,7 @@ import ListaItens from './ListaItens';
 
 const TelaNotas = ({ 
   notas, 
+  categorias: categoriasProp,
   carregando, 
   onNovoItem, 
   onEditarItem, 
@@ -32,7 +33,8 @@ const TelaNotas = ({
   const notasFiltradas = useMemo(() => {
     if (!notas) return [];
 
-    let notasProcessadas = [...notas];
+    // Filtrar notas null/undefined antes de processar
+    let notasProcessadas = notas.filter(nota => nota && typeof nota === 'object');
 
     // Aplicar filtro
     if (filtro) {
@@ -74,17 +76,27 @@ const TelaNotas = ({
     return notasProcessadas;
   }, [notas, filtro, ordenacao, direcao]);
 
-  // Obter categorias únicas das notas
+  // Usar categorias passadas como prop ou extrair das notas
   const categorias = useMemo(() => {
+    // Se categorias foram passadas como prop, usar elas
+    if (categoriasProp && Array.isArray(categoriasProp) && categoriasProp.length > 0) {
+      return categoriasProp.map(cat => typeof cat === 'object' ? cat.nome : cat).sort();
+    }
+    
+    // Caso contrário, extrair categorias únicas das notas
     if (!notas) return [];
     
     const categoriasUnicas = notas
-      .map(nota => nota.topico || nota.categoria)
+      .filter(nota => nota && typeof nota === 'object') // Filtrar notas null/undefined
+      .map(nota => {
+        // Tentar diferentes propriedades onde a categoria pode estar
+        return nota.categoria?.nome || nota.categoria || nota.topico || null;
+      })
       .filter(Boolean)
       .filter((value, index, self) => self.indexOf(value) === index);
     
     return categoriasUnicas.sort();
-  }, [notas]);
+  }, [notas, categoriasProp]);
 
   if (carregando) {
     return (

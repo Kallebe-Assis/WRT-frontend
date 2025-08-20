@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
@@ -11,15 +11,67 @@ import {
   faTh,
   faThLarge,
   faThList,
-  faCaretDown
+  faCaretDown,
+  faStar,
+  faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 import CardItem from './CardItem';
 import { copiarParaClipboard } from '../utils/formatacao';
 import NotasLoading from './NotasLoading';
 
+// Animações
+const fadeInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideInLeft = keyframes`
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+`;
+
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+`;
+
+const spin = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  animation: ${spin} 1s linear infinite;
+  color: var(--corPrimaria);
+`;
+
 const Container = styled.div`
   padding: ${props => props.tipo === 'nota' ? 'var(--espacamentoMedio)' : 'var(--espacamentoGrande)'};
   min-height: 100vh;
+  animation: ${fadeInUp} 0.8s ease-out;
 
   @media (max-width: 768px) {
     padding: var(--espacamentoPequeno);
@@ -37,6 +89,7 @@ const Header = styled.div`
   margin-bottom: ${props => props.tipo === 'nota' ? 'var(--espacamentoMedio)' : 'var(--espacamentoGrande)'};
   flex-wrap: wrap;
   gap: var(--espacamentoMedio);
+  animation: ${slideInLeft} 0.6s ease-out;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -77,6 +130,7 @@ const Contador = styled.span`
   border-radius: 20px;
   font-size: var(--tamanhoFontePequena);
   font-weight: 600;
+  animation: ${pulse} 2s ease-in-out infinite;
 `;
 
 const ContainerBotoes = styled.div`
@@ -99,85 +153,28 @@ const ContainerBotoes = styled.div`
   }
 `;
 
-const BotaoAcao = styled.button`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  background: var(--corPrimaria);
-  color: var(--corTextoClara);
-  border: none;
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  min-height: 44px;
-  min-width: 120px;
-  justify-content: center;
-
-  &:hover {
-    background: var(--corSecundaria);
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-    font-size: var(--tamanhoFontePequena);
-    gap: var(--espacamentoPequeno);
-    min-height: 44px;
-    min-width: 100px;
-  }
-
-  @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-    min-width: 80px;
-  }
-`;
-
-const BotaoSecundario = styled(BotaoAcao)`
-  background: var(--corFundoSecundaria);
-  color: var(--corTextoPrimaria);
-  border: 2px solid var(--corBordaPrimaria);
-
-  &:hover {
-    background: var(--corFundoTerciaria);
-    border-color: var(--corPrimaria);
-  }
-`;
-
 const ContainerBusca = styled.div`
   position: relative;
-  flex: 1;
-  max-width: 400px;
+  min-width: 250px;
 
   @media (max-width: 768px) {
-    max-width: 100%;
-    order: -1;
+    min-width: 200px;
   }
 
   @media (max-width: 480px) {
-    max-width: 100%;
+    min-width: 100%;
   }
 `;
 
 const InputBusca = styled.input`
   width: 100%;
-  padding: var(--espacamentoMedio) var(--espacamentoMedio) var(--espacamentoMedio) 40px;
+  padding: 12px 12px 12px 40px;
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   background: var(--corFundoPrimaria);
   color: var(--corTextoPrimaria);
   font-size: var(--tamanhoFonteMedia);
-  transition: all var(--transicaoMedia);
-  min-height: 44px;
+  transition: all var(--transicaoRapida);
 
   &:focus {
     outline: none;
@@ -186,17 +183,17 @@ const InputBusca = styled.input`
   }
 
   &::placeholder {
-    color: var(--corTextoTerciaria);
+    color: var(--corTextoSecundaria);
   }
 
   @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno) var(--espacamentoPequeno) var(--espacamentoPequeno) 35px;
+    padding: 10px 10px 10px 35px;
     font-size: var(--tamanhoFontePequena);
     min-height: 44px;
   }
 
   @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno) var(--espacamentoPequeno) var(--espacamentoPequeno) 30px;
+    padding: 8px 8px 8px 30px;
     font-size: var(--tamanhoFontePequena);
     min-height: 44px;
   }
@@ -232,10 +229,16 @@ const BotaoFiltro = styled.button`
   min-height: 44px;
   min-width: 80px;
   justify-content: center;
+  position: relative;
 
   &:hover {
     background: var(--corFundoTerciaria);
     border-color: var(--corPrimaria);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &.ativo {
@@ -243,6 +246,11 @@ const BotaoFiltro = styled.button`
     color: var(--corTextoClara);
     border-color: var(--corPrimaria);
   }
+
+  ${props => props.loading && `
+    pointer-events: none;
+    opacity: 0.7;
+  `}
 
   @media (max-width: 768px) {
     padding: var(--espacamentoPequeno) var(--espacamentoMedio);
@@ -254,6 +262,60 @@ const BotaoFiltro = styled.button`
     padding: var(--espacamentoPequeno);
     font-size: var(--tamanhoFontePequena);
     min-width: 60px;
+  }
+`;
+
+// Botão de filtro de favoritos
+const BotaoFavoritos = styled(BotaoFiltro)`
+  &.ativo {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+    border-color: #FFD700;
+  }
+`;
+
+const BotaoAcao = styled.button`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  padding: var(--espacamentoMedio) var(--espacamentoGrande);
+  background: linear-gradient(135deg, var(--corPrimaria) 0%, var(--corSecundaria) 100%);
+  color: var(--corTextoClara);
+  border: none;
+  border-radius: var(--bordaRaioMedia);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+  min-height: 44px;
+  white-space: nowrap;
+  position: relative;
+
+  &:hover {
+    background: linear-gradient(135deg, var(--corSecundaria) 0%, var(--corPrimaria) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--sombraForte);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  ${props => props.loading && `
+    pointer-events: none;
+    opacity: 0.7;
+  `}
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+    font-size: var(--tamanhoFontePequena);
+    min-height: 44px;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    min-height: 44px;
   }
 `;
 
@@ -279,6 +341,7 @@ const GridContainer = styled.div`
   }};
   gap: ${props => props.tipo === 'link' ? '8px' : 'var(--espacamentoGrande)'};
   margin-top: var(--espacamentoGrande);
+  animation: ${fadeInUp} 1s ease-out 0.3s both;
 
   @media (max-width: 768px) {
     grid-template-columns: ${props => {
@@ -330,6 +393,7 @@ const EmptyState = styled.div`
   padding: var(--espacamentoExtraGrande);
   color: var(--corTextoSecundaria);
   font-size: var(--tamanhoFonteGrande);
+  animation: ${fadeInUp} 1s ease-out;
 
   @media (max-width: 768px) {
     padding: var(--espacamentoGrande);
@@ -339,6 +403,165 @@ const EmptyState = styled.div`
   @media (max-width: 480px) {
     padding: var(--espacamentoMedio);
     font-size: var(--tamanhoFontePequena);
+  }
+`;
+
+const IconeVazio = styled.div`
+  font-size: 4rem;
+  color: var(--corTextoTerciaria);
+  margin-bottom: var(--espacamentoMedio);
+  animation: ${pulse} 3s ease-in-out infinite;
+
+  @media (max-width: 768px) {
+    font-size: 3rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 2rem;
+  }
+`;
+
+const FiltroContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoMedio);
+  flex-wrap: wrap;
+  animation: ${slideInLeft} 0.8s ease-out 0.2s both;
+
+  @media (max-width: 768px) {
+    gap: var(--espacamentoPequeno);
+    margin-bottom: var(--espacamentoPequeno);
+  }
+`;
+
+const BotaoLimparFiltro = styled.button`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  background: var(--corFundoTerciaria);
+  color: var(--corTextoSecundaria);
+  border: 1px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  font-size: var(--tamanhoFontePequena);
+  cursor: pointer;
+  transition: all var(--transicaoRapida);
+
+  &:hover {
+    background: var(--corFundoSecundaria);
+    color: var(--corTextoPrimaria);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+  }
+`;
+
+const ContadorFiltros = styled.span`
+  color: var(--corTextoSecundaria);
+  font-size: var(--tamanhoFontePequena);
+  font-style: italic;
+`;
+
+// Componentes de dropdown existentes...
+const DropdownCategoria = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const DropdownBotao = styled.button`
+  display: flex;
+  align-items: center;
+  gap: var(--espacamentoPequeno);
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  background: var(--corFundoPrimaria);
+  color: var(--corTextoPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  font-size: var(--tamanhoFonteMedia);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transicaoMedia);
+  min-height: 44px;
+  min-width: 180px;
+  justify-content: space-between;
+
+  &:hover {
+    border-color: var(--corPrimaria);
+    background: var(--corFundoSecundaria);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--corPrimaria);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    min-width: 150px;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--espacamentoPequeno);
+    font-size: var(--tamanhoFontePequena);
+    min-width: 120px;
+  }
+`;
+
+const SetaDropdown = styled.div`
+  transform: ${props => props.aberto ? 'rotate(180deg)' : 'rotate(0deg)'};
+  transition: transform var(--transicaoRapida);
+`;
+
+const DropdownLista = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--corFundoPrimaria);
+  border: 2px solid var(--corBordaPrimaria);
+  border-radius: var(--bordaRaioMedia);
+  box-shadow: var(--sombraForte);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  opacity: ${props => props.aberto ? 1 : 0};
+  visibility: ${props => props.aberto ? 'visible' : 'hidden'};
+  transform: ${props => props.aberto ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all var(--transicaoRapida);
+`;
+
+const DropdownItem = styled.div`
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  cursor: pointer;
+  transition: background var(--transicaoRapida);
+  background: ${props => props.selecionado ? 'var(--corPrimaria)' : 'transparent'};
+  color: ${props => props.selecionado ? 'var(--corTextoClara)' : 'var(--corTextoPrimaria)'};
+
+  &:hover {
+    background: ${props => props.selecionado ? 'var(--corSecundaria)' : 'var(--corFundoSecundaria)'};
+  }
+
+  &:first-child {
+    border-radius: var(--bordaRaioMedia) var(--bordaRaioMedia) 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 var(--bordaRaioMedia) var(--bordaRaioMedia);
   }
 `;
 
@@ -367,6 +590,11 @@ const BotaoVisualizacao = styled.button`
   &:hover {
     border-color: var(--corPrimaria);
     background: var(--corFundoSecundaria);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:focus {
@@ -398,37 +626,27 @@ const DropdownVisualizacao = styled.div`
   box-shadow: var(--sombraForte);
   z-index: 1000;
   min-width: 150px;
-  opacity: ${props => props.ativo ? '1' : '0'};
+  opacity: ${props => props.ativo ? 1 : 0};
   visibility: ${props => props.ativo ? 'visible' : 'hidden'};
   transform: ${props => props.ativo ? 'translateY(0)' : 'translateY(-10px)'};
-  transition: all var(--transicaoMedia);
-
-  @media (max-width: 768px) {
-    min-width: 130px;
-  }
-
-  @media (max-width: 480px) {
-    min-width: 120px;
-  }
+  transition: all var(--transicaoRapida);
 `;
 
-const OpcaoVisualizacao = styled.button`
+const OpcaoVisualizacao = styled.div`
+  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
+  cursor: pointer;
+  transition: background var(--transicaoRapida);
   display: flex;
   align-items: center;
   gap: var(--espacamentoPequeno);
-  width: 100%;
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  background: transparent;
-  color: var(--corTextoPrimaria);
-  border: none;
-  font-size: var(--tamanhoFonteMedia);
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-  text-align: left;
 
   &:hover {
     background: var(--corFundoSecundaria);
-    color: var(--corPrimaria);
+  }
+
+  &.ativo {
+    background: var(--corPrimaria);
+    color: var(--corTextoClara);
   }
 
   &:first-child {
@@ -438,342 +656,157 @@ const OpcaoVisualizacao = styled.button`
   &:last-child {
     border-radius: 0 0 var(--bordaRaioMedia) var(--bordaRaioMedia);
   }
-
-  &.ativo {
-    background: var(--corPrimaria);
-    color: var(--corTextoClara);
-  }
-
-  @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-  }
-
-  @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-  }
-`;
-
-const FiltroContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  margin-bottom: var(--espacamentoMedio);
-
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    gap: var(--espacamentoPequeno);
-    margin-bottom: var(--espacamentoPequeno);
-  }
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--espacamentoPequeno);
-  }
-`;
-
-const FiltroSelect = styled.select`
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  background: var(--corFundoPrimaria);
-  color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFonteMedia);
-  cursor: pointer;
-  transition: all var(--transicaoMedia);
-  min-width: 150px;
-
-  &:focus {
-    outline: none;
-    border-color: var(--corPrimaria);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-    min-width: 120px;
-  }
-
-  @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-    min-width: 100%;
-  }
-`;
-
-const BotaoLimparFiltro = styled.button`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-  padding: var(--espacamentoPequeno) var(--espacamentoMedio);
-  background: var(--corFundoSecundaria);
-  color: var(--corTextoSecundaria);
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFontePequena);
-  cursor: pointer;
-  transition: all var(--transicaoRapida);
-
-  &:hover {
-    background: var(--corFundoTerciaria);
-    border-color: var(--corPrimaria);
-    color: var(--corPrimaria);
-  }
-
-  @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    font-size: var(--tamanhoFontePequena);
-    width: 100%;
-    justify-content: center;
-  }
-`;
-
-const ContadorFiltros = styled.span`
-  background: var(--corPrimaria);
-  color: var(--corTextoClara);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: var(--tamanhoFontePequena);
-  font-weight: 600;
-  margin-left: var(--espacamentoPequeno);
-
-  @media (max-width: 768px) {
-    padding: 1px 6px;
-    font-size: 10px;
-  }
-`;
-
-const IconeVazio = styled.div`
-  font-size: 4rem;
-  color: var(--corTextoTerciaria);
-  margin-bottom: var(--espacamentoMedio);
-`;
-
-const DropdownCategoria = styled.div`
-  position: relative;
-  min-width: 180px;
-  margin-left: var(--espacamentoMedio);
-`;
-
-const DropdownBotao = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-width: 180px;
-  padding: 12px 18px;
-  background: var(--corFundoSecundaria);
-  color: var(--corTextoPrimaria);
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  font-size: var(--tamanhoFonteMedia);
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: border-color 0.2s, box-shadow 0.2s;
-  position: relative;
-  z-index: 2;
-  &:hover, &:focus {
-    border-color: var(--corPrimaria);
-    box-shadow: 0 4px 16px rgba(102,126,234,0.10);
-    outline: none;
-  }
-`;
-
-const SetaDropdown = styled.span`
-  display: flex;
-  align-items: center;
-  margin-left: 8px;
-  transition: transform 0.25s cubic-bezier(.4,1.4,.6,1);
-  svg {
-    display: block;
-    transition: inherit;
-    transform: ${({ aberto }) => (aberto ? 'rotate(-180deg)' : 'rotate(0deg)')};
-  }
-`;
-
-const DropdownLista = styled.ul`
-  position: absolute;
-  top: 110%;
-  left: 0;
-  width: 100%;
-  background: var(--corFundoSecundaria);
-  border: 2px solid var(--corBordaPrimaria);
-  border-radius: var(--bordaRaioMedia);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-  margin: 0;
-  padding: 8px 0;
-  list-style: none;
-  opacity: ${({ aberto }) => (aberto ? 1 : 0)};
-  pointer-events: ${({ aberto }) => (aberto ? 'auto' : 'none')};
-  transform: ${({ aberto }) => (aberto ? 'translateY(0)' : 'translateY(-10px)')};
-  transition: opacity 0.25s, transform 0.25s cubic-bezier(.4,1.4,.6,1);
-  z-index: 10;
-`;
-
-const DropdownItem = styled.li`
-  padding: 12px 20px;
-  color: ${({ selecionado }) => (selecionado ? 'var(--corPrimaria)' : 'var(--corTextoPrimaria)')};
-  background: ${({ selecionado }) => (selecionado ? 'rgba(102,126,234,0.08)' : 'transparent')};
-  font-weight: ${({ selecionado }) => (selecionado ? 700 : 400)};
-  cursor: pointer;
-  transition: background 0.18s, color 0.18s;
-  border-left: 3px solid transparent;
-  &:hover {
-    background: rgba(102,126,234,0.13);
-    color: var(--corPrimaria);
-    border-left: 3px solid var(--corPrimaria);
-  }
 `;
 
 const ListaItens = ({
-  itens,
-  tipo,
-  titulo,
-  icone,
-  carregando,
+  itens = [],
+  tipo = 'nota',
+  titulo = 'Itens',
+  icone = faList,
   onNovo,
   onEditar,
   onExcluir,
   onVisualizar,
-  onCopiar,
   onExportar,
   onImprimir,
   onTelaCheia,
-  modoOrdenacao = 'automatico',
-  categorias = []
+  onFavoritar,
+  categorias
 }) => {
-  // Verificar se onTelaCheia é uma função válida
-  const handleTelaCheia = (item) => {
-    if (typeof onTelaCheia === 'function') {
-      onTelaCheia(item);
-    } else {
-      console.warn('onTelaCheia não é uma função válida:', onTelaCheia);
-    }
-  };
   const [termoBusca, setTermoBusca] = useState('');
-  const [filtroAtivo, setFiltroAtivo] = useState('todos');
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
+  const [filtroFavoritos, setFiltroFavoritos] = useState(false);
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const [visualizacao, setVisualizacao] = useState('auto');
   const [dropdownVisualizacaoAberto, setDropdownVisualizacaoAberto] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({
+    novo: false,
+    buscar: false,
+    filtrar: false
+  });
 
-  // Fechar dropdown quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownVisualizacaoAberto) {
-        const dropdown = document.querySelector('[data-dropdown="visualizacao"]');
-        if (dropdown && !dropdown.contains(event.target)) {
-          setDropdownVisualizacaoAberto(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownVisualizacaoAberto]);
-
-  // Obter categorias únicas das notas
+  // Usar categorias passadas como prop ou extrair dos itens se não fornecidas
   const categoriasUnicas = useMemo(() => {
-    if (tipo === 'nota' && itens) {
-      const categorias = itens
-        .map(item => item.topico || item.categoria)
-        .filter(Boolean)
-        .filter((value, index, self) => self.indexOf(value) === index);
-      return categorias.sort();
+    console.log('🔍 Processando categorias no ListaItens:', { categorias, itens: itens?.length });
+    
+    // Se categorias foram passadas como prop, usar elas
+    if (categorias && Array.isArray(categorias) && categorias.length > 0) {
+      const categoriasProcessadas = categorias.map(cat => {
+        if (typeof cat === 'object' && cat && cat.nome) {
+          return cat.nome;
+        }
+        return cat;
+      }).filter(Boolean);
+      
+      console.log('📦 Categorias processadas:', categoriasProcessadas);
+      return categoriasProcessadas.sort();
     }
-    return [];
-  }, [itens, tipo]);
+    
+    // Caso contrário, extrair categorias únicas dos itens
+    const categoriasExtraidas = itens
+      .filter(item => item && typeof item === 'object') // Filtrar itens null/undefined
+      .map(item => {
+        // Verificar diferentes possíveis localizações da categoria
+        const categoria = item.categoria || item.topico || null;
+        if (!categoria) return null;
+        
+        // Extrair nome da categoria de diferentes formatos
+        if (typeof categoria === 'object' && categoria) {
+          return categoria.nome || categoria.titulo || categoria.id || null;
+        } else {
+          return categoria;
+        }
+      })
+      .filter(Boolean);
+    
+    const resultado = [...new Set(categoriasExtraidas)].sort();
+    console.log('📋 Categorias extraídas dos itens:', resultado);
+    return resultado;
+  }, [itens, categorias]);
 
-  // Filtrar itens baseado no termo de busca e categoria
-  const itensFiltrados = itens?.filter(item => {
+  // Filtrar itens baseado nos filtros aplicados
+  const itensFiltrados = useMemo(() => {
+    console.log('🔍 Aplicando filtros:', { 
+      categoriaFiltro, 
+      termoBusca, 
+      filtroFavoritos, 
+      totalItens: itens?.length 
+    });
+    
+    // Filtrar itens null/undefined primeiro
+    let filtrados = itens.filter(item => item && typeof item === 'object');
+
     // Filtro por termo de busca
     if (termoBusca) {
-      const busca = termoBusca.toLowerCase();
-      if (tipo === 'nota') {
-        const matchTitulo = item.titulo?.toLowerCase().includes(busca);
-        const matchConteudo = item.conteudo?.toLowerCase().includes(busca);
-        const matchTopico = item.topico?.toLowerCase().includes(busca);
-        if (!matchTitulo && !matchConteudo && !matchTopico) {
-          return false;
-        }
-      } else if (tipo === 'link') {
-        const matchNome = item.nome?.toLowerCase().includes(busca);
-        const matchUrl = item.url?.toLowerCase().includes(busca);
-        const matchCategoria = item.categoria?.toLowerCase().includes(busca);
-        if (!matchNome && !matchUrl && !matchCategoria) {
-          return false;
-        }
-      }
+      const termo = termoBusca.toLowerCase();
+      filtrados = filtrados.filter(item => {
+        const titulo = item.titulo?.toLowerCase() || '';
+        const nome = item.nome?.toLowerCase() || '';
+        const conteudo = item.conteudo?.toLowerCase() || '';
+        const url = item.url?.toLowerCase() || '';
+        return titulo.includes(termo) || nome.includes(termo) || conteudo.includes(termo) || url.includes(termo);
+      });
+      console.log('🔍 Após filtro de busca:', filtrados.length, 'itens');
     }
 
-    // Filtro por categoria/tópico
+    // Filtro por categoria
     if (categoriaFiltro !== 'todas') {
-      if (tipo === 'nota') {
-        const itemCategoria = item.topico || item.categoria;
-        if (itemCategoria !== categoriaFiltro) {
+      console.log('🔍 Aplicando filtro de categoria:', categoriaFiltro);
+      filtrados = filtrados.filter(item => {
+        // Verificar diferentes possíveis localizações da categoria
+        const categoria = item.categoria || item.topico || null;
+        if (!categoria) {
+          console.log('❌ Item sem categoria:', item.titulo || item.nome);
           return false;
         }
-      } else if (tipo === 'link') {
-        const itemCategoria = typeof item.categoria === 'object' 
-          ? item.categoria.nome 
-          : item.categoria;
-        if (itemCategoria !== categoriaFiltro) {
+        
+        // Extrair nome da categoria de diferentes formatos
+        let nomeCategoria;
+        if (typeof categoria === 'object' && categoria) {
+          nomeCategoria = categoria.nome || categoria.titulo || categoria.id || null;
+        } else {
+          nomeCategoria = categoria;
+        }
+        
+        if (!nomeCategoria) {
+          console.log('❌ Não foi possível extrair nome da categoria:', categoria);
           return false;
         }
-      }
+        
+        const match = nomeCategoria === categoriaFiltro;
+        console.log('🔍 Comparando:', { 
+          itemTitulo: item.titulo || item.nome, 
+          categoriaOriginal: categoria,
+          nomeCategoria, 
+          categoriaFiltro, 
+          match 
+        });
+        return match;
+      });
+      console.log('🔍 Após filtro de categoria:', filtrados.length, 'itens');
     }
 
-    return true;
-  }) || [];
-
-  // Mostrar loading se estiver carregando
-  if (carregando) {
-    return (
-      <Container tipo={tipo}>
-        <NotasLoading
-          mensagem={`Carregando ${tipo === 'nota' ? 'notas' : 'links'}...`}
-          subMensagem="Conectando com o servidor"
-        />
-      </Container>
-    );
-  }
-
-  const handleCopiar = async (item) => {
-    const textoParaCopiar = tipo === 'nota' 
-      ? `${item.titulo}\n${item.conteudo}`
-      : `${item.nome}\n${item.url}`;
-    
-    const sucesso = await copiarParaClipboard(textoParaCopiar);
-    if (sucesso && onCopiar) {
-      onCopiar('Conteúdo copiado para a área de transferência!');
+    // Filtro por favoritos (apenas para notas)
+    if (filtroFavoritos && tipo === 'nota') {
+      filtrados = filtrados.filter(item => item.favorita === true);
+      console.log('🔍 Após filtro de favoritos:', filtrados.length, 'itens');
     }
+
+    console.log('✅ Filtros aplicados. Resultado final:', filtrados.length, 'itens');
+    return filtrados;
+  }, [itens, termoBusca, categoriaFiltro, filtroFavoritos, tipo]);
+
+  const setLoading = (action, loading) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [action]: loading
+    }));
   };
-
-  const handleClickLink = (link) => {
-    if (link.url) {
-      window.open(link.url, '_blank');
-    }
-  };
-
-
 
   const limparFiltros = () => {
     setTermoBusca('');
-    setFiltroAtivo('todos');
     setCategoriaFiltro('todas');
+    setFiltroFavoritos(false);
   };
 
   const toggleDropdownVisualizacao = () => {
@@ -792,7 +825,6 @@ const ListaItens = ({
       case 'grade2':
         return faTh;
       case 'grade4':
-        return faThLarge;
       case 'grade6':
         return faThLarge;
       default:
@@ -815,7 +847,46 @@ const ListaItens = ({
     }
   };
 
-  const temFiltrosAtivos = termoBusca || categoriaFiltro !== 'todas';
+  const temFiltrosAtivos = termoBusca || categoriaFiltro !== 'todas' || filtroFavoritos;
+
+  const handleCopiar = async (item) => {
+    try {
+      const textoParaCopiar = tipo === 'nota' 
+        ? `${item.titulo || 'Sem título'}\n\n${item.conteudo || ''}`
+        : `${item.nome || item.titulo || 'Sem título'}\n${item.url || ''}`;
+      
+      await copiarParaClipboard(textoParaCopiar);
+    } catch (error) {
+      console.error('Erro ao copiar:', error);
+    }
+  };
+
+  const handleClickLink = (link) => {
+    window.open(link.url, '_blank');
+  };
+
+  const handleTelaCheia = (nota) => {
+    if (onTelaCheia) {
+      onTelaCheia(nota);
+    }
+  };
+
+  const handleFavoritar = (id, favorita) => {
+    if (onFavoritar) {
+      onFavoritar(id, favorita);
+    }
+  };
+
+  const handleNovo = async () => {
+    if (onNovo) {
+      setLoading('novo', true);
+      try {
+        await onNovo();
+      } finally {
+        setLoading('novo', false);
+      }
+    }
+  };
 
   // Se for tipo 'link', renderizar grade de links
   if (tipo === 'link') {
@@ -841,8 +912,14 @@ const ListaItens = ({
               />
             </ContainerBusca>
 
-            <BotaoAcao onClick={onNovo}>
-              <FontAwesomeIcon icon={faPlus} />
+            <BotaoAcao onClick={handleNovo} loading={loadingStates.novo}>
+              {loadingStates.novo ? (
+                <LoadingSpinner>
+                  <FontAwesomeIcon icon={faSpinner} />
+                </LoadingSpinner>
+              ) : (
+                <FontAwesomeIcon icon={faPlus} />
+              )}
               Novo Link
             </BotaoAcao>
           </ContainerBotoes>
@@ -898,6 +975,16 @@ const ListaItens = ({
               onChange={(e) => setTermoBusca(e.target.value)}
             />
           </ContainerBusca>
+
+          {/* Filtro de favoritos */}
+          <BotaoFavoritos
+            className={filtroFavoritos ? 'ativo' : ''}
+            onClick={() => setFiltroFavoritos(!filtroFavoritos)}
+            title={filtroFavoritos ? "Mostrar todas as notas" : "Mostrar apenas favoritas"}
+          >
+            <FontAwesomeIcon icon={faStar} />
+            Favoritas
+          </BotaoFavoritos>
 
           {/* Filtro de categoria customizado */}
           <DropdownCategoria>
@@ -993,15 +1080,21 @@ const ListaItens = ({
             </VisualizacaoDropdown>
           )}
 
-          <BotaoAcao onClick={onNovo}>
-            <FontAwesomeIcon icon={faPlus} />
+          <BotaoAcao onClick={handleNovo} loading={loadingStates.novo}>
+            {loadingStates.novo ? (
+              <LoadingSpinner>
+                <FontAwesomeIcon icon={faSpinner} />
+              </LoadingSpinner>
+            ) : (
+              <FontAwesomeIcon icon={faPlus} />
+            )}
             Nova Nota
           </BotaoAcao>
         </ContainerBotoes>
       </Header>
 
       {/* Filtro por categoria/tópico */}
-      {categoriasUnicas.length > 0 && (
+      {(categoriasUnicas.length > 0 || filtroFavoritos) && (
         <FiltroContainer>
           {temFiltrosAtivos && (
             <BotaoLimparFiltro onClick={limparFiltros}>
@@ -1018,34 +1111,34 @@ const ListaItens = ({
         </FiltroContainer>
       )}
 
-              {itensFiltrados.length === 0 ? (
-          <EmptyState>
-            <IconeVazio>
-              <FontAwesomeIcon icon={icone} />
-            </IconeVazio>
-            <h3>
-              {temFiltrosAtivos 
-                ? 'Nenhuma nota encontrada com os filtros aplicados' 
-                : 'Nenhuma nota encontrada'
-              }
-            </h3>
-            <p>
-              {temFiltrosAtivos 
-                ? 'Tente ajustar os filtros ou clique em "Limpar Filtros" para ver todas as notas.'
-                : 'Clique em "Nova Nota" para começar a criar suas anotações.'
-              }
-            </p>
-            {temFiltrosAtivos && (
-              <BotaoLimparFiltro 
-                onClick={limparFiltros}
-                style={{ marginTop: 'var(--espacamentoMedio)' }}
-              >
-                <FontAwesomeIcon icon={faTimes} />
-                Limpar Filtros
-              </BotaoLimparFiltro>
-            )}
-          </EmptyState>
-        ) : (
+      {itensFiltrados.length === 0 ? (
+        <EmptyState>
+          <IconeVazio>
+            <FontAwesomeIcon icon={icone} />
+          </IconeVazio>
+          <h3>
+            {temFiltrosAtivos 
+              ? 'Nenhuma nota encontrada com os filtros aplicados' 
+              : 'Nenhuma nota encontrada'
+            }
+          </h3>
+          <p>
+            {temFiltrosAtivos 
+              ? 'Tente ajustar os filtros ou clique em "Limpar Filtros" para ver todas as notas.'
+              : 'Clique em "Nova Nota" para começar a criar suas anotações.'
+            }
+          </p>
+          {temFiltrosAtivos && (
+            <BotaoLimparFiltro 
+              onClick={limparFiltros}
+              style={{ marginTop: 'var(--espacamentoMedio)' }}
+            >
+              <FontAwesomeIcon icon={faTimes} />
+              Limpar Filtros
+            </BotaoLimparFiltro>
+          )}
+        </EmptyState>
+      ) : (
         <GridContainer tipo={tipo} visualizacao={visualizacao}>
           {itensFiltrados.map((nota) => (
             <CardItem
@@ -1059,6 +1152,7 @@ const ListaItens = ({
               onExportar={() => onExportar(nota)}
               onImprimir={() => onImprimir(nota)}
               onTelaCheia={() => handleTelaCheia(nota)}
+              onFavoritar={handleFavoritar}
             />
           ))}
         </GridContainer>

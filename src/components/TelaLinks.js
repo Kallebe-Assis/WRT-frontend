@@ -29,7 +29,8 @@ const TelaLinks = ({
   const linksFiltrados = useMemo(() => {
     if (!links) return [];
 
-    let linksProcessados = [...links];
+    // Filtrar links null/undefined antes de processar
+    let linksProcessados = links.filter(link => link && typeof link === 'object');
 
     // Aplicar filtro
     if (filtro) {
@@ -38,7 +39,7 @@ const TelaLinks = ({
         link.nome?.toLowerCase().includes(filtroLower) ||
         link.url?.toLowerCase().includes(filtroLower) ||
         link.descricao?.toLowerCase().includes(filtroLower) ||
-        (typeof link.categoria === 'object' ? link.categoria.nome : link.categoria)?.toLowerCase().includes(filtroLower)
+        (link.categoria && typeof link.categoria === 'object' ? link.categoria.nome : link.categoria)?.toLowerCase().includes(filtroLower)
       );
     }
 
@@ -77,7 +78,11 @@ const TelaLinks = ({
     if (!links) return [];
     
     const categoriasUnicas = links
-      .map(link => typeof link.categoria === 'object' ? link.categoria.nome : link.categoria)
+      .filter(link => link && typeof link === 'object') // Filtrar links null/undefined
+      .map(link => {
+        if (!link.categoria) return null;
+        return typeof link.categoria === 'object' ? link.categoria.nome : link.categoria;
+      })
       .filter(Boolean)
       .filter((value, index, self) => self.indexOf(value) === index);
     
