@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faStickyNote,
   faLink,
+  faCalendarAlt,
   faCog,
   faSearch,
   faBars,
@@ -530,6 +531,11 @@ const MenuLateral = ({
       titulo: 'Meus Links',
       icone: faLink,
       contador: totalLinks
+    },
+    {
+      id: 'agenda',
+      titulo: 'Minha Agenda',
+      icone: faCalendarAlt
     }
   ];
 

@@ -35,89 +35,69 @@ const ModalOverlay = styled.div`
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--corFundoModal);
+  background: var(--corFundoSecundaria);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000; /* Reduzir o z-index do modal para permitir que os dropdowns apareçam na frente */
-  padding: var(--espacamentoPequeno);
-
-  @media (max-width: 768px) {
-    padding: var(--espacamentoPequeno);
-    align-items: flex-start;
-    padding-top: 60px;
-  }
-
-  @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    padding-top: 50px;
-  }
+  flex-direction: column;
+  z-index: 1000;
 `;
 
 const ModalContent = styled.div`
   background: var(--corFundoSecundaria);
-  border-radius: var(--bordaRaioGrande);
-  box-shadow: var(--sombraForte);
-  max-width: 95vw;
-  max-height: 95vh;
+  width: 100%;
+  height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  width: 90vw;
-  min-width: 800px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    max-width: 100%;
-    min-width: auto;
-    max-height: calc(100vh - 120px);
-    border-radius: var(--bordaRaioMedia);
-  }
-
-  @media (max-width: 480px) {
-    max-height: calc(100vh - 100px);
-    border-radius: var(--bordaRaioPequena);
-  }
+  max-height: 100vh;
 `;
 
 const ModalHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--espacamentoGrande);
-  border-bottom: 2px solid var(--corBordaPrimaria);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--corBordaPrimaria);
   background: linear-gradient(135deg, var(--corFundoTerciaria) 0%, var(--corFundoSecundaria) 100%);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 50px;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: var(--espacamentoMedio);
+    padding: 4px 8px;
+    height: 45px;
   }
 
   @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
+    padding: 4px 8px;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--espacamentoPequeno);
+    gap: 4px;
+    height: auto;
+    min-height: 40px;
   }
 `;
 
 const HeaderLeft = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--espacamentoMedio);
+  gap: 6px;
 `;
 
 const HeaderRight = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--espacamentoPequeno);
+  gap: 4px;
 `;
 
 const BotaoHeader = styled.button`
   background: transparent;
   border: 1px solid var(--corBordaPrimaria);
   color: var(--corTextoSecundaria);
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: var(--bordaRaioPequena);
   font-size: 0.8rem;
   cursor: pointer;
@@ -125,6 +105,7 @@ const BotaoHeader = styled.button`
   display: flex;
   align-items: center;
   gap: 4px;
+  height: 32px;
 
   &:hover {
     background: var(--corFundoHover);
@@ -166,17 +147,17 @@ const BotaoExcluir = styled(BotaoHeader)`
 
 const ModalTitle = styled.h2`
   color: var(--corTextoPrimaria);
-  font-size: var(--tamanhoFonteTitulo);
+  font-size: var(--tamanhoFonteMedia);
   font-weight: 700;
   margin: 0;
   flex: 1;
 
   @media (max-width: 768px) {
-    font-size: var(--tamanhoFonteExtraGrande);
+    font-size: var(--tamanhoFontePequena);
   }
 
   @media (max-width: 480px) {
-    font-size: var(--tamanhoFonteGrande);
+    font-size: var(--tamanhoFontePequena);
     text-align: center;
   }
 `;
@@ -185,10 +166,15 @@ const BotaoFechar = styled.button`
   background: none;
   border: none;
   color: var(--corTextoSecundaria);
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.2rem;
   border-radius: var(--bordaRaioPequena);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     background: var(--corFundoHover);
@@ -202,7 +188,8 @@ const ModalBody = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: 70vh;
+  min-height: 0;
+  max-height: calc(100vh - 50px);
   scrollbar-width: thin;
   scrollbar-color: var(--corBordaPrimaria) transparent;
 
@@ -225,18 +212,17 @@ const ModalBody = styled.div`
 
   @media (max-width: 768px) {
     padding: var(--espacamentoMedio);
-    max-height: 60vh;
+    max-height: calc(100vh - 45px);
   }
 
   @media (max-width: 480px) {
     padding: var(--espacamentoPequeno);
-    max-height: 50vh;
+    max-height: calc(100vh - 40px);
   }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: var(--espacamentoGrande);
-  flex: 1;
   display: flex;
   flex-direction: column;
 
@@ -254,33 +240,44 @@ const FormGroupConteudo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
-  max-height: 60vh;
-  overflow: visible;
+  min-height: 0;
+  overflow: hidden;
+  
+  > div {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 `;
 
 const FormRow = styled.div`
   display: flex;
   gap: var(--espacamentoMedio);
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
+  flex-shrink: 0;
 `;
 
 const FormGroupTitulo = styled.div`
   flex: 1;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
+  flex-shrink: 0;
 `;
 
 const FormGroupTopico = styled.div`
   width: 200px;
-  margin-bottom: var(--espacamentoMedio);
+  margin-bottom: var(--espacamentoPequeno);
+  flex-shrink: 0;
 `;
 
 const Label = styled.label`
   display: block;
-  margin-bottom: var(--espacamentoPequeno);
+  margin-bottom: 4px;
   color: var(--corTextoPrimaria);
   font-weight: 600;
-  font-size: var(--tamanhoFonteMedia);
+  font-size: var(--tamanhoFontePequena);
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     font-size: var(--tamanhoFontePequena);
@@ -289,13 +286,15 @@ const Label = styled.label`
 
 const Input = styled.input`
   width: 100%;
-  padding: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   background: var(--corFundoPrimaria);
   color: var(--corTextoPrimaria);
   font-size: var(--tamanhoFonteMedia);
   transition: all var(--transicaoMedia);
+  height: 36px;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -306,11 +305,12 @@ const Input = styled.input`
   @media (max-width: 768px) {
     padding: var(--espacamentoPequeno);
     font-size: var(--tamanhoFontePequena);
-    min-height: 44px;
+    height: 32px;
   }
 
   @media (max-width: 480px) {
     padding: var(--espacamentoPequeno);
+    height: 30px;
   }
 `;
 
@@ -351,7 +351,7 @@ const Textarea = styled.textarea`
 
 const Select = styled.select`
   width: 100%;
-  padding: var(--espacamentoMedio);
+  padding: var(--espacamentoPequeno);
   border: 2px solid var(--corBordaPrimaria);
   border-radius: var(--bordaRaioMedia);
   background: var(--corFundoPrimaria);
@@ -359,34 +359,25 @@ const Select = styled.select`
   font-size: var(--tamanhoFonteMedia);
   cursor: pointer;
   transition: all var(--transicaoMedia);
+  height: 36px;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: var(--corPrimaria);
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
-`;
-
-const ModalFooter = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--espacamentoMedio);
-  padding: var(--espacamentoGrande);
-  border-top: 2px solid var(--corBordaPrimaria);
-  background: var(--corFundoTerciaria);
 
   @media (max-width: 768px) {
-    padding: var(--espacamentoMedio);
-    gap: var(--espacamentoPequeno);
+    height: 32px;
   }
 
   @media (max-width: 480px) {
-    padding: var(--espacamentoPequeno);
-    flex-direction: column;
-    gap: var(--espacamentoPequeno);
+    height: 30px;
   }
 `;
+
+
 
 const BotaoAcao = styled.button`
   display: flex;
@@ -437,28 +428,29 @@ const BotaoPerigo = styled(BotaoAcao)`
   }
 `;
 
-const BotaoFavorito = styled(BotaoAcao)`
-  background: ${props => props.favorito ? '#FF6B6B' : 'var(--corFundoSecundaria)'};
-  color: ${props => props.favorito ? 'white' : 'var(--corTextoPrimaria)'};
-  border: 2px solid ${props => props.favorito ? '#FF6B6B' : 'var(--corBordaPrimaria)'};
+const BotaoFavorito = styled(BotaoHeader)`
+  background: ${props => props.favorito ? '#FF6B6B' : 'transparent'};
+  color: ${props => props.favorito ? 'white' : 'var(--corTextoSecundaria)'};
+  border-color: ${props => props.favorito ? '#FF6B6B' : 'var(--corBordaPrimaria)'};
 
   &:hover:not(:disabled) {
-    background: ${props => props.favorito ? '#FF5252' : 'var(--corFundoTerciaria)'};
+    background: ${props => props.favorito ? '#FF5252' : 'var(--corFundoHover)'};
     border-color: ${props => props.favorito ? '#FF5252' : 'var(--corPrimaria)'};
+    color: ${props => props.favorito ? 'white' : 'var(--corTextoPrimaria)'};
   }
 `;
 
 const AutoSaveIndicator = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 3px;
+  font-size: 0.65rem;
   color: var(--corTextoSecundaria);
-  margin-right: var(--espacamentoMedio);
+  margin-right: 8px;
   
   .auto-save-icon {
-    width: 8px;
-    height: 8px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: ${props => props.isSaving ? '#ffa500' : props.hasChanges ? '#4CAF50' : '#ccc'};
     animation: ${props => props.isSaving ? 'pulse 1s infinite' : 'none'};
@@ -888,9 +880,7 @@ const ModalItem = ({
             {/* Removido o campo de categoria duplicado - agora o campo topico é o select de categorias */}
           </ModalBody>
 
-          <ModalFooter>
-            {/* Botões movidos para o ModalHeader */}
-          </ModalFooter>
+
         </div>
       </ModalContent>
     </ModalOverlay>

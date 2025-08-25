@@ -13,6 +13,7 @@ import AuthScreen from './components/AuthScreen';
 import TelaInicial from './components/TelaInicial';
 import TelaNotas from './components/TelaNotas';
 import TelaLinks from './components/TelaLinks';
+import TelaAgenda from './components/TelaAgenda';
 import TelaLixeira from './components/TelaLixeira';
 import Configuracoes from './components/Configuracoes';
 import MenuLateral from './components/MenuLateral';
@@ -1065,6 +1066,9 @@ const AppContent = () => {
             forcarAtualizacao={forcarAtualizacao}
           />
         );
+
+      case 'agenda':
+        return <TelaAgenda />;
 
       case 'favoritos':
         return (

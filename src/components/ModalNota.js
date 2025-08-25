@@ -76,50 +76,22 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--corFundoSecundaria);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   z-index: 1000;
-  padding: var(--espacamentoPequeno);
   animation: ${fadeIn} 0.3s ease-out;
-  backdrop-filter: blur(10px);
-
-  @media (max-width: 480px) {
-    padding: 0;
-  }
 `;
 
 const ModalContainer = styled.div`
   background: var(--corFundoSecundaria);
-  border-radius: var(--bordaRaioGrande);
-  box-shadow: var(--sombraForte);
-  width: 95%;
-  max-width: 1200px;
-  height: 95vh;
+  width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: all var(--transicaoRapida);
   animation: ${slideInUp} 0.4s ease-out;
-  border: 2px solid var(--corPrimaria);
-  
-  &:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 768px) {
-    width: 98%;
-    height: 98vh;
-    max-width: none;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-    height: 100vh;
-    border-radius: 0;
-  }
 `;
 
 const ModalHeader = styled.div`
@@ -133,6 +105,7 @@ const ModalHeader = styled.div`
   top: 0;
   z-index: 10;
   animation: ${slideInDown} 0.5s ease-out 0.1s both;
+  flex-shrink: 0;
 `;
 
 const ModalTitle = styled.h2`
@@ -188,46 +161,36 @@ const ModalContent = styled.div`
   padding: var(--espacamentoGrande);
   flex: 1;
   overflow-y: auto;
-  min-height: 600px;
-  max-height: calc(95vh - 140px);
   animation: ${fadeIn} 0.6s ease-out 0.2s both;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 768px) {
-    max-height: calc(98vh - 140px);
     padding: var(--espacamentoMedio);
   }
 
   @media (max-width: 480px) {
-    max-height: calc(100vh - 140px);
     padding: var(--espacamentoPequeno);
   }
-`;
-
-const ModalFooter = styled.div`
-  padding: var(--espacamentoMedio) var(--espacamentoGrande);
-  border-top: 2px solid var(--corBordaPrimaria);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--corFundoTerciaria);
-  animation: ${slideInDown} 0.5s ease-out 0.3s both;
-`;
-
-const ModalFooterActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: var(--espacamentoPequeno);
-`;
-
-const ModalFooterInfo = styled.div`
-  color: var(--corTextoSecundaria);
-  font-size: var(--tamanhoFontePequena);
-  font-style: italic;
 `;
 
 const FormGroup = styled.div`
   margin-bottom: var(--espacamentoMedio);
   animation: ${fadeIn} 0.8s ease-out 0.4s both;
+  
+  &:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    
+    > div {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+  }
 `;
 
 const Label = styled.label`
@@ -416,9 +379,23 @@ const ModalNota = ({
             <ModalButton
               variant="secondary"
               onClick={onClose}
-              title="Fechar"
+              title="Cancelar"
             >
-              <FontAwesomeIcon icon={faTimes} />
+              Cancelar
+            </ModalButton>
+            <ModalButton
+              onClick={handleSave}
+              loading={loadingStates.save}
+              title="Salvar"
+            >
+              {loadingStates.save ? (
+                <LoadingSpinner>
+                  <FontAwesomeIcon icon={faSpinner} />
+                </LoadingSpinner>
+              ) : (
+                <FontAwesomeIcon icon={faSave} />
+              )}
+              Salvar
             </ModalButton>
           </ModalActions>
         </ModalHeader>
@@ -477,33 +454,6 @@ const ModalNota = ({
             />
           </FormGroup>
         </ModalContent>
-
-        <ModalFooter>
-          <ModalFooterInfo>
-            {nota ? `Editando nota criada em ${new Date(nota.createdAt || Date.now()).toLocaleDateString()}` : 'Criando nova nota'}
-          </ModalFooterInfo>
-          <ModalFooterActions>
-            <ModalButton
-              variant="secondary"
-              onClick={onClose}
-            >
-              Cancelar
-            </ModalButton>
-            <ModalButton
-              onClick={handleSave}
-              loading={loadingStates.save}
-            >
-              {loadingStates.save ? (
-                <LoadingSpinner>
-                  <FontAwesomeIcon icon={faSpinner} />
-                </LoadingSpinner>
-              ) : (
-                <FontAwesomeIcon icon={faSave} />
-              )}
-              Salvar
-            </ModalButton>
-          </ModalFooterActions>
-        </ModalFooter>
       </ModalContainer>
     </ModalOverlay>
   );
